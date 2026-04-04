@@ -166,6 +166,18 @@ export function createAgentClient(props: {
     uploadImage(url: string) {
       return request<{ url: string }>("POST", "/upload", { url })
     },
+
+    async fetchIdentity() {
+      try {
+        return await request<{
+          agentId: string | null
+          ensName: string | null
+          registrationStep: number
+        }>("GET", "/identity")
+      } catch {
+        return null
+      }
+    },
   }
 }
 

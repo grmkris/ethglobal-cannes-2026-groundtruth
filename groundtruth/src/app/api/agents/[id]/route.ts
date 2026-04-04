@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createDb } from "@/server/db/db"
 import { env } from "@/env"
 import { AgentProfileId } from "@/lib/typeid"
+import { ERC8004_IDENTITY_REGISTRY } from "@/lib/contracts"
 
 const db = createDb({ databaseUrl: env.DATABASE_URL })
 
@@ -38,29 +39,30 @@ export async function GET(
       ? [
           {
             agentId: Number(profile.erc8004AgentId),
-            agentRegistry: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+            agentRegistry: ERC8004_IDENTITY_REGISTRY,
           },
         ]
       : [],
     services: [
       {
-        name: "ens",
-        endpoint: profile.ensName,
-        version: "1",
+        type: "ENS",
+        url: profile.ensName,
+        description: "ENS subdomain identity",
       },
       {
-        name: "groundtruth",
-        endpoint: `${env.APP_URL}/api/agent`,
-        version: "1",
+        type: "MCP",
+        url: `${env.APP_URL}/api/agent`,
+        description: "Ground Truth intelligence API",
       },
       {
-        name: "a2a",
-        endpoint: profile.agentWallet?.address ?? "",
-        version: "1",
+        type: "A2A",
+        url: profile.agentWallet?.address ?? "",
+        description: "Agent-to-agent wallet",
       },
     ],
     metadata: {
       platform: "groundtruth",
+      ensName: profile.ensName,
       sources: profile.sources,
       mandate: profile.mandate,
       parentEnsName: profile.parentEnsName,

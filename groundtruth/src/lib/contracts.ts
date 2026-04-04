@@ -87,6 +87,7 @@ export const publicResolverAbi = [
 ] as const
 
 export const identityRegistryAbi = [
+  // --- Registration ---
   {
     name: "register",
     type: "function",
@@ -95,11 +96,80 @@ export const identityRegistryAbi = [
     outputs: [{ name: "agentId", type: "uint256" }],
   },
   {
-    name: "ownerOf",
+    name: "register",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentURI", type: "string" },
+      {
+        name: "metadata",
+        type: "tuple[]",
+        components: [
+          { name: "key", type: "string" },
+          { name: "value", type: "bytes" },
+        ],
+      },
+    ],
+    outputs: [{ name: "agentId", type: "uint256" }],
+  },
+  // --- URI & Metadata ---
+  {
+    name: "setAgentURI",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "newURI", type: "string" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "setMetadata",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "metadataKey", type: "string" },
+      { name: "metadataValue", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "getMetadata",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "metadataKey", type: "string" },
+    ],
+    outputs: [{ name: "", type: "bytes" }],
+  },
+  {
+    name: "tokenURI",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "tokenId", type: "uint256" }],
-    outputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "string" }],
+  },
+  // --- Agent Wallet ---
+  {
+    name: "setAgentWallet",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "wallet", type: "address" },
+      { name: "deadline", type: "uint256" },
+      { name: "signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "unsetAgentWallet",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "agentId", type: "uint256" }],
+    outputs: [],
   },
   {
     name: "getAgentWallet",
@@ -108,6 +178,29 @@ export const identityRegistryAbi = [
     inputs: [{ name: "agentId", type: "uint256" }],
     outputs: [{ name: "", type: "address" }],
   },
+  // --- ERC-721 ---
+  {
+    name: "ownerOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getVersion",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "string" }],
+  },
+  // --- Events ---
   {
     name: "Registered",
     type: "event",
@@ -115,6 +208,24 @@ export const identityRegistryAbi = [
       { name: "agentId", type: "uint256", indexed: true },
       { name: "agentURI", type: "string", indexed: false },
       { name: "owner", type: "address", indexed: true },
+    ],
+  },
+  {
+    name: "URIUpdated",
+    type: "event",
+    inputs: [
+      { name: "agentId", type: "uint256", indexed: true },
+      { name: "newURI", type: "string", indexed: false },
+      { name: "updatedBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    name: "MetadataSet",
+    type: "event",
+    inputs: [
+      { name: "agentId", type: "uint256", indexed: true },
+      { name: "metadataKey", type: "string", indexed: true },
+      { name: "metadataValue", type: "bytes", indexed: false },
     ],
   },
 ] as const

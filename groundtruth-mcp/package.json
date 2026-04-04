@@ -1,6 +1,6 @@
 {
   "name": "groundtruth-mcp",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "MCP server for Ground Truth — verified intelligence map",
   "type": "module",
   "bin": {

@@ -67,6 +67,7 @@ export function EventPopupContent({
             <Badge variant="outline" className="gap-0.5 text-[9px] px-1 py-0 text-violet-500 border-violet-500/20 bg-violet-500/10">
               <BotIcon size={8} />
               {event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}
+              {event.onChainVerified && <BadgeCheckIcon size={8} className="text-emerald-500" />}
             </Badge>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
-import { user, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
+import { user, walletAddress, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
 import type { UserId, AgentProfileId, AgentWalletId } from "@/lib/typeid"
 
 export function createAuthService(props: { db: Database }) {
@@ -47,6 +47,23 @@ export function createAuthService(props: { db: Database }) {
       .insert(agentWallet)
       .values({ userId: params.userId, address: params.address.toLowerCase() })
       .onConflictDoNothing()
+  }
+
+  async function getUserByAddress(params: {
+    address: string
+  }): Promise<{ userId: UserId; userName: string } | null> {
+    const addr = params.address.toLowerCase()
+    const wa = await db.query.walletAddress.findFirst({
+      where: (w, { eq }) => eq(w.address, addr),
+      columns: { userId: true },
+    })
+    if (!wa) return null
+
+    const u = await db.query.user.findFirst({
+      where: (u, { eq }) => eq(u.id, wa.userId),
+      columns: { name: true },
+    })
+    return { userId: wa.userId, userName: u?.name ?? "Unknown" }
   }
 
   async function getUserByAgentAddress(params: {
@@ -169,6 +186,7 @@ export function createAuthService(props: { db: Database }) {
     getAgentProfiles,
     resolveAgentByEnsName,
     getAgentProfileById,
+    getUserByAddress,
     getAgentProfileByAddress,
     deleteAgentProfile,
   }

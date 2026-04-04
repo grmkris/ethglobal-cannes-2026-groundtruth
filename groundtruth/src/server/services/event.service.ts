@@ -28,6 +28,7 @@ function toWorldEvent(
     creatorName: row.creatorName,
     agentAddress: row.agentAddress ?? null,
     agentEnsName: row.agentEnsName ?? null,
+    onChainVerified: row.onChainVerified,
   }
 }
 
@@ -98,6 +99,7 @@ export function createEventService(props: { db: Database }) {
     userId: UserId
     agentAddress?: string | null
     agentEnsName?: string | null
+    onChainVerified?: boolean
   }) {
     const [row] = await db
       .insert(worldEvent)
@@ -109,6 +111,7 @@ export function createEventService(props: { db: Database }) {
         userId: params.userId,
         agentAddress: params.agentAddress ?? null,
         agentEnsName: params.agentEnsName ?? null,
+        onChainVerified: params.onChainVerified ?? false,
       })
       .returning()
 

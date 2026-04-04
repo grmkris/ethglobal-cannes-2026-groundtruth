@@ -1,4 +1,5 @@
 import {
+  boolean,
   doublePrecision,
   index,
   jsonb,
@@ -39,6 +40,7 @@ export const worldEvent = pgTable(
       .notNull(),
     agentAddress: text("agent_address"),
     agentEnsName: text("agent_ens_name"),
+    onChainVerified: boolean("on_chain_verified").default(false).notNull(),
     ...baseEntityFields,
   },
   (table) => [

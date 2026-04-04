@@ -13,6 +13,7 @@ import { createAuthService } from "./services/auth.service"
 import { createEventService } from "./services/event.service"
 import { createChatService } from "./services/chat.service"
 import { createAgentApp } from "./agentkit"
+import { createIdentityVerificationService } from "./services/identity-verification"
 import { env } from "@/env"
 import { UserId } from "@/lib/typeid"
 import type { Database } from "./db/db"
@@ -54,12 +55,19 @@ export function createApi(props: { db: Database }) {
 
   app.get("/health", (c) => c.json({ status: "ok" }))
 
+  // On-chain identity verification
+  const identityVerification = createIdentityVerificationService({
+    infuraProjectId: env.INFURA_PROJECT_ID,
+    authService,
+  })
+
   // Agent API — x402 + AgentKit protected REST endpoints
   const agentApp = createAgentApp({
     db,
     eventService,
     chatService,
     authService,
+    identityVerification,
     payTo: env.AGENT_PAY_TO_ADDRESS,
   })
   app.route("/agent", agentApp)

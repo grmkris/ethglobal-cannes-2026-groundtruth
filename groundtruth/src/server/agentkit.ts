@@ -41,6 +41,7 @@ type AgentEnv = EvlogVariables & {
     userName: string
     agentAddress: string
     agentEnsName: string | null
+    onChainVerified: boolean
   }
 }
 
@@ -77,9 +78,10 @@ export function createAgentApp(props: {
   eventService: EventService
   chatService: ChatService
   authService: AuthService
+  identityVerification?: { verifyAgentIdentity: (params: { erc8004AgentId: string; agentAddress: string }) => Promise<boolean> }
   payTo: string
 }) {
-  const { db, eventService, chatService, authService, payTo } = props
+  const { db, eventService, chatService, authService, identityVerification, payTo } = props
 
   // --- AgentKit setup ---
   const agentBook = createAgentBookVerifier()
@@ -169,6 +171,15 @@ export function createAgentApp(props: {
           address: payload.address,
         })
         c.set("agentEnsName", profile?.registrationStep === 4 ? profile.ensName : null)
+
+        // On-chain ERC-8004 identity verification
+        if (profile?.erc8004AgentId && identityVerification) {
+          const verified = await identityVerification.verifyAgentIdentity({
+            erc8004AgentId: profile.erc8004AgentId,
+            agentAddress: payload.address,
+          })
+          c.set("onChainVerified", verified)
+        }
       }
     } catch (err) {
       const log = c.get("log")
@@ -178,6 +189,20 @@ export function createAgentApp(props: {
   })
 
   // --- Routes ---
+
+  app.get("/identity", async (c) => {
+    const agentAddress = c.get("agentAddress")
+    if (!agentAddress) return c.json({ error: "No agent address" }, 401)
+
+    const profile = await authService.getAgentProfileByAddress({ address: agentAddress })
+    if (!profile) return c.json({ agentId: null, ensName: null, registrationStep: 0 })
+
+    return c.json({
+      agentId: profile.erc8004AgentId ?? null,
+      ensName: profile.ensName,
+      registrationStep: profile.registrationStep,
+    })
+  })
 
   app.get("/events", async (c) => {
     const log = c.get("log")
@@ -218,7 +243,8 @@ export function createAgentApp(props: {
     const body = createEventInputSchema.parse(await c.req.json())
     const agentAddress = c.get("agentAddress")
     const agentEnsName = c.get("agentEnsName")
-    const event = await eventService.create({ ...body, userId, agentAddress, agentEnsName })
+    const onChainVerified = c.get("onChainVerified") ?? false
+    const event = await eventService.create({ ...body, userId, agentAddress, agentEnsName, onChainVerified })
     return c.json(event, 201)
   })
 

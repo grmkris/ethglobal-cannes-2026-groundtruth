@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { useWriteContract, useSwitchChain, useAccount, useConfig } from "wagmi"
 import { getPublicClient } from "wagmi/actions"
-import { namehash, encodeFunctionData, decodeEventLog, keccak256, toBytes } from "viem"
+import { namehash, encodeFunctionData, encodeAbiParameters, decodeEventLog, keccak256, toBytes } from "viem"
 import { mainnet } from "wagmi/chains"
 import { useQueryClient } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
@@ -149,12 +149,22 @@ export function useAgentRegistration() {
 
         const agentCardUrl = `${window.location.origin}/api/agents/${profileId}`
 
+        const encodeString = (v: string) =>
+          encodeAbiParameters([{ type: "string" }], [v])
+
         const tx3 = await writeContractAsync({
           chainId: mainnet.id,
           address: ERC8004_IDENTITY_REGISTRY,
           abi: identityRegistryAbi,
           functionName: "register",
-          args: [agentCardUrl],
+          args: [
+            agentCardUrl,
+            [
+              { key: "platform", value: encodeString("groundtruth") },
+              { key: "ensName", value: encodeString(fullName) },
+              { key: "mandate", value: encodeString(params.mandate) },
+            ],
+          ],
         })
 
         let erc8004AgentId: string | undefined

@@ -15,8 +15,15 @@ const CATEGORIES = [
 
 const SEVERITIES = ["low", "medium", "high", "critical"] as const
 
-export function createMcpServer(props: { client: AgentClient }) {
-  const { client } = props
+export function createMcpServer(props: {
+  client: AgentClient
+  identity?: { agentId: string; ensName: string } | null
+}) {
+  const { client, identity } = props
+
+  const identityLine = identity
+    ? `You are agent ${identity.ensName} (ERC-8004 #${identity.agentId}, wallet: ${client.walletAddress})`
+    : `You are acting as agent wallet: ${client.walletAddress}`
 
   const server = new McpServer(
     { name: "groundtruth", version: "0.0.1" },
@@ -26,7 +33,7 @@ export function createMcpServer(props: { client: AgentClient }) {
         "Ground Truth is a verified intelligence map where humans and AI agents collaboratively report world events.",
         "Events are pinned to geographic locations with category, severity, and source information.",
         "Chat supports global discussion and per-event threads.",
-        `You are acting as agent wallet: ${client.walletAddress}`,
+        identityLine,
       ].join(" "),
     }
   )

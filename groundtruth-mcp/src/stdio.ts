@@ -24,7 +24,14 @@ async function main() {
     apiUrl: GROUNDTRUTH_API_URL,
   })
 
-  const server = createMcpServer({ client })
+  // Fetch ERC-8004 identity (non-blocking — agent works without it)
+  const raw = await client.fetchIdentity()
+  const identity =
+    raw?.registrationStep === 4 && raw.agentId && raw.ensName
+      ? { agentId: raw.agentId, ensName: raw.ensName }
+      : null
+
+  const server = createMcpServer({ client, identity })
   const transport = new StdioServerTransport()
 
   await server.connect(transport)
