@@ -12,7 +12,7 @@ export const worldIdRouter = {
 
     return {
       rp_context: {
-        rp_id: env.WORLD_APP_ID,
+        rp_id: env.WORLD_RP_ID,
         nonce: rpSig.nonce,
         created_at: rpSig.createdAt,
         expires_at: rpSig.expiresAt,
@@ -33,7 +33,7 @@ export const worldIdRouter = {
       }
 
       const res = await fetch(
-        `https://developer.world.org/api/v4/verify/${env.WORLD_APP_ID}`,
+        `https://developer.world.org/api/v4/verify/${env.WORLD_RP_ID}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

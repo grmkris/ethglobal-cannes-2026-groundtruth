@@ -30,6 +30,7 @@ import { CreateEventModal } from "./create-event-modal"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
+import { UserControls } from "@/components/user-controls"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
 
@@ -224,6 +225,8 @@ export function WorldMap() {
             </TooltipContent>
           </Tooltip>
         </MapControlContainer>
+
+        <UserControls />
 
         <MapSidebar
           filteredEvents={filteredEvents}

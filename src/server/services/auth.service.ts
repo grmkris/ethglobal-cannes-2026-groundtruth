@@ -17,6 +17,7 @@ export function createAuthService(props: { db: Database }) {
     await db
       .insert(worldIdVerification)
       .values({ nullifierHash, userId })
+      .onConflictDoNothing()
 
     await db
       .update(user)
@@ -36,7 +37,17 @@ export function createAuthService(props: { db: Database }) {
     return result?.worldIdVerified ?? false
   }
 
-  return { verifyWorldId, isWorldIdVerified }
+  async function getUserByHumanId(params: {
+    humanId: string
+  }): Promise<UserId | null> {
+    const row = await db.query.worldIdVerification.findFirst({
+      where: (v, { eq }) => eq(v.nullifierHash, params.humanId),
+      columns: { userId: true },
+    })
+    return row?.userId ?? null
+  }
+
+  return { verifyWorldId, isWorldIdVerified, getUserByHumanId }
 }
 
 export type AuthService = ReturnType<typeof createAuthService>

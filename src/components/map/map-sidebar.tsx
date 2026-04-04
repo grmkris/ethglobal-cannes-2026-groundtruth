@@ -21,15 +21,12 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MessageCircleIcon,
-  MoonIcon,
   SearchIcon,
-  SunIcon,
   WalletIcon,
 } from "lucide-react"
 import { useLayoutEffect, useRef } from "react"
-import { useTheme } from "next-themes"
+import { useAppKit } from "@reown/appkit/react"
 import { CategoryFilter } from "./category-filter"
-import { WorldIdVerifyButton } from "@/components/world-id-verify-button"
 
 const SEVERITY_DOT: Record<SeverityLevel, string> = {
   critical: "bg-red-500",
@@ -165,7 +162,7 @@ export function MapSidebar({
 }) {
   const { data: sessionData } = useSession()
   const isSignedIn = !!sessionData?.session
-  const { resolvedTheme, setTheme } = useTheme()
+  const { open: openAppKit } = useAppKit()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const chatEventId = activeTab === "chat" ? selectedEventId : null
@@ -199,61 +196,22 @@ export function MapSidebar({
       )}
     >
       {collapsed ? (
-        <div className="flex flex-col gap-1.5">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Expand sidebar"
-                  onClick={() => onCollapsedChange(false)}
-                  className="bg-background/90 shadow-lg backdrop-blur-md"
-                />
-              }
-            >
-              <ChevronRightIcon size={16} />
-            </TooltipTrigger>
-            <TooltipContent side="right">Expand sidebar</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Open chat"
-                  onClick={() => {
-                    onCollapsedChange(false)
-                    onTabChange("chat")
-                  }}
-                  className="bg-background/90 shadow-lg backdrop-blur-md"
-                />
-              }
-            >
-              <MessageCircleIcon size={16} />
-            </TooltipTrigger>
-            <TooltipContent side="right">Open chat</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Toggle theme"
-                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className="bg-background/90 shadow-lg backdrop-blur-md"
-                />
-              }
-            >
-              {resolvedTheme === "dark" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-            </TooltipTrigger>
-            <TooltipContent side="right">Toggle theme</TooltipContent>
-          </Tooltip>
-        </div>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Expand sidebar"
+                onClick={() => onCollapsedChange(false)}
+                className="bg-background/90 shadow-lg backdrop-blur-md"
+              />
+            }
+          >
+            <ChevronRightIcon size={16} />
+          </TooltipTrigger>
+          <TooltipContent side="right">Expand sidebar</TooltipContent>
+        </Tooltip>
       ) : (
         <div className="sidebar-grain flex h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] w-full flex-col rounded-lg border bg-background/90 shadow-lg backdrop-blur-md dark:border-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
           {/* Header */}
@@ -270,40 +228,22 @@ export function MapSidebar({
                 {eventCount} live
               </Badge>
             </div>
-            <div className="ml-auto flex items-center gap-1">
-              {isSignedIn && <WorldIdVerifyButton />}
-              <appkit-button size="sm" />
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label="Toggle theme"
-                      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                    />
-                  }
-                >
-                  {resolvedTheme === "dark" ? <SunIcon size={12} /> : <MoonIcon size={12} />}
-                </TooltipTrigger>
-                <TooltipContent>Toggle theme</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label="Collapse sidebar"
-                      onClick={() => onCollapsedChange(true)}
-                    />
-                  }
-                >
-                  <ChevronLeftIcon size={14} />
-                </TooltipTrigger>
-                <TooltipContent>Collapse sidebar</TooltipContent>
-              </Tooltip>
-            </div>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="ml-auto"
+                    aria-label="Collapse sidebar"
+                    onClick={() => onCollapsedChange(true)}
+                  />
+                }
+              >
+                <ChevronLeftIcon size={14} />
+              </TooltipTrigger>
+              <TooltipContent>Collapse sidebar</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Tabs */}
@@ -439,12 +379,15 @@ export function MapSidebar({
               {isSignedIn ? (
                 <ChatInput onSend={handleSend} disabled={send.isPending} />
               ) : (
-                <div className="flex items-center gap-2 border-t px-3 py-3">
+                <button
+                  onClick={() => openAppKit()}
+                  className="flex w-full items-center gap-2 border-t px-3 py-3 text-left transition-colors hover:bg-muted/50"
+                >
                   <WalletIcon size={14} className="text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">
                     Connect wallet to chat
                   </p>
-                </div>
+                </button>
               )}
             </>
           )}

@@ -7,10 +7,13 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(1),
     AUTH_DOMAIN: z.string().min(1),
     WORLD_APP_ID: z.string().min(1),
+    WORLD_RP_ID: z.string().startsWith("rp_"),
     WORLD_SIGNING_KEY: z.string().min(1),
     BLOB_READ_WRITE_TOKEN: z.string().min(1),
     NODE_ENV: z.enum(["development", "production", "test"]),
     APP_URL: z.string().url(),
+    INFURA_PROJECT_ID: z.string().min(1),
+    AGENT_PAY_TO_ADDRESS: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string().min(1),
