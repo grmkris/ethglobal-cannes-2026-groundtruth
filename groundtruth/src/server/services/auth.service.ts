@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
 import { user, walletAddress, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
@@ -47,6 +47,20 @@ export function createAuthService(props: { db: Database }) {
       .insert(agentWallet)
       .values({ userId: params.userId, address: params.address.toLowerCase() })
       .onConflictDoNothing()
+  }
+
+  async function deleteAgentWallet(params: {
+    walletId: AgentWalletId
+    userId: UserId
+  }) {
+    await db
+      .delete(agentWallet)
+      .where(
+        and(
+          eq(agentWallet.id, params.walletId),
+          eq(agentWallet.userId, params.userId)
+        )
+      )
   }
 
   async function getUserByAddress(params: {
@@ -212,6 +226,7 @@ export function createAuthService(props: { db: Database }) {
     verifyWorldId,
     isWorldIdVerified,
     linkAgentWallet,
+    deleteAgentWallet,
     getUserByAgentAddress,
     getAgentWallets,
     createAgentProfile,

@@ -67,6 +67,20 @@ export const agentRouter = {
     return context.authService.getAgentProfiles({ userId })
   }),
 
+  unlinkWallet: authedProcedure
+    .input(z.object({ walletId: AgentWalletId }))
+    .handler(async ({ input, context }) => {
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "agent.unlinkWallet", userId })
+
+      await context.authService.deleteAgentWallet({
+        walletId: input.walletId,
+        userId,
+      })
+
+      return { ok: true }
+    }),
+
   delete: authedProcedure
     .input(z.object({ profileId: AgentProfileId }))
     .handler(async ({ input, context }) => {

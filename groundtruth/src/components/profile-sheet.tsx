@@ -31,12 +31,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs"
-import {
   BadgeCheckIcon,
   BotIcon,
   CheckCircle2Icon,
@@ -58,7 +52,7 @@ import { useAgentWallets } from "@/hooks/use-agent-wallets"
 import { useAgentProfiles } from "@/hooks/use-agent-profiles"
 import { useAgentRegistration, type RegistrationStep } from "@/hooks/use-agent-registration"
 import { ERC8004_IDENTITY_REGISTRY, identityRegistryAbi } from "@/lib/contracts"
-import type { AgentProfileId } from "@/lib/typeid";
+import type { AgentProfileId, AgentWalletId } from "@/lib/typeid";
 
 
 function truncateAddress(address: string) {
@@ -220,6 +214,14 @@ function AgentsSection() {
     },
   })
 
+  const unlinkWallet = useMutation({
+    mutationFn: (walletId: AgentWalletId) => client.agent.unlinkWallet({ walletId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent"] })
+      toast.success("Wallet removed")
+    },
+  })
+
   async function handleLinkWallet(profileId: AgentProfileId) {
     try {
       setLinkingProfileId(profileId)
@@ -255,6 +257,7 @@ function AgentsSection() {
 
   const agentList = agents.data ?? []
   const profileList = profiles.data ?? []
+  const hasWallets = agentList.length > 0
 
   function handleLink() {
     const trimmed = address.trim()
@@ -271,139 +274,166 @@ function AgentsSection() {
         Agents
       </h3>
 
-      <Tabs defaultValue="agents">
-        <TabsList variant="line" className="mb-3 w-full">
-          <TabsTrigger value="agents" className="text-xs">My Agents</TabsTrigger>
-          <TabsTrigger value="setup" className="text-xs">Setup Guide</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="agents">
-          {/* Unified agent list */}
-          {agentList.length > 0 && (
-            <div className="mb-2 space-y-1">
-              {agentList.map((wallet) => {
-                const profile = profileList.find((p) => p.agentWalletId === wallet.id)
-                return (
-                  <div
-                    key={wallet.id}
-                    className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                  >
-                    <BotIcon size={12} className={`shrink-0 ${profile ? "text-violet-500" : "text-muted-foreground"}`} />
-                    <div className="min-w-0 flex-1">
-                      {profile ? (
-                        <>
-                          <span className="block truncate text-xs font-medium">
-                            {profile.ensName}
-                          </span>
-                          <span className="block truncate text-[10px] text-muted-foreground">
-                            {profile.mandate}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="truncate font-mono text-xs">
-                          {wallet.address}
-                        </span>
-                      )}
-                    </div>
-                    {profile ? (
-                      profile.registrationStep >= 4 ? (
-                        <button
-                          onClick={() => handleLinkWallet(profile.id)}
-                          disabled={linkingProfileId === profile.id}
-                          className="shrink-0 rounded p-0.5 text-emerald-500 hover:text-violet-500 transition-colors"
-                          title="Link agent wallet on-chain"
-                        >
-                          {linkingProfileId === profile.id ? (
-                            <Loader2Icon size={12} className="animate-spin" />
-                          ) : (
-                            <WalletIcon size={12} />
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => deleteProfile.mutate(profile.id)}
-                          disabled={deleteProfile.isPending}
-                          className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-red-500 transition-colors"
-                          title="Delete incomplete registration"
-                        >
-                          <Trash2Icon size={12} />
-                        </button>
-                      )
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 shrink-0 text-[10px]"
-                        onClick={() => setRegisterWalletId(wallet.id)}
-                      >
-                        Register
-                      </Button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Link form */}
-          <div className="flex gap-1.5">
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLink()}
-              placeholder="0x agent wallet address"
-              className="h-8 flex-1 rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 shrink-0"
-              onClick={handleLink}
-              disabled={link.isPending || !address.trim()}
-            >
-              <LinkIcon size={12} />
-              Link
-            </Button>
+      <div className="space-y-3 text-xs">
+        {/* Step 1: Install MCP */}
+        <div>
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium ${hasWallets ? "bg-emerald-500 text-white" : "bg-foreground text-background"}`}>
+              {hasWallets ? <CheckIcon size={10} /> : "1"}
+            </span>
+            <span className="font-medium">Install MCP Server</span>
           </div>
-        </TabsContent>
-
-        <TabsContent value="setup">
-          <div className="space-y-4 text-xs">
-            <GuideStep n={1} title="Run installer">
+          {!hasWallets && (
+            <div className="pl-7">
               <p className="mb-2 text-muted-foreground">
-                Installs MCP server config + skill automatically:
+                Run this in your project directory:
               </p>
               <CopyBlock code="npx groundtruth-mcp setup" />
-            </GuideStep>
+            </div>
+          )}
+        </div>
 
-            <GuideStep n={2} title="Register with AgentBook">
-              <p className="mb-2 text-muted-foreground">
-                Ties your agent wallet to World ID. Replace ADDRESS with
-                the wallet address from step 1:
-              </p>
-              <CopyBlock code="npx @worldcoin/agentkit-cli register <ADDRESS>" />
-            </GuideStep>
-
-            <GuideStep n={3} title="Link wallet">
-              <p className="text-muted-foreground">
-                Switch to the{" "}
-                <span className="font-medium text-foreground">My Agents</span>{" "}
-                tab and paste the address from step 1.
-              </p>
-            </GuideStep>
-
-            <GuideStep n={4} title="Verify">
-              <p className="text-muted-foreground">
-                Ask your agent:{" "}
-                <span className="font-medium text-foreground">
-                  &quot;Query all events on Ground Truth&quot;
-                </span>
-              </p>
-            </GuideStep>
+        {/* Step 2: Link wallet */}
+        <div>
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium ${hasWallets ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              {hasWallets ? <CheckIcon size={10} /> : "2"}
+            </span>
+            <span className="font-medium">Link Agent Wallet</span>
           </div>
-        </TabsContent>
-      </Tabs>
+          <div className="pl-7">
+            {!hasWallets && (
+              <p className="mb-2 text-muted-foreground">
+                Paste the wallet address from step 1:
+              </p>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLink()}
+                placeholder="0x agent wallet address"
+                className="h-8 flex-1 rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0"
+                onClick={handleLink}
+                disabled={link.isPending || !address.trim()}
+              >
+                <LinkIcon size={12} />
+                Link
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Per-wallet steps (only show after wallets linked) */}
+        {agentList.map((wallet) => {
+          const profile = profileList.find((p) => p.agentWalletId === wallet.id)
+          const isComplete = profile && profile.registrationStep >= 4
+
+          return (
+            <div key={wallet.id} className="rounded-lg border p-3 space-y-2.5">
+              {/* Wallet header */}
+              <div className="flex items-center gap-2">
+                <BotIcon size={12} className={isComplete ? "text-violet-500" : "text-muted-foreground"} />
+                <span className="flex-1 truncate font-mono text-xs">
+                  {isComplete ? profile.ensName : truncateAddress(wallet.address)}
+                </span>
+                {isComplete && (
+                  <span className="text-[10px] text-muted-foreground truncate">
+                    {truncateAddress(wallet.address)}
+                  </span>
+                )}
+                <button
+                  onClick={() => unlinkWallet.mutate(wallet.id)}
+                  disabled={unlinkWallet.isPending}
+                  className="shrink-0 rounded p-0.5 text-muted-foreground/40 hover:text-red-500 transition-colors"
+                  title="Remove agent wallet"
+                >
+                  <Trash2Icon size={10} />
+                </button>
+              </div>
+
+              {/* Step 3: AgentBook */}
+              <div className="flex items-center gap-2">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground">3</span>
+                <span className="text-[11px] text-muted-foreground">Register with AgentBook</span>
+              </div>
+              <div className="pl-6">
+                <CopyBlock code={`npx @worldcoin/agentkit-cli register ${wallet.address}`} />
+              </div>
+
+              {/* Step 4: ENS + ERC-8004 */}
+              <div className="flex items-center gap-2">
+                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-medium ${isComplete ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                  {isComplete ? <CheckIcon size={8} /> : "4"}
+                </span>
+                <span className="text-[11px] text-muted-foreground">Register ENS + ERC-8004 Identity</span>
+              </div>
+              <div className="pl-6">
+                {profile && profile.registrationStep < 4 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{profile.registrationStep}/4 incomplete</span>
+                    <button
+                      onClick={() => deleteProfile.mutate(profile.id)}
+                      disabled={deleteProfile.isPending}
+                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <Trash2Icon size={10} />
+                    </button>
+                  </div>
+                ) : !isComplete ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[10px]"
+                    onClick={() => setRegisterWalletId(wallet.id)}
+                  >
+                    Register ENS Identity
+                  </Button>
+                ) : (
+                  <span className="text-[10px] text-emerald-600">{profile.ensName}</span>
+                )}
+              </div>
+
+              {/* Step 5: Link wallet on-chain (only after ENS registration) */}
+              {isComplete && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground">5</span>
+                    <span className="text-[11px] text-muted-foreground">Link wallet on-chain</span>
+                  </div>
+                  <div className="pl-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px]"
+                      onClick={() => handleLinkWallet(profile.id)}
+                      disabled={linkingProfileId === profile.id}
+                    >
+                      {linkingProfileId === profile.id ? (
+                        <>
+                          <Loader2Icon size={10} className="animate-spin" />
+                          Linking...
+                        </>
+                      ) : (
+                        <>
+                          <WalletIcon size={10} />
+                          Link wallet on-chain
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       <RegisterAgentDialog
         open={registerWalletId !== null}
@@ -663,19 +693,6 @@ function RegisterAgentDialog({
   )
 }
 
-function GuideStep({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center gap-2">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
-          {n}
-        </span>
-        <span className="font-medium">{title}</span>
-      </div>
-      <div className="pl-7">{children}</div>
-    </div>
-  )
-}
 
 function CopyBlock({ code, className }: { code: string; className?: string }) {
   const [copied, setCopied] = useState(false)
