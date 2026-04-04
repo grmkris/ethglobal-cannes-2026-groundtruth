@@ -1,16 +1,14 @@
 import type { EventService } from "../services/event.service"
 import type { Logger } from "../logger"
 
-export interface ContextOptions {
+export function createContext(props: {
   logger: Logger
   eventService: EventService
-}
-
-export async function createContext(options: ContextOptions) {
+}) {
   return {
-    logger: options.logger,
-    eventService: options.eventService,
+    logger: props.logger,
+    eventService: props.eventService,
   }
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>
+export type Context = ReturnType<typeof createContext>

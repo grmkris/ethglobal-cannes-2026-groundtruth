@@ -1,23 +1,24 @@
 import "dotenv/config"
-import { sql } from "drizzle-orm"
 import { createDb } from "./db"
 import { worldEvent } from "./schema/event/event.db"
+import { MOCK_EVENTS } from "../../lib/mock-events"
+import { createLogger } from "../logger"
+
+const logger = createLogger("seed")
 
 async function seed() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
-    console.error("DATABASE_URL is required")
+    logger.error("DATABASE_URL is required")
     process.exit(1)
   }
 
   const db = createDb({ databaseUrl })
 
-  const { MOCK_EVENTS } = await import("../../lib/mock-events")
+  logger.info("Deleting existing events...")
+  await db.delete(worldEvent)
 
-  console.log("Truncating world_event table...")
-  await db.execute(sql`TRUNCATE TABLE world_event`)
-
-  console.log("Seeding world events...")
+  logger.info("Seeding world events...")
   await db.insert(worldEvent).values(
     MOCK_EVENTS.map((e) => ({
       title: e.title,
@@ -32,11 +33,11 @@ async function seed() {
     }))
   )
 
-  console.log(`Seeded ${MOCK_EVENTS.length} events.`)
+  logger.info("Seed complete", { count: MOCK_EVENTS.length })
   process.exit(0)
 }
 
 seed().catch((err) => {
-  console.error("Seed failed:", err)
+  logger.error("Seed failed", { error: String(err) })
   process.exit(1)
 })

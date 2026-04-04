@@ -5,18 +5,7 @@ const typeIdLength = 26
 
 export const idTypesMapNameToPrefix = {
   worldEvent: "wev",
-  wallet: "wal",
 } as const
-
-type IdTypesMapNameToPrefix = typeof idTypesMapNameToPrefix
-
-type IdTypesMapPrefixToName = {
-  [K in keyof IdTypesMapNameToPrefix as IdTypesMapNameToPrefix[K]]: K
-}
-
-const idTypesMapPrefixToName = Object.fromEntries(
-  Object.entries(idTypesMapNameToPrefix).map(([x, y]) => [y, x])
-) as IdTypesMapPrefixToName
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
 
@@ -63,14 +52,6 @@ export const typeIdToUuid = <const T extends IdTypePrefixNames>(
   }
 }
 
-export const validateTypeId = <const T extends IdTypePrefixNames>(
-  prefix: T,
-  data: unknown
-): data is TypeIdString<T> => typeIdValidator(prefix).safeParse(data).success
-
 // Exported validators and types
 export const WorldEventId = typeIdValidator("worldEvent")
 export type WorldEventId = z.infer<typeof WorldEventId>
-
-export const WalletId = typeIdValidator("wallet")
-export type WalletId = z.infer<typeof WalletId>

@@ -5,7 +5,7 @@ import { MoonIcon, SunIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 
 export function MapHeader({ eventCount }: { eventCount: number }) {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
 
   return (
     <MapControlContainer className="absolute top-2 right-2 z-[1000] flex items-center gap-2">
@@ -17,10 +17,10 @@ export function MapHeader({ eventCount }: { eventCount: number }) {
         <span className="text-xs font-medium">{eventCount} live</span>
       </div>
       <button
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         className="flex size-8 items-center justify-center rounded-lg border bg-background/90 shadow-lg backdrop-blur-md hover:bg-muted"
       >
-        {theme === "dark" ? <SunIcon size={14} /> : <MoonIcon size={14} />}
+        {resolvedTheme === "dark" ? <SunIcon size={14} /> : <MoonIcon size={14} />}
       </button>
     </MapControlContainer>
   )

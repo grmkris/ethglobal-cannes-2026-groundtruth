@@ -16,7 +16,7 @@ function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
     description: row.description,
     category: row.category,
     severity: row.severity,
-    coordinates: [row.latitude, row.longitude] as [number, number],
+    coordinates: [row.latitude, row.longitude],
     location: row.location,
     timestamp: row.timestamp.toISOString(),
     source: row.source,
@@ -24,7 +24,7 @@ function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
 }
 
 export function createEventService(props: { db: Database; logger: Logger }) {
-  const { db, logger } = props
+  const { db } = props
 
   async function getAll(params?: {
     category?: EventCategory
@@ -48,14 +48,13 @@ export function createEventService(props: { db: Database; logger: Logger }) {
       if (searchCondition) conditions.push(searchCondition)
     }
 
-    const rows = await db
-      .select()
-      .from(worldEvent)
-      .where(conditions.length ? and(...conditions) : undefined)
-      .orderBy(desc(worldEvent.timestamp))
-
-    logger.info("Fetched events", { count: rows.length })
-    return rows.map(toWorldEvent)
+    return (
+      await db
+        .select()
+        .from(worldEvent)
+        .where(conditions.length ? and(...conditions) : undefined)
+        .orderBy(desc(worldEvent.timestamp))
+    ).map(toWorldEvent)
   }
 
   async function getById(params: { id: WorldEventId }) {

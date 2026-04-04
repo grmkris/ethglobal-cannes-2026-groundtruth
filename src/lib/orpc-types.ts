@@ -10,7 +10,4 @@ export type {
   EventCategory,
   SeverityLevel,
 } from "@/server/db/schema/event/event.zod"
-export {
-  EVENT_CATEGORY_VALUES,
-  SEVERITY_LEVEL_VALUES,
-} from "@/server/db/schema/event/event.zod"
+export { SEVERITY_LEVEL_VALUES } from "@/server/db/schema/event/event.zod"
