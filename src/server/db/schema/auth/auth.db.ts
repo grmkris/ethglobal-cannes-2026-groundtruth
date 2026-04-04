@@ -109,14 +109,11 @@ export const walletAddress = pgTable(
       .references(() => user.id, { onDelete: "cascade" })
       .$type<UserId>(),
     address: text("address").notNull(),
-    chainNamespace: text("chain_namespace").notNull(),
     chainId: text("chain_id").notNull(),
     isPrimary: boolean("is_primary")
       .$defaultFn(() => false)
       .notNull(),
     ...baseEntityFields,
-    siwxMessage: text("siwx_message"),
-    siwxSignature: text("siwx_signature"),
   },
   (table) => [
     index("walletAddress_userId_idx").on(table.userId),

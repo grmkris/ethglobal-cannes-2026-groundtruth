@@ -6,8 +6,15 @@ import { verifyMessage, createPublicClient, http } from "viem"
 import { mainnet } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
 import { UserId } from "@/lib/typeid"
+import { env } from "@/env"
 
-const ensClient = createPublicClient({ chain: mainnet, transport: http() })
+const ensClient = createPublicClient({
+  chain: mainnet,
+  transport: http(`https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`, {
+    timeout: 5_000,
+    retryCount: 0,
+  }),
+})
 
 function ensureHexString(value: string): `0x${string}` {
   if (!value.startsWith("0x")) throw new Error(`Invalid hex string: ${value}`)

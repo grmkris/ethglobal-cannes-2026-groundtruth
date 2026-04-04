@@ -12,6 +12,7 @@ import { createAuth } from "./auth"
 import { createAuthService } from "./services/auth.service"
 import { createEventService } from "./services/event.service"
 import { createChatService } from "./services/chat.service"
+import { createAgentApp } from "./agentkit"
 import { env } from "@/env"
 import { UserId } from "@/lib/typeid"
 import type { Database } from "./db/db"
@@ -52,6 +53,15 @@ export function createApi(props: { db: Database }) {
   })
 
   app.get("/health", (c) => c.json({ status: "ok" }))
+
+  // Agent API — x402 + AgentKit protected REST endpoints
+  const agentApp = createAgentApp({
+    eventService,
+    chatService,
+    authService,
+    payTo: env.AGENT_PAY_TO_ADDRESS,
+  })
+  app.route("/agent", agentApp)
 
   // Better Auth handles /api/auth/*
   app.all("/auth/*", async (c) => auth.handler(c.req.raw))
