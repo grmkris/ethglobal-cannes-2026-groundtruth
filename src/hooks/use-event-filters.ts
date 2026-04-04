@@ -1,9 +1,10 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
-import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf } from "nuqs"
+import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf, parseAsStringEnum } from "nuqs"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
 import { SEVERITY_LEVEL_VALUES, type EventCategory, type SeverityLevel, type WorldEvent } from "@/lib/orpc-types"
+import { EVENT_CATEGORY_VALUES } from "@/server/db/schema/event/event.zod"
 
 const allCategoryIds = EVENT_CATEGORIES.map((c) => c.id)
 
@@ -14,19 +15,19 @@ export function useEventFilters(events: WorldEvent[]) {
   )
 
   const [filterParams, setFilterParams] = useQueryStates({
-    categories: parseAsArrayOf(parseAsString, ","),
-    severity: parseAsArrayOf(parseAsString, ","),
+    categories: parseAsArrayOf(parseAsStringEnum(EVENT_CATEGORY_VALUES), ","),
+    severity: parseAsArrayOf(parseAsStringEnum(SEVERITY_LEVEL_VALUES), ","),
   })
 
   // null = all selected (clean URL)
   const activeCategories = useMemo(() => {
     if (!filterParams.categories) return new Set<EventCategory>(allCategoryIds)
-    return new Set<EventCategory>(filterParams.categories as EventCategory[])
+    return new Set(filterParams.categories)
   }, [filterParams.categories])
 
   const activeSeverities = useMemo(() => {
     if (!filterParams.severity) return new Set<SeverityLevel>(SEVERITY_LEVEL_VALUES)
-    return new Set<SeverityLevel>(filterParams.severity as SeverityLevel[])
+    return new Set(filterParams.severity)
   }, [filterParams.severity])
 
   const toggleCategory = useCallback(

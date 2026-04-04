@@ -13,12 +13,14 @@ export const chatRouter = {
       })
     )
     .handler(async ({ input, context }) => {
+      context.log.set({ procedure: "chat.getMessages", eventId: input.eventId })
       return context.chatService.getMessages(input)
     }),
 
   send: publicProcedure
     .input(createChatMessageInputSchema)
     .handler(async ({ input, context }) => {
+      context.log.set({ procedure: "chat.send", eventId: input.eventId })
       return context.chatService.create(input)
     }),
 }

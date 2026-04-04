@@ -3,7 +3,6 @@ import type { ChatMessageId, WorldEventId } from "@/lib/typeid"
 import type { ChatMessageResponse } from "@/server/db/schema/chat/chat.zod"
 import { chatMessage } from "../db/schema/chat/chat.db"
 import type { Database } from "../db/db"
-import type { Logger } from "../logger"
 
 function toResponse(row: typeof chatMessage.$inferSelect): ChatMessageResponse {
   return {
@@ -15,7 +14,7 @@ function toResponse(row: typeof chatMessage.$inferSelect): ChatMessageResponse {
   }
 }
 
-export function createChatService(props: { db: Database; logger: Logger }) {
+export function createChatService(props: { db: Database }) {
   const { db } = props
 
   async function getMessages(params: {

@@ -8,22 +8,36 @@ import {
 } from "./auth.db"
 
 export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
-  wallets: many(walletAddress),
-  worldIdVerifications: many(worldIdVerification),
+  sessions: many(session, { relationName: "userSessions" }),
+  accounts: many(account, { relationName: "userAccounts" }),
+  wallets: many(walletAddress, { relationName: "userWallets" }),
+  worldIdVerifications: many(worldIdVerification, {
+    relationName: "userWorldIdVerifications",
+  }),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, { fields: [session.userId], references: [user.id] }),
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+    relationName: "userSessions",
+  }),
 }))
 
 export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, { fields: [account.userId], references: [user.id] }),
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+    relationName: "userAccounts",
+  }),
 }))
 
 export const walletAddressRelations = relations(walletAddress, ({ one }) => ({
-  user: one(user, { fields: [walletAddress.userId], references: [user.id] }),
+  user: one(user, {
+    fields: [walletAddress.userId],
+    references: [user.id],
+    relationName: "userWallets",
+  }),
 }))
 
 export const worldIdVerificationRelations = relations(
@@ -32,6 +46,7 @@ export const worldIdVerificationRelations = relations(
     user: one(user, {
       fields: [worldIdVerification.userId],
       references: [user.id],
+      relationName: "userWorldIdVerifications",
     }),
   })
 )

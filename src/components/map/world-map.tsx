@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs"
+import { useQueryState, parseAsStringLiteral } from "nuqs"
+import { parseAsWorldEventId } from "@/lib/nuqs-parsers"
 import {
   Map,
   MapFullscreenControl,
@@ -38,7 +39,7 @@ export function WorldMap() {
   const { data: events = [], isLoading } = useEvents()
 
   // URL-backed state (shareable)
-  const [selectedEventId, setSelectedEventId] = useQueryState("event", parseAsString)
+  const [selectedEventId, setSelectedEventId] = useQueryState("event", parseAsWorldEventId)
   const [sidebarTab, setSidebarTab] = useQueryState(
     "tab",
     parseAsStringLiteral(["events", "chat"] as const).withDefault("events")
@@ -80,7 +81,7 @@ export function WorldMap() {
   }
 
   const handleOpenChat = useCallback(
-    (eventId: string) => {
+    (eventId: WorldEventId) => {
       setSelectedEventId(eventId)
       setSidebarTab("chat")
       setSidebarCollapsed(false)
@@ -153,7 +154,7 @@ export function WorldMap() {
           eventCount={filteredEvents.length}
           activeCategories={activeCategories}
           searchQuery={searchQuery}
-          selectedEventId={(selectedEventId as WorldEventId) ?? null}
+          selectedEventId={selectedEventId}
           activeTab={sidebarTab}
           collapsed={sidebarCollapsed}
           onToggleCategory={toggleCategory}

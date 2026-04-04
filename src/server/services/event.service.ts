@@ -7,7 +7,6 @@ import type {
   WorldEventResponse,
 } from "@/server/db/schema/event/event.zod"
 import { worldEvent } from "../db/schema/event/event.db"
-import type { Logger } from "../logger"
 
 function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
   return {
@@ -23,7 +22,7 @@ function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
   }
 }
 
-export function createEventService(props: { db: Database; logger: Logger }) {
+export function createEventService(props: { db: Database }) {
   const { db } = props
 
   async function getAll(params?: {

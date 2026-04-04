@@ -1,5 +1,6 @@
 import { getCategoryConfig } from "@/lib/event-categories"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
+import type { WorldEventId } from "@/lib/typeid"
 import { cn } from "@/lib/utils"
 import { MessageCircleIcon } from "lucide-react"
 
@@ -15,7 +16,7 @@ export function EventPopupContent({
   onOpenChat,
 }: {
   event: WorldEvent
-  onOpenChat?: (eventId: string) => void
+  onOpenChat?: (eventId: WorldEventId) => void
 }) {
   const config = getCategoryConfig(event.category)
   const time = new Date(event.timestamp).toLocaleString("en-US", {

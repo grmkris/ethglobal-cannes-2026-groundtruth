@@ -25,11 +25,16 @@ export const typeId = <const T extends IdTypePrefixNames>(
     },
   })(columnName)
 
+export const createTimestampField = (name?: string) => {
+  if (!name) {
+    return timestamp({ withTimezone: true, mode: "date" })
+  }
+  return timestamp(name, { withTimezone: true, mode: "date" })
+}
+
 export const baseEntityFields = {
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+  createdAt: createTimestampField("created_at").defaultNow().notNull(),
+  updatedAt: createTimestampField("updated_at")
     .defaultNow()
     .notNull()
     .$onUpdate(() => new Date()),

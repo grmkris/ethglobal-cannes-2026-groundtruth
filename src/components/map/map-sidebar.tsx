@@ -65,7 +65,7 @@ function EventListItem({
         <button
           onClick={(e) => {
             e.stopPropagation()
-            onOpenChat(event.id as WorldEventId)
+            onOpenChat(event.id)
           }}
           className="ml-auto flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >

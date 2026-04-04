@@ -6,8 +6,9 @@ import { WagmiAdapter } from "@reown/appkit-adapter-wagmi"
 import { WagmiProvider } from "wagmi"
 import { mainnet, base } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { env } from "@/env"
 
-const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID ?? ""
+const projectId = env.NEXT_PUBLIC_REOWN_PROJECT_ID
 
 const wagmiAdapter = new WagmiAdapter({
   projectId,

@@ -1,26 +1,19 @@
 import "dotenv/config"
+import { log } from "@/lib/evlog"
 import { createDb } from "./db"
 import { worldEvent } from "./schema/event/event.db"
 import { chatMessage } from "./schema/chat/chat.db"
 import { MOCK_EVENTS } from "../../lib/mock-events"
-import { createLogger } from "../logger"
-
-const logger = createLogger("seed")
+import { env } from "../../env"
 
 async function seed() {
-  const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) {
-    logger.error("DATABASE_URL is required")
-    process.exit(1)
-  }
+  const db = createDb({ databaseUrl: env.DATABASE_URL })
 
-  const db = createDb({ databaseUrl })
-
-  logger.info("Deleting existing data...")
+  log.info({ msg: "Deleting existing data...", service: "seed" })
   await db.delete(chatMessage)
   await db.delete(worldEvent)
 
-  logger.info("Seeding world events...")
+  log.info({ msg: "Seeding world events...", service: "seed" })
   const insertedEvents = await db
     .insert(worldEvent)
     .values(
@@ -38,7 +31,7 @@ async function seed() {
     )
     .returning({ id: worldEvent.id })
 
-  logger.info("Seeding chat messages...")
+  log.info({ msg: "Seeding chat messages...", service: "seed" })
   const globalMessages = [
     { authorName: "Observer", content: "Anyone tracking the situation in Eastern Europe?" },
     { authorName: "FieldWatch", content: "Multiple sources confirming escalation near the border" },
@@ -51,26 +44,25 @@ async function seed() {
   ]
 
   await db.insert(chatMessage).values(
-    globalMessages.map((m, i) => ({
+    globalMessages.map((m) => ({
       eventId: null,
       authorName: m.authorName,
       content: m.content,
     }))
   )
 
-  // Add per-event messages to first 3 events
   if (insertedEvents.length >= 3) {
-    const eventChats = [
+    await db.insert(chatMessage).values([
       { eventId: insertedEvents[0].id, authorName: "LocalSource", content: "Talks broke down at 3am local time" },
       { eventId: insertedEvents[0].id, authorName: "Analyst", content: "This was expected after last week's provocation" },
       { eventId: insertedEvents[1].id, authorName: "NavalWatch", content: "3 carrier groups now in the area" },
       { eventId: insertedEvents[2].id, authorName: "SahelTracker", content: "Military convoys spotted heading south" },
-    ]
-
-    await db.insert(chatMessage).values(eventChats)
+    ])
   }
 
-  logger.info("Seed complete", {
+  log.info({
+    msg: "Seed complete",
+    service: "seed",
     events: insertedEvents.length,
     globalMessages: globalMessages.length,
   })
@@ -78,6 +70,6 @@ async function seed() {
 }
 
 seed().catch((err) => {
-  logger.error("Seed failed", { error: String(err) })
+  log.error({ msg: "Seed failed", service: "seed", error: String(err) })
   process.exit(1)
 })

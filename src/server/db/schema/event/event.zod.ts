@@ -37,4 +37,5 @@ export const createEventInputSchema = z.object({
 })
 
 // --- Runtime enum value arrays (for iteration) ---
+export const EVENT_CATEGORY_VALUES = eventCategoryEnum.enumValues
 export const SEVERITY_LEVEL_VALUES = severityLevelEnum.enumValues

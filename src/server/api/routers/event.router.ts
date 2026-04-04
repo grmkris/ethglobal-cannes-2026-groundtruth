@@ -20,18 +20,21 @@ export const eventRouter = {
         .optional()
     )
     .handler(async ({ input, context }) => {
+      context.log.set({ procedure: "event.getAll", filters: input })
       return context.eventService.getAll(input)
     }),
 
   create: publicProcedure
     .input(createEventInputSchema)
     .handler(async ({ input, context }) => {
+      context.log.set({ procedure: "event.create", category: input.category })
       return context.eventService.create(input)
     }),
 
   getById: publicProcedure
     .input(z.object({ id: WorldEventId }))
     .handler(async ({ input, context }) => {
+      context.log.set({ procedure: "event.getById", eventId: input.id })
       const event = await context.eventService.getById({ id: input.id })
       if (!event) {
         throw new ORPCError("NOT_FOUND", { message: "Event not found" })

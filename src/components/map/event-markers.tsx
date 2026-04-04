@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/map"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
 import type { EventCategory, WorldEvent } from "@/lib/orpc-types"
+import type { WorldEventId } from "@/lib/typeid"
 import { EventMarkerIcon } from "./event-marker-icon"
 import { EventPopupContent } from "./event-popup"
 
@@ -17,7 +18,7 @@ export function EventMarkers({
   onOpenChat,
 }: {
   eventsByCategory: Map<EventCategory, WorldEvent[]>
-  onOpenChat: (eventId: string) => void
+  onOpenChat: (eventId: WorldEventId) => void
 }) {
   return (
     <>

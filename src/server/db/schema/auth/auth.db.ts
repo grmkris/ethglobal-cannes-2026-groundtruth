@@ -1,10 +1,8 @@
 import {
   boolean,
   index,
-  integer,
   pgTable,
   text,
-  timestamp,
 } from "drizzle-orm/pg-core"
 import {
   type UserId,
@@ -15,7 +13,7 @@ import {
   type WorldIdVerificationId,
   typeIdGenerator,
 } from "@/lib/typeid"
-import { baseEntityFields, typeId } from "../../utils"
+import { baseEntityFields, createTimestampField, typeId } from "../../utils"
 
 // --- Better Auth: user ---
 export const user = pgTable("user", {
@@ -25,7 +23,9 @@ export const user = pgTable("user", {
     .$type<UserId>(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").default(false).notNull(),
+  emailVerified: boolean("email_verified")
+    .$defaultFn(() => false)
+    .notNull(),
   image: text("image"),
   // Ground Truth extension
   worldIdVerified: boolean("world_id_verified").default(false).notNull(),
@@ -40,20 +40,17 @@ export const session = pgTable(
       .primaryKey()
       .$defaultFn(() => typeIdGenerator("session"))
       .$type<SessionId>(),
-    expiresAt: timestamp("expires_at", {
-      withTimezone: true,
-      mode: "date",
-    }).notNull(),
+    expiresAt: createTimestampField("expires_at").notNull(),
     token: text("token").notNull().unique(),
+    ...baseEntityFields,
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: typeId("user", "user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" })
       .$type<UserId>(),
-    ...baseEntityFields,
   },
-  (t) => [index("session_userId_idx").on(t.userId)]
+  (table) => [index("session_userId_idx").on(table.userId)]
 )
 
 // --- Better Auth: account ---
@@ -64,7 +61,7 @@ export const account = pgTable(
       .primaryKey()
       .$defaultFn(() => typeIdGenerator("account"))
       .$type<AccountId>(),
-    accountId: text("account_id").notNull(),
+    accountId: typeId("account", "account_id").notNull().$type<AccountId>(),
     providerId: text("provider_id").notNull(),
     userId: typeId("user", "user_id")
       .notNull()
@@ -73,19 +70,13 @@ export const account = pgTable(
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", {
-      withTimezone: true,
-      mode: "date",
-    }),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
-      withTimezone: true,
-      mode: "date",
-    }),
+    accessTokenExpiresAt: createTimestampField("access_token_expires_at"),
+    refreshTokenExpiresAt: createTimestampField("refresh_token_expires_at"),
     scope: text("scope"),
     password: text("password"),
     ...baseEntityFields,
   },
-  (t) => [index("account_userId_idx").on(t.userId)]
+  (table) => [index("account_userId_idx").on(table.userId)]
 )
 
 // --- Better Auth: verification ---
@@ -98,13 +89,11 @@ export const verification = pgTable(
       .$type<VerificationId>(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamp("expires_at", {
-      withTimezone: true,
-      mode: "date",
-    }).notNull(),
-    ...baseEntityFields,
+    expiresAt: createTimestampField("expires_at").notNull(),
+    createdAt: createTimestampField("created_at").$defaultFn(() => new Date()),
+    updatedAt: createTimestampField("updated_at").$defaultFn(() => new Date()),
   },
-  (t) => [index("verification_identifier_idx").on(t.identifier)]
+  (table) => [index("verification_identifier_idx").on(table.identifier)]
 )
 
 // --- Better Auth SIWE: walletAddress ---
@@ -120,13 +109,18 @@ export const walletAddress = pgTable(
       .references(() => user.id, { onDelete: "cascade" })
       .$type<UserId>(),
     address: text("address").notNull(),
-    chainId: integer("chain_id").notNull(),
-    isPrimary: boolean("is_primary").default(false).notNull(),
+    chainNamespace: text("chain_namespace").notNull(),
+    chainId: text("chain_id").notNull(),
+    isPrimary: boolean("is_primary")
+      .$defaultFn(() => false)
+      .notNull(),
     ...baseEntityFields,
+    siwxMessage: text("siwx_message"),
+    siwxSignature: text("siwx_signature"),
   },
-  (t) => [
-    index("wallet_userId_idx").on(t.userId),
-    index("wallet_address_idx").on(t.address),
+  (table) => [
+    index("walletAddress_userId_idx").on(table.userId),
+    index("walletAddress_address_idx").on(table.address),
   ]
 )
 
