@@ -11,10 +11,11 @@ import {
   createAgentBookVerifier,
   createAgentkitHooks,
   declareAgentkitExtension,
-  InMemoryAgentKitStorage,
   parseAgentkitHeader,
 } from "@worldcoin/agentkit"
-import { z } from "zod"
+import type { AgentKitStorage } from "@worldcoin/agentkit"
+import type { EvlogVariables } from "evlog/hono"
+import { eq } from "drizzle-orm"
 import { WorldEventId } from "@/lib/typeid"
 import {
   createEventInputSchema,
@@ -22,33 +23,65 @@ import {
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
 import { createChatMessageInputSchema } from "@/server/db/schema/chat/chat.zod"
+import { agentkitNonce } from "./db/schema/auth/auth.db"
 import type { AuthService } from "./services/auth.service"
 import type { EventService } from "./services/event.service"
 import type { ChatService } from "./services/chat.service"
 import type { RoutesConfig } from "@x402/core/server"
 import type { UserId } from "@/lib/typeid"
+import type { Database } from "./db/db"
 
 const WORLD_CHAIN = "eip155:480" as const
 const WORLD_USDC = "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1"
 
-type AgentEnv = {
+type AgentEnv = EvlogVariables & {
   Variables: {
-    humanId: string
     userId: UserId
+    userName: string
+    agentAddress: string
+  }
+}
+
+// --- DB-backed nonce storage (persists across restarts) ---
+class DrizzleAgentKitStorage implements AgentKitStorage {
+  constructor(private db: Database) {}
+
+  async tryIncrementUsage(
+    _endpoint: string,
+    _humanId: string,
+    _limit: number
+  ): Promise<boolean> {
+    // Free mode — never called, but interface requires it
+    return true
+  }
+
+  async hasUsedNonce(nonce: string): Promise<boolean> {
+    const row = await this.db.query.agentkitNonce.findFirst({
+      where: (n, { eq }) => eq(n.nonce, nonce),
+    })
+    return !!row
+  }
+
+  async recordNonce(nonce: string): Promise<void> {
+    await this.db
+      .insert(agentkitNonce)
+      .values({ nonce })
+      .onConflictDoNothing()
   }
 }
 
 export function createAgentApp(props: {
+  db: Database
   eventService: EventService
   chatService: ChatService
   authService: AuthService
   payTo: string
 }) {
-  const { eventService, chatService, authService, payTo } = props
+  const { db, eventService, chatService, authService, payTo } = props
 
   // --- AgentKit setup ---
   const agentBook = createAgentBookVerifier()
-  const storage = new InMemoryAgentKitStorage()
+  const storage = new DrizzleAgentKitStorage(db)
 
   const hooks = createAgentkitHooks({
     agentBook,
@@ -81,11 +114,11 @@ export function createAgentApp(props: {
   ]
 
   const routes = {
-    "GET /events": { accepts, extensions: agentExt },
-    "GET /events/:id": { accepts, extensions: agentExt },
-    "POST /events": { accepts, extensions: agentExt },
-    "GET /chat": { accepts, extensions: agentExt },
-    "POST /chat": { accepts, extensions: agentExt },
+    "GET /api/agent/events": { accepts, extensions: agentExt },
+    "GET /api/agent/events/:id": { accepts, extensions: agentExt },
+    "POST /api/agent/events": { accepts, extensions: agentExt },
+    "GET /api/agent/chat": { accepts, extensions: agentExt },
+    "POST /api/agent/chat": { accepts, extensions: agentExt },
   } satisfies RoutesConfig
 
   const resourceServer = new x402ResourceServer(facilitatorClient)
@@ -100,35 +133,48 @@ export function createAgentApp(props: {
   // --- Hono sub-app ---
   const app = new Hono<AgentEnv>()
 
+  // Error handler — clean JSON for Zod parse errors etc.
+  app.onError((error, c) => {
+    const log = c.get("log")
+    log?.error(error)
+
+    if (error.name === "ZodError") {
+      return c.json({ error: "Invalid input", details: error.message }, 400)
+    }
+    return c.json({ error: error.message ?? "Internal error" }, 500)
+  })
+
   // x402 + AgentKit middleware
   app.use("*", paymentMiddlewareFromHTTPServer(httpServer))
 
-  // After x402 grants access, resolve the agent's humanId for write ops
+  // Resolve agent wallet → userId + userName for write ops
   app.use("*", async (c, next) => {
     try {
       const header = c.req.header("agentkit")
       if (header) {
         const payload = parseAgentkitHeader(header)
-        const humanId = await agentBook.lookupHuman(
-          payload.address,
-          payload.chainId
-        )
-        if (humanId) {
-          c.set("humanId", humanId)
-          const userId = await authService.getUserByHumanId({ humanId })
-          if (userId) c.set("userId", userId)
+        c.set("agentAddress", payload.address)
+        const result = await authService.getUserByAgentAddress({
+          address: payload.address,
+        })
+        if (result) {
+          c.set("userId", result.userId)
+          c.set("userName", result.userName)
         }
       }
-    } catch {
-      // Non-critical — read endpoints don't need humanId
+    } catch (err) {
+      const log = c.get("log")
+      log?.set({ agentResolveError: String(err) })
     }
     await next()
   })
 
   // --- Routes ---
 
-  // GET /events
   app.get("/events", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.events.list" })
+
     const query = c.req.query()
     const category = query.category
       ? eventCategorySchema.parse(query.category)
@@ -144,26 +190,33 @@ export function createAgentApp(props: {
     return c.json(events)
   })
 
-  // GET /events/:id
   app.get("/events/:id", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.events.getById" })
+
     const id = WorldEventId.parse(c.req.param("id"))
     const event = await eventService.getById({ id })
     if (!event) return c.json({ error: "Event not found" }, 404)
     return c.json(event)
   })
 
-  // POST /events
   app.post("/events", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.events.create" })
+
     const userId = c.get("userId")
     if (!userId) return c.json({ error: "Agent not linked to a user" }, 403)
 
     const body = createEventInputSchema.parse(await c.req.json())
-    const event = await eventService.create({ ...body, userId })
+    const agentAddress = c.get("agentAddress")
+    const event = await eventService.create({ ...body, userId, agentAddress })
     return c.json(event, 201)
   })
 
-  // GET /chat
   app.get("/chat", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.chat.list" })
+
     const query = c.req.query()
     const eventId = query.eventId
       ? WorldEventId.parse(query.eventId)
@@ -176,17 +229,22 @@ export function createAgentApp(props: {
     return c.json(messages)
   })
 
-  // POST /chat
   app.post("/chat", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.chat.send" })
+
     const userId = c.get("userId")
     if (!userId) return c.json({ error: "Agent not linked to a user" }, 403)
 
+    const userName = c.get("userName") ?? "Agent"
+    const agentAddress = c.get("agentAddress")
     const body = createChatMessageInputSchema.parse(await c.req.json())
     const message = await chatService.create({
       eventId: body.eventId ?? null,
       content: body.content,
-      authorName: "Agent",
+      authorName: userName,
       userId,
+      agentAddress,
     })
     return c.json(message, 201)
   })

@@ -1,7 +1,8 @@
 import type { ChatMessage } from "@/lib/orpc-types"
+import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { BadgeCheckIcon } from "lucide-react"
+import { BadgeCheckIcon, BotIcon } from "lucide-react"
 
 export function ChatMessageItem({ message }: { message: ChatMessage }) {
   const time = new Date(message.createdAt).toLocaleTimeString("en-US", {
@@ -13,13 +14,26 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
   return (
     <div className="group flex gap-2.5 px-3 py-2 transition-colors hover:bg-muted/30">
       <Avatar size="sm" className="mt-0.5">
-        <AvatarFallback className="bg-muted text-[10px] font-semibold text-muted-foreground">
-          {initials}
+        <AvatarFallback className={cn("text-[10px] font-semibold", message.agentAddress ? "bg-violet-500/10 text-violet-500" : "bg-muted text-muted-foreground")}>
+          {message.agentAddress ? <BotIcon size={12} /> : initials}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate text-xs font-semibold">{message.authorName}</span>
+          {message.agentAddress && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <BotIcon
+                    size={12}
+                    className="shrink-0 text-violet-500"
+                  />
+                }
+              />
+              <TooltipContent>Agent {message.agentAddress.slice(0, 6)}...{message.agentAddress.slice(-4)}</TooltipContent>
+            </Tooltip>
+          )}
           {message.worldIdVerified && (
             <Tooltip>
               <TooltipTrigger

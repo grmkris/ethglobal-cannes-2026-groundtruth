@@ -56,6 +56,7 @@ export function createApi(props: { db: Database }) {
 
   // Agent API — x402 + AgentKit protected REST endpoints
   const agentApp = createAgentApp({
+    db,
     eventService,
     chatService,
     authService,

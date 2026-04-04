@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
-import { user, worldIdVerification } from "../db/schema/schema"
+import { user, worldIdVerification, agentWallet } from "../db/schema/schema"
 import type { UserId } from "@/lib/typeid"
 
 export function createAuthService(props: { db: Database }) {
@@ -37,17 +37,46 @@ export function createAuthService(props: { db: Database }) {
     return result?.worldIdVerified ?? false
   }
 
-  async function getUserByHumanId(params: {
-    humanId: string
-  }): Promise<UserId | null> {
-    const row = await db.query.worldIdVerification.findFirst({
-      where: (v, { eq }) => eq(v.nullifierHash, params.humanId),
-      columns: { userId: true },
-    })
-    return row?.userId ?? null
+  async function linkAgentWallet(params: {
+    userId: UserId
+    address: string
+  }) {
+    await db
+      .insert(agentWallet)
+      .values({ userId: params.userId, address: params.address.toLowerCase() })
   }
 
-  return { verifyWorldId, isWorldIdVerified, getUserByHumanId }
+  async function getUserByAgentAddress(params: {
+    address: string
+  }): Promise<{ userId: UserId; userName: string } | null> {
+    const addr = params.address.toLowerCase()
+    const wallet = await db.query.agentWallet.findFirst({
+      where: (a, { eq }) => eq(a.address, addr),
+      columns: { userId: true },
+    })
+    if (!wallet) return null
+
+    const u = await db.query.user.findFirst({
+      where: (u, { eq }) => eq(u.id, wallet.userId),
+      columns: { name: true },
+    })
+    return { userId: wallet.userId, userName: u?.name ?? "Agent" }
+  }
+
+  async function getAgentWallets(params: { userId: UserId }) {
+    return db.query.agentWallet.findMany({
+      where: (a, { eq }) => eq(a.userId, params.userId),
+      columns: { id: true, address: true, createdAt: true },
+    })
+  }
+
+  return {
+    verifyWorldId,
+    isWorldIdVerified,
+    linkAgentWallet,
+    getUserByAgentAddress,
+    getAgentWallets,
+  }
 }
 
 export type AuthService = ReturnType<typeof createAuthService>

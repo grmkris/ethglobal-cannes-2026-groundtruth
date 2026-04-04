@@ -5,6 +5,7 @@ import {
   account,
   walletAddress,
   worldIdVerification,
+  agentWallet,
 } from "./auth.db"
 import { worldEvent } from "../event/event.db"
 import { chatMessage } from "../chat/chat.db"
@@ -15,6 +16,9 @@ export const userRelations = relations(user, ({ many }) => ({
   wallets: many(walletAddress, { relationName: "userWallets" }),
   worldIdVerifications: many(worldIdVerification, {
     relationName: "userWorldIdVerifications",
+  }),
+  agentWallets: many(agentWallet, {
+    relationName: "userAgentWallets",
   }),
   events: many(worldEvent, { relationName: "userEvents" }),
   chatMessages: many(chatMessage, { relationName: "userMessages" }),
@@ -54,3 +58,11 @@ export const worldIdVerificationRelations = relations(
     }),
   })
 )
+
+export const agentWalletRelations = relations(agentWallet, ({ one }) => ({
+  user: one(user, {
+    fields: [agentWallet.userId],
+    references: [user.id],
+    relationName: "userAgentWallets",
+  }),
+}))

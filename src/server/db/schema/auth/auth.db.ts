@@ -11,6 +11,7 @@ import {
   type VerificationId,
   type WalletAddressId,
   type WorldIdVerificationId,
+  type AgentWalletId,
   typeIdGenerator,
 } from "@/lib/typeid"
 import { baseEntityFields, createTimestampField, typeId } from "../../utils"
@@ -118,6 +119,33 @@ export const walletAddress = pgTable(
   (table) => [
     index("walletAddress_userId_idx").on(table.userId),
     index("walletAddress_address_idx").on(table.address),
+  ]
+)
+
+// --- Ground Truth: AgentKit nonce replay protection ---
+export const agentkitNonce = pgTable("agentkit_nonce", {
+  nonce: text("nonce").primaryKey(),
+  createdAt: createTimestampField("created_at").defaultNow().notNull(),
+})
+
+// --- Ground Truth: Agent wallet linking ---
+export const agentWallet = pgTable(
+  "agent_wallet",
+  {
+    id: typeId("agentWallet", "id")
+      .primaryKey()
+      .$defaultFn(() => typeIdGenerator("agentWallet"))
+      .$type<AgentWalletId>(),
+    userId: typeId("user", "user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" })
+      .$type<UserId>(),
+    address: text("address").notNull().unique(),
+    ...baseEntityFields,
+  },
+  (table) => [
+    index("agentWallet_userId_idx").on(table.userId),
+    index("agentWallet_address_idx").on(table.address),
   ]
 )
 

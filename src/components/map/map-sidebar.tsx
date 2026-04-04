@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import {
   ArrowLeftIcon,
   BadgeCheckIcon,
+  BotIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   MessageCircleIcon,
@@ -116,7 +117,12 @@ function EventListItem({
         <span className="text-[10px] text-muted-foreground">{time}</span>
       </div>
       <h4 className="text-xs font-medium leading-snug">{event.title}</h4>
-      <p className="mt-0.5 text-[11px] text-muted-foreground">{event.location}</p>
+      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span>{event.location}</span>
+        <span className="text-muted-foreground/40">·</span>
+        <span className="truncate">{event.creatorName}</span>
+        {event.agentAddress && <BotIcon size={10} className="shrink-0 text-violet-500" />}
+      </div>
     </div>
   )
 }

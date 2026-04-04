@@ -34,5 +34,6 @@ export const worldEvent = pgTable("world_event", {
     .references(() => user.id)
     .$type<UserId>()
     .notNull(),
+  agentAddress: text("agent_address"),
   ...baseEntityFields,
 })

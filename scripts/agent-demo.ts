@@ -11,6 +11,7 @@
 
 import { privateKeyToAccount } from "viem/accounts"
 import { getAddress } from "viem"
+import { SiweMessage } from "siwe"
 
 const API_BASE = process.env.API_URL ?? "http://localhost:3000/api/agent"
 const account = privateKeyToAccount(
@@ -24,11 +25,12 @@ async function agentFetch(url: string, init?: RequestInit): Promise<Response> {
 
   if (res.status !== 402) return res
 
-  // Parse 402 body for agentkit extension
-  const body = await res.json()
-  const agentkit = body?.x402?.extensions?.agentkit
-    ?? body?.extensions?.agentkit
-    ?? body?.agentkit
+  // Parse 402 challenge from payment-required header (base64-encoded JSON)
+  const prHeader = res.headers.get("payment-required")
+  if (!prHeader) throw new Error("402 without payment-required header")
+
+  const challenge = JSON.parse(atob(prHeader))
+  const agentkit = challenge?.extensions?.agentkit
 
   if (!agentkit) {
     throw new Error("402 without agentkit extension — payment required")
@@ -43,31 +45,25 @@ async function agentFetch(url: string, init?: RequestInit): Promise<Response> {
   if (!chain) throw new Error("No supported EVM chain in challenge")
 
   // Extract numeric chain ID from CAIP-2 (eip155:480 → 480)
-  const numericChainId = chain.chainId.split(":")[1]
-
-  // Construct SIWE message (EIP-4361)
+  const numericChainId = Number(chain.chainId.split(":")[1])
   const address = getAddress(account.address)
-  const lines = [
-    `${info.domain} wants you to sign in with your Ethereum account:`,
-    address,
-    "",
-    info.statement ?? "",
-    "",
-    `URI: ${info.uri}`,
-    `Version: ${info.version}`,
-    `Chain ID: ${numericChainId}`,
-    `Nonce: ${info.nonce}`,
-    `Issued At: ${info.issuedAt}`,
-  ]
-  if (info.expirationTime) lines.push(`Expiration Time: ${info.expirationTime}`)
-  if (info.notBefore) lines.push(`Not Before: ${info.notBefore}`)
-  if (info.requestId) lines.push(`Request ID: ${info.requestId}`)
-  if (info.resources?.length) {
-    lines.push("Resources:")
-    for (const r of info.resources) lines.push(`- ${r}`)
-  }
 
-  const message = lines.join("\n")
+  // Construct SIWE message using same library as server (exact format match)
+  const siweMessage = new SiweMessage({
+    domain: info.domain,
+    address,
+    statement: info.statement,
+    uri: info.uri,
+    version: info.version,
+    chainId: numericChainId,
+    nonce: info.nonce,
+    issuedAt: info.issuedAt,
+    expirationTime: info.expirationTime,
+    notBefore: info.notBefore,
+    requestId: info.requestId,
+    resources: info.resources,
+  })
+  const message = siweMessage.prepareMessage()
 
   // Sign with agent wallet
   const signature = await account.signMessage({ message })
@@ -110,7 +106,7 @@ async function main() {
     body: JSON.stringify({
       title: "Agent Test Report",
       description: "Automated intelligence submitted by a verified agent",
-      category: "infrastructure",
+      category: "technology",
       severity: "low",
       latitude: 43.5528,
       longitude: 7.0174,

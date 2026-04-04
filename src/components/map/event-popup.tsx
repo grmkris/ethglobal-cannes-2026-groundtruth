@@ -2,7 +2,7 @@ import { getCategoryConfig } from "@/lib/event-categories"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
 import { cn } from "@/lib/utils"
-import { BadgeCheckIcon, MessageCircleIcon } from "lucide-react"
+import { BadgeCheckIcon, BotIcon, MessageCircleIcon } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -61,6 +61,15 @@ export function EventPopupContent({
         </p>
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-2 px-3 pb-3 pt-0">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span className="truncate font-medium">{event.creatorName}</span>
+          {event.agentAddress && (
+            <Badge variant="outline" className="gap-0.5 text-[9px] px-1 py-0 text-violet-500 border-violet-500/20 bg-violet-500/10">
+              <BotIcon size={8} />
+              Agent
+            </Badge>
+          )}
+        </div>
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
           <span>{event.location}</span>
           <span>{time}</span>

@@ -10,7 +10,7 @@ import { worldEvent } from "../db/schema/event/event.db"
 import { user } from "../db/schema/auth/auth.db"
 
 function toWorldEvent(
-  row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean }
+  row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean; creatorName: string }
 ): WorldEventResponse {
   return {
     id: row.id,
@@ -25,6 +25,8 @@ function toWorldEvent(
     imageUrls: row.imageUrls,
     userId: row.userId,
     worldIdVerified: row.worldIdVerified,
+    creatorName: row.creatorName,
+    agentAddress: row.agentAddress ?? null,
   }
 }
 
@@ -57,6 +59,7 @@ export function createEventService(props: { db: Database }) {
       .select({
         ...getTableColumns(worldEvent),
         worldIdVerified: user.worldIdVerified,
+        creatorName: user.name,
       })
       .from(worldEvent)
       .innerJoin(user, eq(worldEvent.userId, user.id))
@@ -71,6 +74,7 @@ export function createEventService(props: { db: Database }) {
       .select({
         ...getTableColumns(worldEvent),
         worldIdVerified: user.worldIdVerified,
+        creatorName: user.name,
       })
       .from(worldEvent)
       .innerJoin(user, eq(worldEvent.userId, user.id))
@@ -91,6 +95,7 @@ export function createEventService(props: { db: Database }) {
     source?: string | null
     imageUrls?: string[]
     userId: UserId
+    agentAddress?: string | null
   }) {
     const [row] = await db
       .insert(worldEvent)
@@ -100,17 +105,19 @@ export function createEventService(props: { db: Database }) {
         source: params.source ?? null,
         imageUrls: params.imageUrls ?? [],
         userId: params.userId,
+        agentAddress: params.agentAddress ?? null,
       })
       .returning()
 
     const userRow = await db.query.user.findFirst({
       where: (u, { eq }) => eq(u.id, params.userId),
-      columns: { worldIdVerified: true },
+      columns: { worldIdVerified: true, name: true },
     })
 
     return toWorldEvent({
       ...row,
       worldIdVerified: userRow?.worldIdVerified ?? false,
+      creatorName: userRow?.name ?? "Unknown",
     })
   }
 

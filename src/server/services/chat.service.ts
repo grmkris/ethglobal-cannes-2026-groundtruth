@@ -16,6 +16,7 @@ function toResponse(
     userId: row.userId,
     createdAt: row.createdAt.toISOString(),
     worldIdVerified: row.worldIdVerified,
+    agentAddress: row.agentAddress ?? null,
   }
 }
 
@@ -66,6 +67,7 @@ export function createChatService(props: { db: Database }) {
     authorName: string
     content: string
     userId: UserId
+    agentAddress?: string | null
   }) {
     const [row] = await db
       .insert(chatMessage)
@@ -74,6 +76,7 @@ export function createChatService(props: { db: Database }) {
         authorName: params.authorName,
         content: params.content,
         userId: params.userId,
+        agentAddress: params.agentAddress ?? null,
       })
       .returning()
 

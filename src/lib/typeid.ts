@@ -14,6 +14,7 @@ export const idTypesMapNameToPrefix = {
   verification: "ver",
   walletAddress: "wal",
   worldIdVerification: "wid",
+  agentWallet: "agw",
 } as const
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
@@ -86,3 +87,6 @@ export type WalletAddressId = z.infer<typeof WalletAddressId>
 
 export const WorldIdVerificationId = typeIdValidator("worldIdVerification")
 export type WorldIdVerificationId = z.infer<typeof WorldIdVerificationId>
+
+export const AgentWalletId = typeIdValidator("agentWallet")
+export type AgentWalletId = z.infer<typeof AgentWalletId>

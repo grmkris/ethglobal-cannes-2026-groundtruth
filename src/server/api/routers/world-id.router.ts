@@ -2,6 +2,7 @@ import { signRequest } from "@worldcoin/idkit/signing"
 import { worldIdVerifyInputSchema } from "@/server/db/schema/auth/auth.zod"
 import { UserId } from "@/lib/typeid"
 import { env } from "@/env"
+import { z } from "zod"
 import { authedProcedure } from "../api"
 
 export const worldIdRouter = {
@@ -55,4 +56,25 @@ export const worldIdRouter = {
       context.log.set({ verified: true })
       return { verified: true }
     }),
+
+  linkAgent: authedProcedure
+    .input(z.object({ agentAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/) }))
+    .handler(async ({ input, context }) => {
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "worldId.linkAgent", userId })
+
+      await context.authService.linkAgentWallet({
+        userId,
+        address: input.agentAddress,
+      })
+
+      return { linked: true }
+    }),
+
+  getAgents: authedProcedure.handler(async ({ context }) => {
+    const userId = UserId.parse(context.session.user.id)
+    context.log.set({ procedure: "worldId.getAgents", userId })
+
+    return context.authService.getAgentWallets({ userId })
+  }),
 }

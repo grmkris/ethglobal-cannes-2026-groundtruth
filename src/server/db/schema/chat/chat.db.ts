@@ -20,6 +20,7 @@ export const chatMessage = pgTable(
       .notNull(),
     authorName: text("author_name").notNull(),
     content: text("content").notNull(),
+    agentAddress: text("agent_address"),
     ...baseEntityFields,
   },
   (table) => [

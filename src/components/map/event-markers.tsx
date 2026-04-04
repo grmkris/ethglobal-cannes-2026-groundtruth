@@ -26,11 +26,10 @@ export function EventMarkers({
     <>
       {EVENT_CATEGORIES.map((category) => {
         const events = eventsByCategory.get(category.id)
-        if (!events?.length) return null
 
         return (
           <MapLayerGroup key={category.id} name={category.label} disabled={false}>
-            <MapMarkerClusterGroup
+            {!events?.length ? null : <MapMarkerClusterGroup
               icon={(count) => (
                 <div
                   className="flex size-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg dark:border-neutral-800"
@@ -62,7 +61,7 @@ export function EventMarkers({
                   </MapTooltip>
                 </MapMarker>
               ))}
-            </MapMarkerClusterGroup>
+            </MapMarkerClusterGroup>}
           </MapLayerGroup>
         )
       })}

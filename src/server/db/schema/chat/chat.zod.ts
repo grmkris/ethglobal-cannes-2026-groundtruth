@@ -9,6 +9,7 @@ export const chatMessageResponseSchema = z.object({
   userId: UserId,
   createdAt: z.string(),
   worldIdVerified: z.boolean(),
+  agentAddress: z.string().nullable(),
 })
 
 export const createChatMessageInputSchema = z.object({

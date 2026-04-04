@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import {
   Sheet,
@@ -23,13 +23,16 @@ import { useSession, signOut } from "@/lib/auth-client"
 import { useAccount } from "wagmi"
 import {
   BadgeCheckIcon,
-  CopyIcon,
-  LogOutIcon,
   BotIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  LinkIcon,
+  LogOutIcon,
   MoonIcon,
   SunIcon,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useAgentWallets } from "@/hooks/use-agent-wallets"
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -126,21 +129,8 @@ export function ProfileSheet({
 
           <Separator />
 
-          {/* Agents placeholder */}
-          <div>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Agents
-            </h3>
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-3 py-6">
-              <BotIcon size={20} className="text-muted-foreground/40" />
-              <p className="text-xs text-muted-foreground">
-                Link your AI agents to your profile
-              </p>
-              <p className="text-[11px] text-muted-foreground/60">
-                Coming soon
-              </p>
-            </div>
-          </div>
+          {/* Agents */}
+          <AgentsSection />
 
           <Separator />
 
@@ -182,5 +172,110 @@ export function ProfileSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  )
+}
+
+function AgentsSection() {
+  const { agents, link } = useAgentWallets()
+  const [address, setAddress] = useState("")
+  const [showGuide, setShowGuide] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const agentList = agents.data ?? []
+
+  function handleLink() {
+    const trimmed = address.trim()
+    if (!trimmed) return
+    link.mutate(
+      { agentAddress: trimmed },
+      { onSuccess: () => setAddress("") }
+    )
+  }
+
+  return (
+    <div>
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        Agents
+      </h3>
+
+      {/* Linked agents */}
+      {agentList.length > 0 && (
+        <div className="mb-2 space-y-1">
+          {agentList.map((a) => (
+            <div
+              key={a.id}
+              className="flex items-center gap-2 rounded-lg border px-3 py-2"
+            >
+              <BotIcon size={12} className="shrink-0 text-emerald-500" />
+              <span className="flex-1 truncate font-mono text-xs">
+                {a.address}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Link form */}
+      <div className="flex gap-1.5">
+        <input
+          ref={inputRef}
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLink()}
+          placeholder="0x agent wallet address"
+          className="h-8 flex-1 rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0"
+          onClick={handleLink}
+          disabled={link.isPending || !address.trim()}
+        >
+          <LinkIcon size={12} />
+          Link
+        </Button>
+      </div>
+
+      {/* Instructions toggle */}
+      <button
+        onClick={() => setShowGuide(!showGuide)}
+        className="mt-2 flex w-full items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground"
+      >
+        <ChevronDownIcon
+          size={10}
+          className={showGuide ? "rotate-180 transition-transform" : "transition-transform"}
+        />
+        How to set up an agent
+      </button>
+
+      {showGuide && (
+        <div className="mt-1.5 space-y-1.5 rounded-lg border border-dashed px-3 py-2.5 text-[11px] text-muted-foreground">
+          <p>
+            <span className="font-medium text-foreground">1.</span> Generate a
+            wallet for your agent (any EVM keypair)
+          </p>
+          <p>
+            <span className="font-medium text-foreground">2.</span> Register it
+            in AgentBook:
+          </p>
+          <code className="block rounded bg-muted px-2 py-1 font-mono text-[10px]">
+            npx @worldcoin/agentkit-cli register &lt;address&gt;
+          </code>
+          <p>
+            <span className="font-medium text-foreground">3.</span> Paste the
+            address above and click Link
+          </p>
+          <p>
+            <span className="font-medium text-foreground">4.</span> Your agent
+            can now call{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[10px]">
+              /api/agent/*
+            </code>
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
