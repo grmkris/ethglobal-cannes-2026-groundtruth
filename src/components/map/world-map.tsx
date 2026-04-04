@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import {
   Map,
   MapFullscreenControl,
@@ -10,15 +10,14 @@ import {
   MapTileLayer,
   MapZoomControl,
 } from "@/components/ui/map"
-import { ChatPanel } from "@/components/chat/chat-panel"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
+import type { WorldEventId } from "@/lib/typeid"
 import { useEventFilters } from "@/hooks/use-event-filters"
 import { useEvents } from "@/hooks/use-events"
 import type { LatLngExpression } from "leaflet"
 import { CreateEventModal } from "./create-event-modal"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
-import { MapHeader } from "./map-header"
 import { MapSidebar } from "./map-sidebar"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
@@ -27,6 +26,7 @@ export function WorldMap() {
   const { data: events = [], isLoading } = useEvents()
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null)
+  const [selectedEventId, setSelectedEventId] = useState<WorldEventId | null>(null)
 
   const {
     activeCategories,
@@ -41,6 +41,10 @@ export function WorldMap() {
     setClickedCoords([lat, lng])
     setCreateModalOpen(true)
   }
+
+  const handleOpenChat = useCallback((eventId: string) => {
+    setSelectedEventId(eventId as WorldEventId)
+  }, [])
 
   if (isLoading) {
     return (
@@ -72,7 +76,10 @@ export function WorldMap() {
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution="Tiles &copy; Esri"
           />
-          <EventMarkers eventsByCategory={eventsByCategory} />
+          <EventMarkers
+            eventsByCategory={eventsByCategory}
+            onOpenChat={handleOpenChat}
+          />
           <MapLayersControl position="bottom-2 right-2" />
         </MapLayers>
 
@@ -82,13 +89,14 @@ export function WorldMap() {
 
         <MapSidebar
           filteredEvents={filteredEvents}
+          eventCount={filteredEvents.length}
           activeCategories={activeCategories}
           searchQuery={searchQuery}
+          selectedEventId={selectedEventId}
           onToggleCategory={toggleCategory}
           onSearchChange={setSearchQuery}
+          onSelectEvent={setSelectedEventId}
         />
-        <MapHeader eventCount={filteredEvents.length} />
-        <ChatPanel />
       </Map>
 
       <CreateEventModal

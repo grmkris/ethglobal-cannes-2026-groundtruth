@@ -14,8 +14,10 @@ import { EventPopupContent } from "./event-popup"
 
 export function EventMarkers({
   eventsByCategory,
+  onOpenChat,
 }: {
   eventsByCategory: Map<EventCategory, WorldEvent[]>
+  onOpenChat: (eventId: string) => void
 }) {
   return (
     <>
@@ -47,7 +49,7 @@ export function EventMarkers({
                   }
                 >
                   <MapPopup className="w-auto border-0 p-0 shadow-none bg-transparent">
-                    <EventPopupContent event={event} />
+                    <EventPopupContent event={event} onOpenChat={onOpenChat} />
                   </MapPopup>
                   <MapTooltip side="top" sideOffset={20}>
                     {event.title}

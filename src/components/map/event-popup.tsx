@@ -1,6 +1,7 @@
 import { getCategoryConfig } from "@/lib/event-categories"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import { cn } from "@/lib/utils"
+import { MessageCircleIcon } from "lucide-react"
 
 const SEVERITY_STYLES: Record<SeverityLevel, string> = {
   critical: "bg-red-500/10 text-red-500 border-red-500/20",
@@ -9,7 +10,13 @@ const SEVERITY_STYLES: Record<SeverityLevel, string> = {
   low: "bg-green-500/10 text-green-500 border-green-500/20",
 }
 
-export function EventPopupContent({ event }: { event: WorldEvent }) {
+export function EventPopupContent({
+  event,
+  onOpenChat,
+}: {
+  event: WorldEvent
+  onOpenChat?: (eventId: string) => void
+}) {
   const config = getCategoryConfig(event.category)
   const time = new Date(event.timestamp).toLocaleString("en-US", {
     month: "short",
@@ -52,6 +59,15 @@ export function EventPopupContent({ event }: { event: WorldEvent }) {
         <div className="mt-1 text-[10px] text-muted-foreground/60">
           via {event.source}
         </div>
+      )}
+      {onOpenChat && (
+        <button
+          onClick={() => onOpenChat(event.id)}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+        >
+          <MessageCircleIcon size={12} />
+          Open Chat
+        </button>
       )}
     </div>
   )
