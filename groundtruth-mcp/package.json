@@ -1,0 +1,21 @@
+{
+  "name": "groundtruth-mcp",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/stdio.ts",
+    "build": "bun build --compile --minify --bytecode src/stdio.ts --outfile dist/groundtruth-mcp",
+    "build:darwin-arm64": "bun build --compile --minify --bytecode --target=bun-darwin-arm64 src/stdio.ts --outfile dist/groundtruth-mcp-darwin-arm64",
+    "build:darwin-x64": "bun build --compile --minify --bytecode --target=bun-darwin-x64 src/stdio.ts --outfile dist/groundtruth-mcp-darwin-x64",
+    "build:linux-x64": "bun build --compile --minify --bytecode --target=bun-linux-x64 src/stdio.ts --outfile dist/groundtruth-mcp-linux-x64",
+    "build:linux-arm64": "bun build --compile --minify --bytecode --target=bun-linux-arm64 src/stdio.ts --outfile dist/groundtruth-mcp-linux-arm64",
+    "build:windows-x64": "bun build --compile --minify --bytecode --target=bun-windows-x64 src/stdio.ts --outfile dist/groundtruth-mcp-windows-x64",
+    "build:all": "bun run build:darwin-arm64 && bun run build:darwin-x64 && bun run build:linux-x64 && bun run build:linux-arm64 && bun run build:windows-x64"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "viem": "^2.47.10",
+    "zod": "^4.3.6"
+  }
+}

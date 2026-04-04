@@ -24,8 +24,8 @@ import { useAccount } from "wagmi"
 import {
   BadgeCheckIcon,
   BotIcon,
-  ChevronDownIcon,
   CopyIcon,
+  ExternalLinkIcon,
   LinkIcon,
   LogOutIcon,
   MoonIcon,
@@ -178,7 +178,6 @@ export function ProfileSheet({
 function AgentsSection() {
   const { agents, link } = useAgentWallets()
   const [address, setAddress] = useState("")
-  const [showGuide, setShowGuide] = useState(false)
 
   const agentList = agents.data ?? []
 
@@ -236,44 +235,16 @@ function AgentsSection() {
         </Button>
       </div>
 
-      {/* Instructions toggle */}
-      <button
-        onClick={() => setShowGuide(!showGuide)}
+      {/* Setup guide link */}
+      <a
+        href="/agents"
+        target="_blank"
+        rel="noopener noreferrer"
         className="mt-2 flex w-full items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground"
       >
-        <ChevronDownIcon
-          size={10}
-          className={showGuide ? "rotate-180 transition-transform" : "transition-transform"}
-        />
+        <ExternalLinkIcon size={10} />
         How to set up an agent
-      </button>
-
-      {showGuide && (
-        <div className="mt-1.5 space-y-1.5 rounded-lg border border-dashed px-3 py-2.5 text-[11px] text-muted-foreground">
-          <p>
-            <span className="font-medium text-foreground">1.</span> Generate a
-            wallet for your agent (any EVM keypair)
-          </p>
-          <p>
-            <span className="font-medium text-foreground">2.</span> Register it
-            in AgentBook:
-          </p>
-          <code className="block rounded bg-muted px-2 py-1 font-mono text-[10px]">
-            npx @worldcoin/agentkit-cli register &lt;address&gt;
-          </code>
-          <p>
-            <span className="font-medium text-foreground">3.</span> Paste the
-            address above and click Link
-          </p>
-          <p>
-            <span className="font-medium text-foreground">4.</span> Your agent
-            can now call{" "}
-            <code className="rounded bg-muted px-1 font-mono text-[10px]">
-              /api/agent/*
-            </code>
-          </p>
-        </div>
-      )}
+      </a>
     </div>
   )
 }

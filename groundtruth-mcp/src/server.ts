@@ -1,0 +1,149 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { z } from "zod"
+import type { AgentClient } from "./agent-client"
+
+const CATEGORIES = [
+  "conflict",
+  "natural-disaster",
+  "politics",
+  "economics",
+  "health",
+  "technology",
+  "environment",
+  "social",
+] as const
+
+const SEVERITIES = ["low", "medium", "high", "critical"] as const
+
+export function createMcpServer(props: { client: AgentClient }) {
+  const { client } = props
+
+  const server = new McpServer(
+    { name: "groundtruth", version: "0.0.1" },
+    {
+      capabilities: { tools: {} },
+      instructions: [
+        "Ground Truth is a verified intelligence map where humans and AI agents collaboratively report world events.",
+        "Events are pinned to geographic locations with category, severity, and source information.",
+        "Chat supports global discussion and per-event threads.",
+        `You are acting as agent wallet: ${client.walletAddress}`,
+      ].join(" "),
+    }
+  )
+
+  // --- Read tools ---
+
+  server.tool(
+    "query_events",
+    "Search world events by category, severity, or text. Returns all events if no filters provided.",
+    {
+      category: z
+        .enum(CATEGORIES)
+        .optional()
+        .describe("Filter by event category"),
+      severity: z
+        .enum(SEVERITIES)
+        .optional()
+        .describe("Filter by severity level"),
+      search: z
+        .string()
+        .optional()
+        .describe("Search in title and location"),
+    },
+    async ({ category, severity, search }) => {
+      const events = await client.getEvents({ category, severity, search })
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(events, null, 2) },
+        ],
+      }
+    }
+  )
+
+  server.tool(
+    "get_event",
+    "Get detailed information about a specific world event by its ID (format: wev_...).",
+    { id: z.string().describe("World event ID (e.g. wev_...)") },
+    async ({ id }) => {
+      const event = await client.getEvent(id)
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(event, null, 2) },
+        ],
+      }
+    }
+  )
+
+  server.tool(
+    "get_event_chat",
+    "Get chat messages. Provide eventId for per-event chat, or omit for global chat.",
+    {
+      eventId: z
+        .string()
+        .optional()
+        .describe("Event ID to get chat for (omit for global chat)"),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max messages to return (default 50)"),
+    },
+    async ({ eventId, limit }) => {
+      const messages = await client.getChat({ eventId, limit })
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(messages, null, 2) },
+        ],
+      }
+    }
+  )
+
+  // --- Write tools ---
+
+  server.tool(
+    "submit_event",
+    "Submit a new world event to the intelligence map. Requires a verified agent wallet registered in AgentBook.",
+    {
+      title: z.string().describe("Event title"),
+      description: z.string().describe("Event description"),
+      category: z.enum(CATEGORIES).describe("Event category"),
+      severity: z.enum(SEVERITIES).describe("Severity level"),
+      latitude: z.number().describe("Latitude coordinate"),
+      longitude: z.number().describe("Longitude coordinate"),
+      location: z.string().describe("Human-readable location name"),
+      source: z.string().optional().describe("Source URL or 'eyewitness'"),
+    },
+    async (input) => {
+      const event = await client.createEvent(input)
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(event, null, 2) },
+        ],
+      }
+    }
+  )
+
+  server.tool(
+    "post_message",
+    "Post a chat message. Provide eventId for per-event chat, or omit for global chat. Requires a verified agent wallet.",
+    {
+      eventId: z
+        .string()
+        .optional()
+        .describe("Event ID to post to (omit for global chat)"),
+      content: z.string().describe("Message content"),
+    },
+    async ({ eventId, content }) => {
+      const message = await client.sendChat({ eventId, content })
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(message, null, 2) },
+        ],
+      }
+    }
+  )
+
+  return server
+}

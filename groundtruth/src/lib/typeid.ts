@@ -15,6 +15,7 @@ export const idTypesMapNameToPrefix = {
   walletAddress: "wal",
   worldIdVerification: "wid",
   agentWallet: "agw",
+  agentProfile: "agt",
 } as const
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
