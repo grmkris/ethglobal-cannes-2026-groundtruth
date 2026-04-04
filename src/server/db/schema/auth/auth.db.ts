@@ -61,7 +61,7 @@ export const account = pgTable(
       .primaryKey()
       .$defaultFn(() => typeIdGenerator("account"))
       .$type<AccountId>(),
-    accountId: typeId("account", "account_id").notNull().$type<AccountId>(),
+    accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: typeId("user", "user_id")
       .notNull()

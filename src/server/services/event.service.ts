@@ -1,5 +1,5 @@
 import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm"
-import type { WorldEventId } from "@/lib/typeid"
+import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
 import type {
   EventCategory,
@@ -19,6 +19,8 @@ function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
     location: row.location,
     timestamp: row.timestamp.toISOString(),
     source: row.source,
+    imageUrls: row.imageUrls,
+    userId: row.userId,
   }
 }
 
@@ -72,6 +74,8 @@ export function createEventService(props: { db: Database }) {
     longitude: number
     location: string
     source?: string | null
+    imageUrls?: string[]
+    userId: UserId
   }) {
     const [row] = await db
       .insert(worldEvent)
@@ -79,6 +83,8 @@ export function createEventService(props: { db: Database }) {
         ...params,
         timestamp: new Date(),
         source: params.source ?? null,
+        imageUrls: params.imageUrls ?? [],
+        userId: params.userId,
       })
       .returning()
     return toWorldEvent(row)

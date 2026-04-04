@@ -16,9 +16,11 @@ import { EventPopupContent } from "./event-popup"
 export function EventMarkers({
   eventsByCategory,
   onOpenChat,
+  onSelectEvent,
 }: {
   eventsByCategory: Map<EventCategory, WorldEvent[]>
   onOpenChat: (eventId: WorldEventId) => void
+  onSelectEvent: (eventId: WorldEventId) => void
 }) {
   return (
     <>
@@ -48,6 +50,9 @@ export function EventMarkers({
                       severity={event.severity}
                     />
                   }
+                  eventHandlers={{
+                    click: () => onSelectEvent(event.id),
+                  }}
                 >
                   <MapPopup className="w-auto border-0 p-0 shadow-none bg-transparent">
                     <EventPopupContent event={event} onOpenChat={onOpenChat} />

@@ -1,10 +1,27 @@
 import "dotenv/config"
+import { eq } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import { createDb } from "./db"
 import { worldEvent } from "./schema/event/event.db"
 import { chatMessage } from "./schema/chat/chat.db"
+import { user } from "./schema/auth/auth.db"
 import { MOCK_EVENTS } from "../../lib/mock-events"
 import { env } from "../../env"
+
+const SYSTEM_EMAIL = "system@groundtruth.app"
+
+async function getOrCreateSystemUser(db: ReturnType<typeof createDb>) {
+  const existing = await db.query.user.findFirst({
+    where: eq(user.email, SYSTEM_EMAIL),
+  })
+  if (existing) return existing
+
+  const [created] = await db
+    .insert(user)
+    .values({ name: "Ground Truth", email: SYSTEM_EMAIL, emailVerified: false })
+    .returning()
+  return created
+}
 
 async function seed() {
   const db = createDb({ databaseUrl: env.DATABASE_URL })
@@ -12,6 +29,9 @@ async function seed() {
   log.info({ msg: "Deleting existing data...", service: "seed" })
   await db.delete(chatMessage)
   await db.delete(worldEvent)
+
+  const systemUser = await getOrCreateSystemUser(db)
+  log.info({ msg: "System user ready", service: "seed", userId: systemUser.id })
 
   log.info({ msg: "Seeding world events...", service: "seed" })
   const insertedEvents = await db
@@ -27,6 +47,7 @@ async function seed() {
         location: e.location,
         timestamp: new Date(e.timestamp),
         source: e.source,
+        userId: systemUser.id,
       }))
     )
     .returning({ id: worldEvent.id })
@@ -48,15 +69,16 @@ async function seed() {
       eventId: null,
       authorName: m.authorName,
       content: m.content,
+      userId: systemUser.id,
     }))
   )
 
   if (insertedEvents.length >= 3) {
     await db.insert(chatMessage).values([
-      { eventId: insertedEvents[0].id, authorName: "LocalSource", content: "Talks broke down at 3am local time" },
-      { eventId: insertedEvents[0].id, authorName: "Analyst", content: "This was expected after last week's provocation" },
-      { eventId: insertedEvents[1].id, authorName: "NavalWatch", content: "3 carrier groups now in the area" },
-      { eventId: insertedEvents[2].id, authorName: "SahelTracker", content: "Military convoys spotted heading south" },
+      { eventId: insertedEvents[0].id, authorName: "LocalSource", content: "Talks broke down at 3am local time", userId: systemUser.id },
+      { eventId: insertedEvents[0].id, authorName: "Analyst", content: "This was expected after last week's provocation", userId: systemUser.id },
+      { eventId: insertedEvents[1].id, authorName: "NavalWatch", content: "3 carrier groups now in the area", userId: systemUser.id },
+      { eventId: insertedEvents[2].id, authorName: "SahelTracker", content: "Military convoys spotted heading south", userId: systemUser.id },
     ])
   }
 

@@ -1,10 +1,16 @@
 import { z } from "zod"
-import { WorldEventId } from "@/lib/typeid"
-import { eventCategoryEnum, severityLevelEnum } from "./event.db"
+import { UserId, WorldEventId } from "@/lib/typeid"
+import {
+  EVENT_CATEGORY_VALUES,
+  SEVERITY_LEVEL_VALUES,
+} from "@/lib/event-constants"
 
-// --- Enum schemas derived from pgEnums ---
-export const eventCategorySchema = z.enum(eventCategoryEnum.enumValues)
-export const severityLevelSchema = z.enum(severityLevelEnum.enumValues)
+// Re-export types so existing server-side imports still work
+export type { EventCategory, SeverityLevel } from "@/lib/event-constants"
+
+// --- Enum schemas derived from shared constants ---
+export const eventCategorySchema = z.enum(EVENT_CATEGORY_VALUES)
+export const severityLevelSchema = z.enum(SEVERITY_LEVEL_VALUES)
 
 // --- API response schema (DB stores lat/lng separately, API returns coordinates tuple) ---
 export const worldEventResponseSchema = z.object({
@@ -17,11 +23,11 @@ export const worldEventResponseSchema = z.object({
   location: z.string(),
   timestamp: z.string(),
   source: z.string().nullable(),
+  imageUrls: z.array(z.string()),
+  userId: UserId,
 })
 
 // --- Inferred types ---
-export type EventCategory = z.infer<typeof eventCategorySchema>
-export type SeverityLevel = z.infer<typeof severityLevelSchema>
 export type WorldEventResponse = z.infer<typeof worldEventResponseSchema>
 
 // --- Create input schema ---
@@ -34,8 +40,5 @@ export const createEventInputSchema = z.object({
   longitude: z.number().min(-180).max(180),
   location: z.string().min(1).max(200),
   source: z.string().nullable().optional(),
+  imageUrls: z.array(z.string().url()).max(5).optional(),
 })
-
-// --- Runtime enum value arrays (for iteration) ---
-export const EVENT_CATEGORY_VALUES = eventCategoryEnum.enumValues
-export const SEVERITY_LEVEL_VALUES = severityLevelEnum.enumValues

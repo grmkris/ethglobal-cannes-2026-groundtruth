@@ -4,12 +4,15 @@ import type { AuthService } from "../services/auth.service"
 import type { ChatService } from "../services/chat.service"
 import type { EventService } from "../services/event.service"
 
+export type Session = Awaited<ReturnType<Auth["api"]["getSession"]>>
+
 export function createContext(props: {
   log: RequestLogger
   auth: Auth
   authService: AuthService
   eventService: EventService
   chatService: ChatService
+  session: Session
 }) {
   return {
     log: props.log,
@@ -17,6 +20,7 @@ export function createContext(props: {
     authService: props.authService,
     eventService: props.eventService,
     chatService: props.chatService,
+    session: props.session,
   }
 }
 

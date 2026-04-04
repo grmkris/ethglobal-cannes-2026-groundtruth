@@ -6,6 +6,8 @@ import {
   walletAddress,
   worldIdVerification,
 } from "./auth.db"
+import { worldEvent } from "../event/event.db"
+import { chatMessage } from "../chat/chat.db"
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session, { relationName: "userSessions" }),
@@ -14,6 +16,8 @@ export const userRelations = relations(user, ({ many }) => ({
   worldIdVerifications: many(worldIdVerification, {
     relationName: "userWorldIdVerifications",
   }),
+  events: many(worldEvent, { relationName: "userEvents" }),
+  chatMessages: many(chatMessage, { relationName: "userMessages" }),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({

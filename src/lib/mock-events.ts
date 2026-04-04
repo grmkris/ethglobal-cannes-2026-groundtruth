@@ -1,9 +1,9 @@
 import type { WorldEvent } from "@/lib/orpc-types"
 
-export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
+export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   // Conflict
   {
-
+    imageUrls: [],
     title: "Ceasefire Negotiations Stall in Eastern Region",
     description: "Peace talks between opposing factions have broken down after disagreements over territorial boundaries.",
     category: "conflict",
@@ -14,6 +14,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "Reuters",
   },
   {
+    imageUrls: [],
     title: "Maritime Dispute Escalation in South China Sea",
     description: "Naval vessels from multiple nations converge as territorial claims intensify near contested islands.",
     category: "conflict",
@@ -24,6 +25,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "AP News",
   },
   {
+    imageUrls: [],
     title: "Cross-Border Tensions Rise in Sahel Region",
     description: "Increased military activity reported along multiple borders in West Africa.",
     category: "conflict",
@@ -35,6 +37,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Natural Disasters
   {
+    imageUrls: [],
     title: "7.2 Magnitude Earthquake Hits Central Japan",
     description: "Major earthquake recorded off the coast. Tsunami warnings issued for coastal regions.",
     category: "natural-disaster",
@@ -45,6 +48,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "USGS",
   },
   {
+    imageUrls: [],
     title: "Category 4 Hurricane Approaching Gulf Coast",
     description: "Hurricane Maria strengthens as it approaches the southern United States coastline.",
     category: "natural-disaster",
@@ -55,6 +59,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "NOAA",
   },
   {
+    imageUrls: [],
     title: "Severe Flooding in Bangladesh Delta",
     description: "Monsoon rains cause unprecedented flooding displacing thousands of residents.",
     category: "natural-disaster",
@@ -65,6 +70,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Wildfire Season Intensifies in Southern Australia",
     description: "Multiple bushfires burning across New South Wales amid record temperatures.",
     category: "natural-disaster",
@@ -76,6 +82,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Politics
   {
+    imageUrls: [],
     title: "EU Summit on Digital Sovereignty",
     description: "European leaders convene in Brussels to discuss AI regulation and tech independence.",
     category: "politics",
@@ -86,6 +93,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "Euronews",
   },
   {
+    imageUrls: [],
     title: "Snap Elections Called in Brazil",
     description: "Political crisis deepens as president dissolves parliament and calls for early elections.",
     category: "politics",
@@ -96,6 +104,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "UN Security Council Emergency Session",
     description: "Emergency meeting called to address escalating tensions in multiple regions.",
     category: "politics",
@@ -106,6 +115,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "UN News",
   },
   {
+    imageUrls: [],
     title: "India Passes Landmark Data Privacy Law",
     description: "Parliament approves comprehensive data protection legislation affecting 1.4 billion citizens.",
     category: "politics",
@@ -117,6 +127,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Economics
   {
+    imageUrls: [],
     title: "Global Markets Tumble on Rate Hike Fears",
     description: "Stock markets across Asia and Europe fall sharply on unexpected inflation data.",
     category: "economics",
@@ -127,6 +138,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "Bloomberg",
   },
   {
+    imageUrls: [],
     title: "OPEC+ Announces Production Cuts",
     description: "Oil cartel agrees to reduce output by 2M barrels per day starting next month.",
     category: "economics",
@@ -137,6 +149,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Nigeria Launches Digital Currency Phase 2",
     description: "Central bank expands eNaira program to rural areas with 50M new wallets.",
     category: "economics",
@@ -147,6 +160,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Silicon Valley Bank Run Fears Resurface",
     description: "Regional bank stocks drop 15% after earnings miss sparks contagion concerns.",
     category: "economics",
@@ -158,6 +172,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Health
   {
+    imageUrls: [],
     title: "WHO Declares New Pandemic Alert Level",
     description: "Novel respiratory virus identified in Southeast Asia triggers international concern.",
     category: "health",
@@ -168,6 +183,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "WHO",
   },
   {
+    imageUrls: [],
     title: "Breakthrough Cancer Treatment Approved",
     description: "FDA greenlights revolutionary mRNA-based therapy showing 90% efficacy in trials.",
     category: "health",
@@ -178,6 +194,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Cholera Outbreak in Eastern Congo",
     description: "Rapid spread of waterborne disease affects 50,000+ in displaced persons camps.",
     category: "health",
@@ -189,6 +206,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Technology
   {
+    imageUrls: [],
     title: "Major Undersea Cable Cut Disrupts Internet",
     description: "Three submarine cables severed simultaneously in the Mediterranean affecting connectivity.",
     category: "technology",
@@ -199,6 +217,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Massive Ransomware Attack on European Hospitals",
     description: "Coordinated cyberattack takes down hospital systems across Germany and France.",
     category: "technology",
@@ -209,7 +228,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "CyberNews",
   },
   {
-    title: "Starlink Gen3 Achieves Global Coverage",
+    imageUrls: [],
+                      title: "Starlink Gen3 Achieves Global Coverage",
     description: "SpaceX announces full global broadband coverage including polar regions.",
     category: "technology",
     severity: "low",
@@ -219,6 +239,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "China Unveils Quantum Computing Breakthrough",
     description: "New quantum processor achieves 1000+ qubit milestone with error correction.",
     category: "technology",
@@ -230,6 +251,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Environment
   {
+    imageUrls: [],
     title: "Amazon Deforestation Hits Record Monthly Rate",
     description: "Satellite data shows 1,200 sq km cleared in March alone despite pledges.",
     category: "environment",
@@ -240,6 +262,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "INPE",
   },
   {
+    imageUrls: [],
     title: "Arctic Ice Shelf Collapse Accelerates",
     description: "Largest remaining ice shelf in the Arctic loses 800 sq km in 48 hours.",
     category: "environment",
@@ -250,6 +273,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Coral Bleaching Event Spreads Across Pacific",
     description: "Fourth global bleaching event confirmed affecting 70% of monitored reefs.",
     category: "environment",
@@ -260,6 +284,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Record Air Pollution in Delhi NCR",
     description: "AQI exceeds 500 for third consecutive day, schools and offices shut.",
     category: "environment",
@@ -271,6 +296,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
   },
   // Social
   {
+    imageUrls: [],
     title: "Mass Protests in Nairobi Over Cost of Living",
     description: "Hundreds of thousands take to streets demanding government action on inflation.",
     category: "social",
@@ -281,6 +307,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Student Protests Sweep South Korea",
     description: "University students nationwide protest AI-driven hiring practices and job displacement.",
     category: "social",
@@ -291,6 +318,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Global Climate Strike — 10M Participants",
     description: "Largest coordinated climate action in history spans 150 countries simultaneously.",
     category: "social",
@@ -301,6 +329,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Water Rationing Sparks Unrest in Mexico City",
     description: "Severe water shortages lead to clashes between residents and authorities.",
     category: "social",
@@ -311,6 +340,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: null,
   },
   {
+    imageUrls: [],
     title: "Historic Peace Agreement Signed in Horn of Africa",
     description: "Decades-long conflict officially ends with multilateral peace treaty.",
     category: "conflict",
@@ -321,7 +351,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id">[] = [
     source: "BBC",
   },
   {
-    title: "Volcanic Eruption in Iceland",
+    imageUrls: [],
+        title: "Volcanic Eruption in Iceland",
     description: "Fagradalsfjall erupts again, disrupting air travel across Northern Europe.",
     category: "natural-disaster",
     severity: "medium",

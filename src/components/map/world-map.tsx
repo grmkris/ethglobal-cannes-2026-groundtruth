@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useQueryState, parseAsStringLiteral } from "nuqs"
 import { parseAsWorldEventId } from "@/lib/nuqs-parsers"
 import {
   Map,
+  MapControlContainer,
   MapFullscreenControl,
   MapLayers,
   MapLayersControl,
@@ -12,12 +13,19 @@ import {
   MapTileLayer,
   MapZoomControl,
 } from "@/components/ui/map"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui/separator"
+import { Spinner } from "@/components/ui/spinner"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
 import type { WorldEventId } from "@/lib/typeid"
 import { useEventFilters } from "@/hooks/use-event-filters"
 import { useEvents } from "@/hooks/use-events"
 import type { LatLngExpression } from "leaflet"
 import { useMap } from "react-leaflet"
+import { CrosshairIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { CreateEventModal } from "./create-event-modal"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
@@ -25,11 +33,12 @@ import { MapSidebar, type SidebarTab } from "./map-sidebar"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
 
+// Legitimate effect — syncs with external system (Leaflet map)
 function MapFlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap()
   useEffect(() => {
     if (target) {
-      map.flyTo(target, Math.max(map.getZoom(), 10), { duration: 1 })
+      map.flyTo(target, Math.max(map.getZoom(), 14), { duration: 1 })
     }
   }, [target, map])
   return null
@@ -46,38 +55,49 @@ export function WorldMap() {
   )
 
   // Local UI state (ephemeral)
+  const [reportMode, setReportMode] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null)
 
+  // One-time URL deep-link fly guard
+  const initialFlyDone = useRef(false)
+
   const {
     activeCategories,
+    activeSeverities,
     searchQuery,
     filteredEvents,
     eventsByCategory,
     toggleCategory,
+    toggleSeverity,
     setSearchQuery,
+    clearFilters,
   } = useEventFilters(events)
 
-  // Auto-flyTo when event is selected (including from shared URL)
+  // Legitimate effect: sync with external system on initial URL deep-link
+  // Only fires once when events first load and URL has a selected event
   useEffect(() => {
-    if (selectedEventId && events.length > 0) {
+    if (!initialFlyDone.current && selectedEventId && events.length > 0) {
       const event = events.find((e) => e.id === selectedEventId)
-      if (event) setFlyToTarget([...event.coordinates])
+      if (event) {
+        setFlyToTarget([...event.coordinates])
+        initialFlyDone.current = true
+      }
     }
   }, [selectedEventId, events])
 
-  // Auto-expand sidebar when event or chat tab is active
-  useEffect(() => {
-    if (selectedEventId || sidebarTab === "chat") {
-      setSidebarCollapsed(false)
-    }
-  }, [selectedEventId, sidebarTab])
+  // Compute selectedEvent from full events array (not filtered)
+  const selectedEvent = selectedEventId
+    ? events.find((e) => e.id === selectedEventId) ?? null
+    : null
 
   function handleMapClick(lat: number, lng: number) {
+    if (!reportMode) return
     setClickedCoords([lat, lng])
     setCreateModalOpen(true)
+    setReportMode(false)
   }
 
   const handleOpenChat = useCallback(
@@ -93,26 +113,59 @@ export function WorldMap() {
     setFlyToTarget([...coordinates])
   }, [])
 
+  // Event handlers fold in sidebar expansion + flyTo (no effects needed)
   const handleSelectEvent = useCallback(
     (eventId: WorldEventId | null) => {
       setSelectedEventId(eventId)
+      if (eventId) {
+        setSidebarCollapsed(false)
+        const event = events.find((e) => e.id === eventId)
+        if (event) setFlyToTarget([...event.coordinates])
+      }
     },
-    [setSelectedEventId]
+    [setSelectedEventId, events]
   )
 
   const handleTabChange = useCallback(
     (tab: SidebarTab) => {
       setSidebarTab(tab)
+      if (tab === "chat") setSidebarCollapsed(false)
     },
     [setSidebarTab]
   )
 
   if (isLoading) {
     return (
-      <div className="flex h-svh w-svw items-center justify-center bg-background">
-        <p className="animate-pulse text-sm font-medium">
-          Monitoring the situation...
-        </p>
+      <div className="flex h-svh w-svw bg-background">
+        <div className="hidden w-80 border-r border-border/50 p-3 sm:block">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-10 w-full rounded-3xl" />
+            <Separator />
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-6 w-16 rounded-full" />
+              ))}
+            </div>
+            <div className="space-y-1">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="h-14 w-full"
+                  style={{ animationDelay: `${i * 75}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-center bg-muted/20">
+          <div className="flex flex-col items-center gap-3">
+            <Spinner className="size-5" />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Initializing
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
@@ -124,9 +177,9 @@ export function WorldMap() {
         zoom={3}
         minZoom={2}
         maxZoom={18}
-        className="h-full w-full"
+        className={cn("h-full w-full", reportMode && "cursor-crosshair")}
       >
-        <MapClickHandler onClick={handleMapClick} />
+        <MapClickHandler onClick={handleMapClick} enabled={reportMode} />
         <MapFlyTo target={flyToTarget} />
 
         <MapLayers
@@ -141,6 +194,7 @@ export function WorldMap() {
           <EventMarkers
             eventsByCategory={eventsByCategory}
             onOpenChat={handleOpenChat}
+            onSelectEvent={handleSelectEvent}
           />
           <MapLayersControl position="bottom-2 right-2" />
         </MapLayers>
@@ -149,22 +203,63 @@ export function WorldMap() {
         <MapFullscreenControl position="bottom-24 right-2" />
         <MapLocateControl position="bottom-34 right-2" />
 
+        {/* Report mode FAB */}
+        <MapControlContainer className="bottom-44 right-2">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon"
+                  variant={reportMode ? "default" : "outline"}
+                  onClick={() => setReportMode((p) => !p)}
+                  aria-label={reportMode ? "Cancel report" : "Report event"}
+                  className={cn(reportMode && "ring-2 ring-primary/50 animate-pulse")}
+                />
+              }
+            >
+              <CrosshairIcon size={18} />
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {reportMode ? "Cancel report" : "Report event"}
+            </TooltipContent>
+          </Tooltip>
+        </MapControlContainer>
+
         <MapSidebar
           filteredEvents={filteredEvents}
           eventCount={filteredEvents.length}
           activeCategories={activeCategories}
+          activeSeverities={activeSeverities}
           searchQuery={searchQuery}
           selectedEventId={selectedEventId}
+          selectedEvent={selectedEvent}
           activeTab={sidebarTab}
           collapsed={sidebarCollapsed}
           onToggleCategory={toggleCategory}
+          onToggleSeverity={toggleSeverity}
           onSearchChange={setSearchQuery}
+          onClearFilters={clearFilters}
           onSelectEvent={handleSelectEvent}
           onTabChange={handleTabChange}
           onCollapsedChange={setSidebarCollapsed}
           onFlyTo={handleFlyTo}
         />
       </Map>
+
+      {/* Report mode mobile banner */}
+      {reportMode && (
+        <div className="fixed inset-x-0 bottom-0 z-[1001] flex items-center justify-between bg-foreground px-4 py-3 text-background sm:hidden">
+          <span className="text-xs font-medium">Tap map to place report</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setReportMode(false)}
+            className="text-background hover:text-background/80"
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
 
       <CreateEventModal
         open={createModalOpen}

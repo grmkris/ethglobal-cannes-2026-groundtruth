@@ -1,17 +1,17 @@
 import { z } from "zod"
-import { ChatMessageId, WorldEventId } from "@/lib/typeid"
+import { ChatMessageId, UserId, WorldEventId } from "@/lib/typeid"
 
 export const chatMessageResponseSchema = z.object({
   id: ChatMessageId,
   eventId: WorldEventId.nullable(),
   authorName: z.string(),
   content: z.string(),
+  userId: UserId,
   createdAt: z.string(),
 })
 
 export const createChatMessageInputSchema = z.object({
   eventId: WorldEventId.nullable().optional(),
-  authorName: z.string().min(1).max(50),
   content: z.string().min(1).max(2000),
 })
 

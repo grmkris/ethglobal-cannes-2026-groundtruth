@@ -7,6 +7,7 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuLabel,
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
@@ -491,7 +492,7 @@ function MapLayersControl({
                                 )} {...props} />}><LayersIcon /></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-1000">
                 {showTileLayersDropdown && (
-                    <>
+                    <DropdownMenuGroup>
                         <DropdownMenuLabel>{tileLayersLabel}</DropdownMenuLabel>
                         <DropdownMenuRadioGroup
                             value={selectedTileLayer}
@@ -504,13 +505,13 @@ function MapLayersControl({
                                 </DropdownMenuRadioItem>
                             ))}
                         </DropdownMenuRadioGroup>
-                    </>
+                    </DropdownMenuGroup>
                 )}
                 {showTileLayersDropdown && showLayerGroupsDropdown && (
                     <DropdownMenuSeparator />
                 )}
                 {showLayerGroupsDropdown && (
-                    <>
+                    <DropdownMenuGroup>
                         <DropdownMenuLabel>
                             {layerGroupsLabel}
                         </DropdownMenuLabel>
@@ -530,7 +531,7 @@ function MapLayersControl({
                                 {layerGroup.name}
                             </DropdownMenuCheckboxItem>
                         ))}
-                    </>
+                    </DropdownMenuGroup>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>

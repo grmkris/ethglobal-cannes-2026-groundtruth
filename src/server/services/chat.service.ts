@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, isNull, lt, type SQL } from "drizzle-orm"
-import type { ChatMessageId, WorldEventId } from "@/lib/typeid"
+import type { ChatMessageId, UserId, WorldEventId } from "@/lib/typeid"
 import type { ChatMessageResponse } from "@/server/db/schema/chat/chat.zod"
 import { chatMessage } from "../db/schema/chat/chat.db"
 import type { Database } from "../db/db"
@@ -10,6 +10,7 @@ function toResponse(row: typeof chatMessage.$inferSelect): ChatMessageResponse {
     eventId: row.eventId,
     authorName: row.authorName,
     content: row.content,
+    userId: row.userId,
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -56,6 +57,7 @@ export function createChatService(props: { db: Database }) {
     eventId?: WorldEventId | null
     authorName: string
     content: string
+    userId: UserId
   }) {
     const [row] = await db
       .insert(chatMessage)
@@ -63,6 +65,7 @@ export function createChatService(props: { db: Database }) {
         eventId: params.eventId ?? null,
         authorName: params.authorName,
         content: params.content,
+        userId: params.userId,
       })
       .returning()
     return toResponse(row)

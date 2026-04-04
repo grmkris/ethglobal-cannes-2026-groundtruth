@@ -9,9 +9,6 @@ export type ChatMessage = Awaited<
   ReturnType<AppRouterClient["chat"]["getMessages"]>
 >[number]
 
-// Re-export enum types and runtime arrays from the Zod layer
-export type {
-  EventCategory,
-  SeverityLevel,
-} from "@/server/db/schema/event/event.zod"
-export { SEVERITY_LEVEL_VALUES } from "@/server/db/schema/event/event.zod"
+// Re-export from shared constants — no server code in client bundle
+export type { EventCategory, SeverityLevel } from "@/lib/event-constants"
+export { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES } from "@/lib/event-constants"

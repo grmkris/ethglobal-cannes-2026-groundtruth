@@ -1,12 +1,12 @@
 import { ORPCError } from "@orpc/server"
 import { z } from "zod"
-import { WorldEventId } from "@/lib/typeid"
+import { UserId, WorldEventId } from "@/lib/typeid"
 import {
   createEventInputSchema,
   eventCategorySchema,
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
-import { publicProcedure } from "../api"
+import { authedProcedure, publicProcedure } from "../api"
 
 export const eventRouter = {
   getAll: publicProcedure
@@ -24,11 +24,12 @@ export const eventRouter = {
       return context.eventService.getAll(input)
     }),
 
-  create: publicProcedure
+  create: authedProcedure
     .input(createEventInputSchema)
     .handler(async ({ input, context }) => {
-      context.log.set({ procedure: "event.create", category: input.category })
-      return context.eventService.create(input)
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "event.create", category: input.category, userId })
+      return context.eventService.create({ ...input, userId })
     }),
 
   getById: publicProcedure

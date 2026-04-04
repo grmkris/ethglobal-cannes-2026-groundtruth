@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
+import { toast } from "sonner"
 
 export function useCreateEvent() {
   const queryClient = useQueryClient()
@@ -11,6 +12,12 @@ export function useCreateEvent() {
       client.event.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] })
+      toast.success("Event reported successfully")
+    },
+    onError: (error) => {
+      toast.error("Failed to report event", {
+        description: error.message,
+      })
     },
   })
 }

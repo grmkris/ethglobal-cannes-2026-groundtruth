@@ -3,6 +3,9 @@ import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
 import { cn } from "@/lib/utils"
 import { MessageCircleIcon } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 const SEVERITY_STYLES: Record<SeverityLevel, string> = {
   critical: "bg-red-500/10 text-red-500 border-red-500/20",
@@ -27,49 +30,52 @@ export function EventPopupContent({
   })
 
   return (
-    <div className="w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-xl">
-      <div className="mb-2 flex items-center gap-1.5">
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
-            config.color
-          )}
-        >
-          {config.emoji} {config.label}
-        </span>
-        <span
-          className={cn(
-            "inline-flex rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase",
-            SEVERITY_STYLES[event.severity]
-          )}
-        >
-          {event.severity}
-        </span>
-      </div>
-      <h3 className="mb-1 text-sm font-semibold leading-tight">
-        {event.title}
-      </h3>
-      <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-        {event.description}
-      </p>
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{event.location}</span>
-        <span>{time}</span>
-      </div>
-      {event.source && (
-        <div className="mt-1 text-[10px] text-muted-foreground/60">
-          via {event.source}
+    <Card size="sm" className="w-[min(18rem,calc(100vw-4rem))] gap-0 py-0 shadow-xl">
+      <CardHeader className="px-3 pt-3 pb-2">
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline" className={cn("text-[10px]", config.color)}>
+            {config.emoji} {config.label}
+          </Badge>
+          <Badge variant="outline" className={cn("text-[10px] uppercase", SEVERITY_STYLES[event.severity])}>
+            {event.severity}
+          </Badge>
         </div>
-      )}
-      {onOpenChat && (
-        <button
-          onClick={() => onOpenChat(event.id)}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
-        >
-          <MessageCircleIcon size={12} />
-          Open Chat
-        </button>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-2 px-3 pb-2">
+        {event.imageUrls.length > 0 && (
+          <img
+            src={event.imageUrls[0]}
+            alt={event.title}
+            className="h-28 w-full rounded-md object-cover"
+          />
+        )}
+        <h3 className="text-sm font-semibold leading-tight">{event.title}</h3>
+        <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+          {event.description}
+        </p>
+      </CardContent>
+      <CardFooter className="flex-col items-stretch gap-2 px-3 pb-3 pt-0">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>{event.location}</span>
+          <span>{time}</span>
+        </div>
+        {event.source && (
+          <div className="text-[10px] text-muted-foreground/60">
+            via {event.source}
+          </div>
+        )}
+        {onOpenChat && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onOpenChat(event.id)}
+          >
+            <MessageCircleIcon size={12} />
+            Open Chat
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   )
 }

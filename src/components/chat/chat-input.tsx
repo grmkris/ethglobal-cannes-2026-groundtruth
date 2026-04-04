@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { SendIcon } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 export function ChatInput({
   onSend,
@@ -22,21 +24,24 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-1.5 border-t px-2 py-2">
-      <input
+      <Input
         type="text"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Type a message..."
         disabled={disabled}
-        className="flex-1 rounded-md border bg-muted/50 px-2.5 py-1.5 text-xs outline-none placeholder:text-muted-foreground/60 focus:border-foreground/20"
+        aria-label="Message"
+        className="h-8 flex-1 text-xs"
       />
-      <button
+      <Button
         type="submit"
+        size="icon-xs"
         disabled={disabled || !content.trim()}
-        className="flex size-7 items-center justify-center rounded-md bg-foreground text-background transition-opacity hover:opacity-80 disabled:opacity-30"
+        aria-label="Send message"
+        className="size-8 shrink-0"
       >
         <SendIcon size={12} />
-      </button>
+      </Button>
     </form>
   )
 }

@@ -3,10 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
 import type { WorldEventId } from "@/lib/typeid"
+import { toast } from "sonner"
 
-export function useChat(eventId?: WorldEventId | null) {
+export function useChat(
+  eventId?: WorldEventId | null,
+  options?: { enabled?: boolean }
+) {
   const queryClient = useQueryClient()
   const queryKey = ["chat", "messages", eventId ?? "global"]
+  const enabled = options?.enabled ?? true
 
   const messages = useQuery({
     queryKey,
@@ -15,18 +20,23 @@ export function useChat(eventId?: WorldEventId | null) {
         eventId: eventId ?? null,
         limit: 50,
       }),
-    refetchInterval: 3000,
+    refetchInterval: enabled ? 3000 : false,
+    enabled,
   })
 
   const send = useMutation({
-    mutationFn: (params: { authorName: string; content: string }) =>
+    mutationFn: (params: { content: string }) =>
       client.chat.send({
         eventId: eventId ?? null,
-        authorName: params.authorName,
         content: params.content,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey })
+    },
+    onError: (error) => {
+      toast.error("Failed to send message", {
+        description: error.message,
+      })
     },
   })
 

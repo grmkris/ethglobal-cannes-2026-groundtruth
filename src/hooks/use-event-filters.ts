@@ -1,10 +1,9 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
-import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf, parseAsStringEnum } from "nuqs"
+import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf, parseAsStringLiteral } from "nuqs"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
-import { SEVERITY_LEVEL_VALUES, type EventCategory, type SeverityLevel, type WorldEvent } from "@/lib/orpc-types"
-import { EVENT_CATEGORY_VALUES } from "@/server/db/schema/event/event.zod"
+import { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES, type EventCategory, type SeverityLevel, type WorldEvent } from "@/lib/orpc-types"
 
 const allCategoryIds = EVENT_CATEGORIES.map((c) => c.id)
 
@@ -15,8 +14,8 @@ export function useEventFilters(events: WorldEvent[]) {
   )
 
   const [filterParams, setFilterParams] = useQueryStates({
-    categories: parseAsArrayOf(parseAsStringEnum(EVENT_CATEGORY_VALUES), ","),
-    severity: parseAsArrayOf(parseAsStringEnum(SEVERITY_LEVEL_VALUES), ","),
+    categories: parseAsArrayOf(parseAsStringLiteral(EVENT_CATEGORY_VALUES), ","),
+    severity: parseAsArrayOf(parseAsStringLiteral(SEVERITY_LEVEL_VALUES), ","),
   })
 
   // null = all selected (clean URL)
@@ -82,6 +81,11 @@ export function useEventFilters(events: WorldEvent[]) {
     return grouped
   }, [filteredEvents])
 
+  const clearFilters = useCallback(() => {
+    setSearchQuery("")
+    setFilterParams({ categories: null, severity: null })
+  }, [setSearchQuery, setFilterParams])
+
   return {
     activeCategories,
     activeSeverities,
@@ -91,5 +95,6 @@ export function useEventFilters(events: WorldEvent[]) {
     toggleCategory,
     toggleSeverity,
     setSearchQuery,
+    clearFilters,
   }
 }

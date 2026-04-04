@@ -7,6 +7,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(1),
     AUTH_DOMAIN: z.string().min(1),
     WORLD_APP_ID: z.string().min(1),
+    BLOB_READ_WRITE_TOKEN: z.string().min(1),
     NODE_ENV: z.enum(["development", "production", "test"]),
     APP_URL: z.string().url(),
   },

@@ -19,6 +19,7 @@ export function CategoryFilter({
           <button
             key={cat.id}
             onClick={() => onToggle(cat.id)}
+            aria-pressed={isActive}
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-all",
               isActive

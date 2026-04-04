@@ -1,4 +1,4 @@
-import type { EventCategory } from "@/lib/orpc-types"
+import type { EventCategory } from "@/lib/event-constants"
 
 export interface CategoryConfig {
   id: EventCategory
@@ -71,8 +71,14 @@ export const CATEGORY_MAP = new Map<EventCategory, CategoryConfig>(
   EVENT_CATEGORIES.map((c) => [c.id, c])
 )
 
+const FALLBACK_CONFIG: CategoryConfig = {
+  id: "social" as EventCategory,
+  label: "Unknown",
+  emoji: "❓",
+  color: "text-muted-foreground bg-muted/10 border-border",
+  markerColor: "#6b7280",
+}
+
 export function getCategoryConfig(id: EventCategory): CategoryConfig {
-  const config = CATEGORY_MAP.get(id)
-  if (!config) throw new Error(`Unknown category: ${id}`)
-  return config
+  return CATEGORY_MAP.get(id) ?? FALLBACK_CONFIG
 }

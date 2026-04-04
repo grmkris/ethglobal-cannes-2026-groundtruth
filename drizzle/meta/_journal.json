@@ -15,6 +15,20 @@
       "when": 1775300272516,
       "tag": "0001_shallow_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775305279027,
+      "tag": "0002_daily_pete_wisdom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775306226433,
+      "tag": "0003_old_dorian_gray",
+      "breakpoints": true
     }
   ]
 }

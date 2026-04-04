@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { ChatMessageId, WorldEventId } from "@/lib/typeid"
+import { ChatMessageId, UserId, WorldEventId } from "@/lib/typeid"
 import { createChatMessageInputSchema } from "@/server/db/schema/chat/chat.zod"
-import { publicProcedure } from "../api"
+import { authedProcedure, publicProcedure } from "../api"
 
 export const chatRouter = {
   getMessages: publicProcedure
@@ -17,10 +17,17 @@ export const chatRouter = {
       return context.chatService.getMessages(input)
     }),
 
-  send: publicProcedure
+  send: authedProcedure
     .input(createChatMessageInputSchema)
     .handler(async ({ input, context }) => {
-      context.log.set({ procedure: "chat.send", eventId: input.eventId })
-      return context.chatService.create(input)
+      const authorName = context.session.user.name
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "chat.send", eventId: input.eventId, userId })
+      return context.chatService.create({
+        eventId: input.eventId,
+        content: input.content,
+        authorName,
+        userId,
+      })
     }),
 }

@@ -1,5 +1,5 @@
 import { index, pgTable, text } from "drizzle-orm/pg-core"
-import { type ChatMessageId, typeIdGenerator } from "@/lib/typeid"
+import { type ChatMessageId, type UserId, type WorldEventId, typeIdGenerator } from "@/lib/typeid"
 import { baseEntityFields, typeId } from "../../utils"
 import { worldEvent } from "../event/event.db"
 import { user } from "../auth/auth.db"
@@ -11,8 +11,13 @@ export const chatMessage = pgTable(
       .primaryKey()
       .$defaultFn(() => typeIdGenerator("chatMessage"))
       .$type<ChatMessageId>(),
-    eventId: typeId("worldEvent", "event_id").references(() => worldEvent.id),
-    userId: typeId("user", "user_id").references(() => user.id),
+    eventId: typeId("worldEvent", "event_id")
+      .references(() => worldEvent.id)
+      .$type<WorldEventId>(),
+    userId: typeId("user", "user_id")
+      .references(() => user.id)
+      .$type<UserId>()
+      .notNull(),
     authorName: text("author_name").notNull(),
     content: text("content").notNull(),
     ...baseEntityFields,

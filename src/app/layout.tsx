@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
-import { Geist, JetBrains_Mono } from "next/font/google"
+import Script from "next/script"
+import { Geist, JetBrains_Mono, Instrument_Serif } from "next/font/google"
 
 import "./globals.css"
 import { Providers } from "@/components/providers"
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const fontSans = Geist({
@@ -11,6 +14,12 @@ const fontSans = Geist({
 })
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-serif",
+})
 
 export const metadata: Metadata = {
   title: "Ground Truth",
@@ -26,10 +35,30 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontSans.variable, "font-mono", jetbrainsMono.variable)}
+      className={cn(
+        "antialiased",
+        fontSans.variable,
+        "font-mono",
+        jetbrainsMono.variable,
+        instrumentSerif.variable
+      )}
     >
+      <head>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+          />
+        )}
+      </head>
       <body className="overflow-hidden">
-        <Providers>{children}</Providers>
+        <Providers>
+          <TooltipProvider delay={300}>
+            {children}
+          </TooltipProvider>
+        </Providers>
+        <Toaster position="bottom-center" richColors />
       </body>
     </html>
   )

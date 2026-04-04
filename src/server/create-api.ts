@@ -4,6 +4,8 @@ import { createError, parseError } from "evlog"
 import { evlog, type EvlogVariables } from "evlog/hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { RPCHandler } from "@orpc/server/fetch"
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client"
+import { UPLOAD_MAX_SIZE_BYTES, UPLOAD_ALLOWED_TYPES } from "@/lib/upload-config"
 import { createContext } from "./api/context"
 import { appRouter } from "./api/router"
 import { createAuth } from "./auth"
@@ -102,16 +104,46 @@ export function createApi(props: { db: Database }) {
     return c.json({ verified: true })
   })
 
+  // Image upload (Vercel Blob client-upload pattern)
+  app.post("/upload", async (c) => {
+    const log = c.get("log")
+    log.set({ action: "upload" })
+
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    if (!session) {
+      throw createError({ message: "Not authenticated", status: 401 })
+    }
+    const userId = UserId.parse(session.user.id)
+    log.set({ userId })
+
+    const body = (await c.req.json()) as HandleUploadBody
+
+    const jsonResponse = await handleUpload({
+      body,
+      request: c.req.raw,
+      onBeforeGenerateToken: async () => ({
+        allowedContentTypes: [...UPLOAD_ALLOWED_TYPES],
+        maximumSizeInBytes: UPLOAD_MAX_SIZE_BYTES,
+        addRandomSuffix: true,
+      }),
+      onUploadCompleted: async () => {},
+    })
+
+    return c.json(jsonResponse)
+  })
+
   // oRPC handler
   const rpcHandler = new RPCHandler(appRouter)
   app.all("/rpc/*", async (c) => {
     const log = c.get("log")
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
     const context = createContext({
       log,
       auth,
       authService,
       eventService,
       chatService,
+      session,
     })
 
     const { matched, response } = await rpcHandler.handle(c.req.raw, {
