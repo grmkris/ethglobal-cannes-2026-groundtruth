@@ -25,6 +25,7 @@ export const worldEventResponseSchema = z.object({
   source: z.string().nullable(),
   imageUrls: z.array(z.string()),
   userId: UserId,
+  worldIdVerified: z.boolean(),
 })
 
 // --- Inferred types ---

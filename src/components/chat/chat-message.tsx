@@ -1,5 +1,7 @@
 import type { ChatMessage } from "@/lib/orpc-types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { BadgeCheckIcon } from "lucide-react"
 
 export function ChatMessageItem({ message }: { message: ChatMessage }) {
   const time = new Date(message.createdAt).toLocaleTimeString("en-US", {
@@ -16,8 +18,21 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="truncate text-xs font-semibold">{message.authorName}</span>
+          {message.worldIdVerified && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <BadgeCheckIcon
+                    size={12}
+                    className="shrink-0 text-emerald-500"
+                  />
+                }
+              />
+              <TooltipContent>World ID Verified</TooltipContent>
+            </Tooltip>
+          )}
           <span className="shrink-0 text-[10px] text-muted-foreground/60">{time}</span>
         </div>
         <p className="text-xs leading-relaxed text-foreground/80">

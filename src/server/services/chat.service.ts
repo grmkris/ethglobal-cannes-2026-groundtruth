@@ -1,10 +1,13 @@
-import { and, asc, desc, eq, isNull, lt, type SQL } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, isNull, lt, type SQL } from "drizzle-orm"
 import type { ChatMessageId, UserId, WorldEventId } from "@/lib/typeid"
 import type { ChatMessageResponse } from "@/server/db/schema/chat/chat.zod"
 import { chatMessage } from "../db/schema/chat/chat.db"
+import { user } from "../db/schema/auth/auth.db"
 import type { Database } from "../db/db"
 
-function toResponse(row: typeof chatMessage.$inferSelect): ChatMessageResponse {
+function toResponse(
+  row: typeof chatMessage.$inferSelect & { worldIdVerified: boolean }
+): ChatMessageResponse {
   return {
     id: row.id,
     eventId: row.eventId,
@@ -12,6 +15,7 @@ function toResponse(row: typeof chatMessage.$inferSelect): ChatMessageResponse {
     content: row.content,
     userId: row.userId,
     createdAt: row.createdAt.toISOString(),
+    worldIdVerified: row.worldIdVerified,
   }
 }
 
@@ -44,8 +48,12 @@ export function createChatService(props: { db: Database }) {
     const limit = params.limit ?? 50
 
     const rows = await db
-      .select()
+      .select({
+        ...getTableColumns(chatMessage),
+        worldIdVerified: user.worldIdVerified,
+      })
       .from(chatMessage)
+      .innerJoin(user, eq(chatMessage.userId, user.id))
       .where(and(...conditions))
       .orderBy(desc(chatMessage.createdAt))
       .limit(limit)
@@ -68,7 +76,16 @@ export function createChatService(props: { db: Database }) {
         userId: params.userId,
       })
       .returning()
-    return toResponse(row)
+
+    const userRow = await db.query.user.findFirst({
+      where: (u, { eq }) => eq(u.id, params.userId),
+      columns: { worldIdVerified: true },
+    })
+
+    return toResponse({
+      ...row,
+      worldIdVerified: userRow?.worldIdVerified ?? false,
+    })
   }
 
   return { getMessages, create }

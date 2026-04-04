@@ -12,7 +12,6 @@ import { createAuth } from "./auth"
 import { createAuthService } from "./services/auth.service"
 import { createEventService } from "./services/event.service"
 import { createChatService } from "./services/chat.service"
-import { worldIdVerifyInputSchema } from "./db/schema/auth/auth.zod"
 import { env } from "@/env"
 import { UserId } from "@/lib/typeid"
 import type { Database } from "./db/db"
@@ -56,53 +55,6 @@ export function createApi(props: { db: Database }) {
 
   // Better Auth handles /api/auth/*
   app.all("/auth/*", async (c) => auth.handler(c.req.raw))
-
-  // World ID verification
-  app.post("/auth/verify-world-id", async (c) => {
-    const log = c.get("log")
-    log.set({ action: "verify-world-id" })
-
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    if (!session) {
-      throw createError({ message: "Not authenticated", status: 401 })
-    }
-
-    const { proof, nullifier } = worldIdVerifyInputSchema.parse(
-      await c.req.json()
-    )
-    const userId = UserId.parse(session.user.id)
-    log.set({ userId })
-
-    if (!env.WORLD_APP_ID) {
-      throw createError({
-        message: "World App not configured",
-        status: 500,
-        why: "WORLD_APP_ID environment variable is not set",
-      })
-    }
-
-    const res = await fetch(
-      `https://developer.world.org/api/v4/verify/${env.WORLD_APP_ID}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proof, nullifier, action: "verify-human" }),
-      }
-    )
-
-    if (!res.ok) {
-      throw createError({
-        message: "World ID verification failed",
-        status: 400,
-        why: "The World API rejected the verification proof",
-      })
-    }
-
-    await authService.verifyWorldId({ userId, nullifierHash: nullifier })
-
-    log.set({ verified: true })
-    return c.json({ verified: true })
-  })
 
   // Image upload (Vercel Blob client-upload pattern)
   app.post("/upload", async (c) => {

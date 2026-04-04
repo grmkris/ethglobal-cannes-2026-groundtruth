@@ -17,6 +17,7 @@ import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeftIcon,
+  BadgeCheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   MessageCircleIcon,
@@ -28,6 +29,7 @@ import {
 import { useLayoutEffect, useRef } from "react"
 import { useTheme } from "next-themes"
 import { CategoryFilter } from "./category-filter"
+import { WorldIdVerifyButton } from "@/components/world-id-verify-button"
 
 const SEVERITY_DOT: Record<SeverityLevel, string> = {
   critical: "bg-red-500",
@@ -89,6 +91,19 @@ function EventListItem({
         <span className="text-[11px] text-muted-foreground">
           {config.emoji} {config.label}
         </span>
+        {event.worldIdVerified && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <BadgeCheckIcon
+                  size={11}
+                  className="shrink-0 text-emerald-500"
+                />
+              }
+            />
+            <TooltipContent>Verified reporter</TooltipContent>
+          </Tooltip>
+        )}
         <Button
           variant="ghost"
           size="icon-xs"
@@ -242,20 +257,22 @@ export function MapSidebar({
       ) : (
         <div className="sidebar-grain flex h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] w-full flex-col rounded-lg border bg-background/90 shadow-lg backdrop-blur-md dark:border-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
           {/* Header */}
-          <div className="flex items-center gap-2 border-b px-3 py-2.5">
-            <div className="flex flex-1 items-center gap-2">
+          <div className="flex items-center gap-2 border-b px-3 py-2">
+            <div className="flex items-center gap-2">
               <span className="relative flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
-              <h2 className="font-serif text-sm font-bold tracking-tight">
+              <h2 className="text-sm font-bold tracking-tight">
                 Ground Truth
               </h2>
               <Badge variant="outline" className="h-4 px-1.5 py-0 font-mono text-[9px]">
                 {eventCount} live
               </Badge>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="ml-auto flex items-center gap-1">
+              {isSignedIn && <WorldIdVerifyButton />}
+              <appkit-button size="sm" />
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -287,11 +304,6 @@ export function MapSidebar({
                 <TooltipContent>Collapse sidebar</TooltipContent>
               </Tooltip>
             </div>
-          </div>
-
-          {/* Wallet */}
-          <div className="border-b px-3 py-1.5">
-            <appkit-button size="sm" />
           </div>
 
           {/* Tabs */}

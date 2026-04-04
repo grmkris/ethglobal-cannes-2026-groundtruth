@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, ilike, or, type SQL } from "drizzle-orm"
 import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
 import type {
@@ -7,8 +7,11 @@ import type {
   WorldEventResponse,
 } from "@/server/db/schema/event/event.zod"
 import { worldEvent } from "../db/schema/event/event.db"
+import { user } from "../db/schema/auth/auth.db"
 
-function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
+function toWorldEvent(
+  row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean }
+): WorldEventResponse {
   return {
     id: row.id,
     title: row.title,
@@ -21,6 +24,7 @@ function toWorldEvent(row: typeof worldEvent.$inferSelect): WorldEventResponse {
     source: row.source,
     imageUrls: row.imageUrls,
     userId: row.userId,
+    worldIdVerified: row.worldIdVerified,
   }
 }
 
@@ -49,20 +53,31 @@ export function createEventService(props: { db: Database }) {
       if (searchCondition) conditions.push(searchCondition)
     }
 
-    return (
-      await db
-        .select()
-        .from(worldEvent)
-        .where(conditions.length ? and(...conditions) : undefined)
-        .orderBy(desc(worldEvent.timestamp))
-    ).map(toWorldEvent)
+    const rows = await db
+      .select({
+        ...getTableColumns(worldEvent),
+        worldIdVerified: user.worldIdVerified,
+      })
+      .from(worldEvent)
+      .innerJoin(user, eq(worldEvent.userId, user.id))
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(worldEvent.timestamp))
+
+    return rows.map(toWorldEvent)
   }
 
   async function getById(params: { id: WorldEventId }) {
-    const row = await db.query.worldEvent.findFirst({
-      where: eq(worldEvent.id, params.id),
-    })
-    return row ? toWorldEvent(row) : null
+    const rows = await db
+      .select({
+        ...getTableColumns(worldEvent),
+        worldIdVerified: user.worldIdVerified,
+      })
+      .from(worldEvent)
+      .innerJoin(user, eq(worldEvent.userId, user.id))
+      .where(eq(worldEvent.id, params.id))
+      .limit(1)
+
+    return rows[0] ? toWorldEvent(rows[0]) : null
   }
 
   async function create(params: {
@@ -87,7 +102,16 @@ export function createEventService(props: { db: Database }) {
         userId: params.userId,
       })
       .returning()
-    return toWorldEvent(row)
+
+    const userRow = await db.query.user.findFirst({
+      where: (u, { eq }) => eq(u.id, params.userId),
+      columns: { worldIdVerified: true },
+    })
+
+    return toWorldEvent({
+      ...row,
+      worldIdVerified: userRow?.worldIdVerified ?? false,
+    })
   }
 
   return { getAll, getById, create }

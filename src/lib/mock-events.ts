@@ -3,6 +3,7 @@ import type { WorldEvent } from "@/lib/orpc-types"
 export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   // Conflict
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Ceasefire Negotiations Stall in Eastern Region",
     description: "Peace talks between opposing factions have broken down after disagreements over territorial boundaries.",
@@ -14,6 +15,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "Reuters",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Maritime Dispute Escalation in South China Sea",
     description: "Naval vessels from multiple nations converge as territorial claims intensify near contested islands.",
@@ -25,6 +27,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "AP News",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Cross-Border Tensions Rise in Sahel Region",
     description: "Increased military activity reported along multiple borders in West Africa.",
@@ -37,6 +40,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Natural Disasters
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "7.2 Magnitude Earthquake Hits Central Japan",
     description: "Major earthquake recorded off the coast. Tsunami warnings issued for coastal regions.",
@@ -48,6 +52,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "USGS",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Category 4 Hurricane Approaching Gulf Coast",
     description: "Hurricane Maria strengthens as it approaches the southern United States coastline.",
@@ -59,6 +64,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "NOAA",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Severe Flooding in Bangladesh Delta",
     description: "Monsoon rains cause unprecedented flooding displacing thousands of residents.",
@@ -70,6 +76,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Wildfire Season Intensifies in Southern Australia",
     description: "Multiple bushfires burning across New South Wales amid record temperatures.",
@@ -82,6 +89,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Politics
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "EU Summit on Digital Sovereignty",
     description: "European leaders convene in Brussels to discuss AI regulation and tech independence.",
@@ -93,6 +101,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "Euronews",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Snap Elections Called in Brazil",
     description: "Political crisis deepens as president dissolves parliament and calls for early elections.",
@@ -104,6 +113,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "UN Security Council Emergency Session",
     description: "Emergency meeting called to address escalating tensions in multiple regions.",
@@ -115,6 +125,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "UN News",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "India Passes Landmark Data Privacy Law",
     description: "Parliament approves comprehensive data protection legislation affecting 1.4 billion citizens.",
@@ -127,6 +138,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Economics
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Global Markets Tumble on Rate Hike Fears",
     description: "Stock markets across Asia and Europe fall sharply on unexpected inflation data.",
@@ -138,6 +150,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "Bloomberg",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "OPEC+ Announces Production Cuts",
     description: "Oil cartel agrees to reduce output by 2M barrels per day starting next month.",
@@ -149,6 +162,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Nigeria Launches Digital Currency Phase 2",
     description: "Central bank expands eNaira program to rural areas with 50M new wallets.",
@@ -160,6 +174,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Silicon Valley Bank Run Fears Resurface",
     description: "Regional bank stocks drop 15% after earnings miss sparks contagion concerns.",
@@ -172,6 +187,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Health
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "WHO Declares New Pandemic Alert Level",
     description: "Novel respiratory virus identified in Southeast Asia triggers international concern.",
@@ -183,6 +199,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "WHO",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Breakthrough Cancer Treatment Approved",
     description: "FDA greenlights revolutionary mRNA-based therapy showing 90% efficacy in trials.",
@@ -194,6 +211,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Cholera Outbreak in Eastern Congo",
     description: "Rapid spread of waterborne disease affects 50,000+ in displaced persons camps.",
@@ -206,6 +224,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Technology
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Major Undersea Cable Cut Disrupts Internet",
     description: "Three submarine cables severed simultaneously in the Mediterranean affecting connectivity.",
@@ -217,6 +236,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Massive Ransomware Attack on European Hospitals",
     description: "Coordinated cyberattack takes down hospital systems across Germany and France.",
@@ -228,6 +248,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "CyberNews",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
                       title: "Starlink Gen3 Achieves Global Coverage",
     description: "SpaceX announces full global broadband coverage including polar regions.",
@@ -239,6 +260,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "China Unveils Quantum Computing Breakthrough",
     description: "New quantum processor achieves 1000+ qubit milestone with error correction.",
@@ -251,6 +273,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Environment
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Amazon Deforestation Hits Record Monthly Rate",
     description: "Satellite data shows 1,200 sq km cleared in March alone despite pledges.",
@@ -262,6 +285,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "INPE",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Arctic Ice Shelf Collapse Accelerates",
     description: "Largest remaining ice shelf in the Arctic loses 800 sq km in 48 hours.",
@@ -273,6 +297,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Coral Bleaching Event Spreads Across Pacific",
     description: "Fourth global bleaching event confirmed affecting 70% of monitored reefs.",
@@ -284,6 +309,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Record Air Pollution in Delhi NCR",
     description: "AQI exceeds 500 for third consecutive day, schools and offices shut.",
@@ -296,6 +322,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
   },
   // Social
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Mass Protests in Nairobi Over Cost of Living",
     description: "Hundreds of thousands take to streets demanding government action on inflation.",
@@ -307,6 +334,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Student Protests Sweep South Korea",
     description: "University students nationwide protest AI-driven hiring practices and job displacement.",
@@ -318,6 +346,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Global Climate Strike — 10M Participants",
     description: "Largest coordinated climate action in history spans 150 countries simultaneously.",
@@ -329,6 +358,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Water Rationing Sparks Unrest in Mexico City",
     description: "Severe water shortages lead to clashes between residents and authorities.",
@@ -340,6 +370,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: null,
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
     title: "Historic Peace Agreement Signed in Horn of Africa",
     description: "Decades-long conflict officially ends with multilateral peace treaty.",
@@ -351,6 +382,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     source: "BBC",
   },
   {
+    worldIdVerified: false,
     imageUrls: [],
         title: "Volcanic Eruption in Iceland",
     description: "Fagradalsfjall erupts again, disrupting air travel across Northern Europe.",

@@ -2,7 +2,7 @@ import { getCategoryConfig } from "@/lib/event-categories"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
 import { cn } from "@/lib/utils"
-import { MessageCircleIcon } from "lucide-react"
+import { BadgeCheckIcon, MessageCircleIcon } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,12 @@ export function EventPopupContent({
           <Badge variant="outline" className={cn("text-[10px] uppercase", SEVERITY_STYLES[event.severity])}>
             {event.severity}
           </Badge>
+          {event.worldIdVerified && (
+            <Badge variant="outline" className="gap-0.5 text-[10px] text-emerald-500 border-emerald-500/20 bg-emerald-500/10">
+              <BadgeCheckIcon size={10} />
+              Verified
+            </Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2 px-3 pb-2">

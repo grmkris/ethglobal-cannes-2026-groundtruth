@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Script from "next/script"
-import { Geist, JetBrains_Mono, Instrument_Serif } from "next/font/google"
+import { Geist, JetBrains_Mono } from "next/font/google"
 
 import "./globals.css"
 import { Providers } from "@/components/providers"
@@ -14,12 +14,6 @@ const fontSans = Geist({
 })
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-serif",
-})
 
 export const metadata: Metadata = {
   title: "Ground Truth",
@@ -39,8 +33,7 @@ export default function RootLayout({
         "antialiased",
         fontSans.variable,
         "font-mono",
-        jetbrainsMono.variable,
-        instrumentSerif.variable
+        jetbrainsMono.variable
       )}
     >
       <head>
