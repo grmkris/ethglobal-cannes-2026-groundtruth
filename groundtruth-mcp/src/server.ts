@@ -169,5 +169,36 @@ export function createMcpServer(props: {
     }
   )
 
+  server.tool(
+    "link_wallet_onchain",
+    "Generate and submit a wallet-link signature so the human owner can link this agent's wallet on-chain via ERC-8004 setAgentWallet. Run this after ENS + ERC-8004 registration is complete.",
+    {},
+    async () => {
+      const id = identity ?? await (async () => {
+        const raw = await client.fetchIdentity()
+        return raw?.registrationStep === 4 && raw.agentId && raw.ensName
+          ? { agentId: raw.agentId, ensName: raw.ensName }
+          : null
+      })()
+
+      if (!id) {
+        return {
+          content: [{ type: "text" as const, text: "No completed ERC-8004 identity found. Register ENS + ERC-8004 identity first in the Ground Truth UI." }],
+        }
+      }
+
+      try {
+        await client.submitWalletLinkSignature(id.agentId)
+        return {
+          content: [{ type: "text" as const, text: `Wallet link signature submitted for ${id.ensName} (ERC-8004 #${id.agentId}). The human owner can now click "Link wallet on-chain" in the Ground Truth profile sheet.` }],
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: `Failed to submit signature: ${err?.message ?? "unknown error"}` }],
+        }
+      }
+    }
+  )
+
   return server
 }

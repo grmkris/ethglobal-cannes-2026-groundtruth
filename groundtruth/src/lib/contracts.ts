@@ -1,4 +1,4 @@
-import { type Hex } from "viem"
+import { type Hex, concat, numberToHex, toHex, toBytes } from "viem"
 
 // --- Contract Addresses ---
 
@@ -83,6 +83,16 @@ export const publicResolverAbi = [
       { name: "key", type: "string" },
     ],
     outputs: [{ name: "", type: "string" }],
+  },
+  {
+    name: "setAddr",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "node", type: "bytes32" },
+      { name: "a", type: "address" },
+    ],
+    outputs: [],
   },
 ] as const
 
@@ -252,23 +262,47 @@ export const reputationRegistryAbi = [
   },
 ] as const
 
+// --- ERC-7930 Interoperable Address Encoding ---
+
+/**
+ * Encode an EVM address + chain ID into ERC-7930 binary hex.
+ *
+ * Layout:
+ *   Version (2B) | ChainType (2B) | ChainRefLen (1B) | ChainRef (NB) | AddrLen (1B) | Address (20B)
+ *
+ * For EVM (eip155): ChainType = 0x0000, ChainRef = chainId as minimal big-endian bytes
+ */
+export function encodeErc7930Address(chainId: number, address: string): Uint8Array {
+  const addrBytes = toBytes(address as Hex) // 20 bytes
+  // Minimal big-endian encoding of chainId (no leading zeros)
+  const chainRefHex = numberToHex(chainId) // e.g. 0x01, 0x2105
+  const chainRefBytes = toBytes(chainRefHex)
+
+  return concat([
+    toBytes(numberToHex(1, { size: 2 })),           // version = 0x0001
+    toBytes(numberToHex(0, { size: 2 })),           // chainType = 0x0000 (eip155)
+    toBytes(numberToHex(chainRefBytes.length, { size: 1 })), // chainRefLen
+    chainRefBytes,                                   // chainRef
+    toBytes(numberToHex(addrBytes.length, { size: 1 })),     // addrLen = 0x14
+    addrBytes,                                       // address (20 bytes)
+  ])
+}
+
 // --- ENSIP-25 Helpers ---
 
 /**
  * Build ENSIP-25 text record key for cross-chain agent verification.
- * Format: agent-registration[<erc7930_registry>][<agentId>]
+ * Format: agent-registration[<erc7930_hex>][<agentId>]
  *
- * For hackathon: uses simplified CAIP-style registry identifier
- * (full ERC-7930 binary encoding is still draft spec)
+ * Uses ERC-7930 binary encoding of the registry address.
  */
 export function buildEnsip25Key(
   chainId: number,
   registryAddress: string,
   agentId: string | number,
 ): string {
-  // Simplified ERC-7930-style identifier: eip155:<chainId>:<address>
-  const registry = `eip155:${chainId}:${registryAddress.toLowerCase()}`
-  return `agent-registration[${registry}][${agentId}]`
+  const erc7930Hex = toHex(encodeErc7930Address(chainId, registryAddress))
+  return `agent-registration[${erc7930Hex}][${agentId}]`
 }
 
 /**

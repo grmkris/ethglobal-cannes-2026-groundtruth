@@ -2,6 +2,8 @@ import * as p from "@clack/prompts"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { getAddress } from "viem"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { exec } from "node:child_process"
+import { platform } from "node:os"
 import { join, resolve } from "node:path"
 
 const SKILL_CONTENT = `---
@@ -161,5 +163,10 @@ export async function runSetup() {
     "Next steps"
   )
 
-  p.outro("Done! Your agent can now use Ground Truth.")
+  // Open browser to link the wallet
+  const linkUrl = `${apiUrl}?link-agent=${address}`
+  const openCmd = platform() === "darwin" ? "open" : platform() === "win32" ? "start" : "xdg-open"
+  exec(`${openCmd} "${linkUrl}"`)
+
+  p.outro("Done! Opening Ground Truth to link your wallet...")
 }

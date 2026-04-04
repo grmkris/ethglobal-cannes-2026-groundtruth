@@ -10,6 +10,7 @@ import {
   MapLayers,
   MapLayersControl,
   MapLocateControl,
+  MapPopup,
   MapTileLayer,
   MapZoomControl,
 } from "@/components/ui/map"
@@ -27,6 +28,7 @@ import { useMap } from "react-leaflet"
 import { CrosshairIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CreateEventModal } from "./create-event-modal"
+import { EventPopupContent } from "./event-popup"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
@@ -129,6 +131,10 @@ export function WorldMap() {
     [setSelectedEventId, events]
   )
 
+  const handlePopupClose = useCallback(() => {
+    setSelectedEventId(null)
+  }, [setSelectedEventId])
+
   const handleTabChange = useCallback(
     (tab: SidebarTab) => {
       setSidebarTab(tab)
@@ -201,6 +207,17 @@ export function WorldMap() {
           />
           <MapLayersControl position="bottom-2 right-2" />
         </MapLayers>
+
+        {selectedEvent && (
+          <MapPopup
+            key={selectedEvent.id}
+            position={selectedEvent.coordinates}
+            className="w-auto border-0 p-0 shadow-none bg-transparent"
+            eventHandlers={{ remove: handlePopupClose }}
+          >
+            <EventPopupContent event={selectedEvent} onOpenChat={handleOpenChat} />
+          </MapPopup>
+        )}
 
         <MapZoomControl position="bottom-14 right-2" />
         <MapFullscreenControl position="bottom-24 right-2" />

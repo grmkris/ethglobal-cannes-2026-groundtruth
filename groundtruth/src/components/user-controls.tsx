@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useAppKit } from "@reown/appkit/react"
 import { MapControlContainer } from "@/components/ui/map"
 import {
@@ -19,7 +20,23 @@ export function UserControls() {
   const isSignedIn = !!sessionData?.session
   const user = sessionData?.user
   const { open } = useAppKit()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [profileOpen, setProfileOpen] = useState(false)
+  const [linkAgentAddress, setLinkAgentAddress] = useState<string>()
+
+  // Auto-open profile sheet when ?link-agent=ADDRESS is in URL
+  useEffect(() => {
+    const addr = searchParams.get("link-agent")
+    if (addr && isSignedIn) {
+      setLinkAgentAddress(addr)
+      setProfileOpen(true)
+      // Clean URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete("link-agent")
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }, [searchParams, isSignedIn, router])
 
   const displayName = user?.name || "User"
   const initials = displayName.slice(0, 2).toUpperCase()
@@ -53,7 +70,14 @@ export function UserControls() {
         )}
       </MapControlContainer>
 
-      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} />
+      <ProfileSheet
+        open={profileOpen}
+        onOpenChange={(open) => {
+          setProfileOpen(open)
+          if (!open) setLinkAgentAddress(undefined)
+        }}
+        defaultAgentAddress={linkAgentAddress}
+      />
     </>
   )
 }

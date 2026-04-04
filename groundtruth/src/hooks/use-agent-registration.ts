@@ -127,6 +127,11 @@ export function useAgentRegistration() {
             functionName: "setText",
             args: [subnameNode, "agent-wallet", params.agentWalletAddress],
           }),
+          encodeFunctionData({
+            abi: publicResolverAbi,
+            functionName: "setAddr",
+            args: [subnameNode, params.agentWalletAddress as `0x${string}`],
+          }),
         ]
 
         const tx2 = await writeContractAsync({
