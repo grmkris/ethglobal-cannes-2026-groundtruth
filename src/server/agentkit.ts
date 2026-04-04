@@ -15,7 +15,6 @@ import {
 } from "@worldcoin/agentkit"
 import type { AgentKitStorage } from "@worldcoin/agentkit"
 import type { EvlogVariables } from "evlog/hono"
-import { eq } from "drizzle-orm"
 import { WorldEventId } from "@/lib/typeid"
 import {
   createEventInputSchema,
@@ -138,7 +137,7 @@ export function createAgentApp(props: {
     const log = c.get("log")
     log?.error(error)
 
-    if (error.name === "ZodError") {
+    if (error.name === "ZodError" || error.name === "SyntaxError") {
       return c.json({ error: "Invalid input", details: error.message }, 400)
     }
     return c.json({ error: error.message ?? "Internal error" }, 500)

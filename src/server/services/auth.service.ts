@@ -14,15 +14,17 @@ export function createAuthService(props: { db: Database }) {
     const { userId, nullifierHash } = params
     log.info({ msg: "Storing World ID verification", userId, service: "auth" })
 
-    await db
-      .insert(worldIdVerification)
-      .values({ nullifierHash, userId })
-      .onConflictDoNothing()
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(worldIdVerification)
+        .values({ nullifierHash, userId })
+        .onConflictDoNothing()
 
-    await db
-      .update(user)
-      .set({ worldIdVerified: true })
-      .where(eq(user.id, userId))
+      await tx
+        .update(user)
+        .set({ worldIdVerified: true })
+        .where(eq(user.id, userId))
+    })
 
     log.info({ msg: "World ID verified successfully", userId, service: "auth" })
   }
@@ -44,6 +46,7 @@ export function createAuthService(props: { db: Database }) {
     await db
       .insert(agentWallet)
       .values({ userId: params.userId, address: params.address.toLowerCase() })
+      .onConflictDoNothing()
   }
 
   async function getUserByAgentAddress(params: {

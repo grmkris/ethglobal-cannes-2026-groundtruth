@@ -145,7 +145,6 @@ export const agentWallet = pgTable(
   },
   (table) => [
     index("agentWallet_userId_idx").on(table.userId),
-    index("agentWallet_address_idx").on(table.address),
   ]
 )
 

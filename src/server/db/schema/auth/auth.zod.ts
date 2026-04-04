@@ -1,14 +1,4 @@
 import { z } from "zod"
-import { UserId } from "@/lib/typeid"
-
-export const sessionResponseSchema = z.object({
-  userId: UserId,
-  walletAddress: z.string().nullable(),
-  chainId: z.number().nullable(),
-  worldIdVerified: z.boolean(),
-})
-
-export type SessionResponse = z.infer<typeof sessionResponseSchema>
 
 // --- World ID v4 proof response item ---
 const responseItemV4Schema = z.object({

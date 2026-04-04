@@ -12,7 +12,10 @@ export const authedProcedure = publicProcedure.use(
       })
     }
     return next({
-      context: { ...context, session: context.session },
+      context: {
+        ...context,
+        session: context.session as NonNullable<typeof context.session>,
+      },
     })
   }
 )

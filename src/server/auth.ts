@@ -5,7 +5,6 @@ import { generateRandomString } from "better-auth/crypto"
 import { verifyMessage, createPublicClient, http } from "viem"
 import { mainnet } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
-import { UserId } from "@/lib/typeid"
 import { env } from "@/env"
 
 const ensClient = createPublicClient({

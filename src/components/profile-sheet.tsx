@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
 import {
   Sheet,
@@ -179,7 +179,6 @@ function AgentsSection() {
   const { agents, link } = useAgentWallets()
   const [address, setAddress] = useState("")
   const [showGuide, setShowGuide] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const agentList = agents.data ?? []
 
@@ -218,7 +217,6 @@ function AgentsSection() {
       {/* Link form */}
       <div className="flex gap-1.5">
         <input
-          ref={inputRef}
           type="text"
           value={address}
           onChange={(e) => setAddress(e.target.value)}

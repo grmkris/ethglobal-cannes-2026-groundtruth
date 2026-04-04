@@ -1,6 +1,6 @@
 import type { WorldEvent } from "@/lib/orpc-types"
 
-export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
+export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId" | "creatorName" | "agentAddress">[] = [
   // Conflict
   {
     worldIdVerified: false,
@@ -13,6 +13,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Eastern Europe",
     timestamp: "2026-04-03T08:30:00Z",
     source: "Reuters",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -25,6 +27,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "South China Sea",
     timestamp: "2026-04-03T06:15:00Z",
     source: "AP News",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -37,6 +41,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Niger-Mali Border",
     timestamp: "2026-04-02T22:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Natural Disasters
   {
@@ -50,6 +56,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Honshu, Japan",
     timestamp: "2026-04-03T04:12:00Z",
     source: "USGS",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -62,6 +70,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Gulf of Mexico",
     timestamp: "2026-04-03T10:00:00Z",
     source: "NOAA",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -74,6 +84,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Dhaka, Bangladesh",
     timestamp: "2026-04-02T18:30:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -86,6 +98,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "New South Wales, Australia",
     timestamp: "2026-04-03T01:45:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Politics
   {
@@ -99,6 +113,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Brussels, Belgium",
     timestamp: "2026-04-03T09:00:00Z",
     source: "Euronews",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -111,6 +127,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Brasilia, Brazil",
     timestamp: "2026-04-02T20:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -123,6 +141,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "New York, USA",
     timestamp: "2026-04-03T14:00:00Z",
     source: "UN News",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -135,6 +155,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "New Delhi, India",
     timestamp: "2026-04-02T12:30:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Economics
   {
@@ -148,6 +170,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Tokyo, Japan",
     timestamp: "2026-04-03T02:00:00Z",
     source: "Bloomberg",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -160,7 +184,9 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Abu Dhabi, UAE",
     timestamp: "2026-04-03T11:00:00Z",
     source: null,
-  },
+    agentAddress: null,
+    creatorName: "John Doe",
+          },
   {
     worldIdVerified: false,
     imageUrls: [],
@@ -172,6 +198,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Abuja, Nigeria",
     timestamp: "2026-04-02T15:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -184,6 +212,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "San Francisco, USA",
     timestamp: "2026-04-03T16:30:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Health
   {
@@ -197,6 +227,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Bangkok, Thailand",
     timestamp: "2026-04-03T07:00:00Z",
     source: "WHO",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -209,6 +241,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Washington DC, USA",
     timestamp: "2026-04-02T19:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -221,6 +255,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Goma, DRC",
     timestamp: "2026-04-02T10:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Technology
   {
@@ -234,6 +270,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Mediterranean Sea",
     timestamp: "2026-04-03T05:30:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -246,6 +284,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Berlin, Germany",
     timestamp: "2026-04-03T03:15:00Z",
     source: "CyberNews",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -258,6 +298,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Cape Canaveral, USA",
     timestamp: "2026-04-02T21:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -270,6 +312,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Shanghai, China",
     timestamp: "2026-04-03T08:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Environment
   {
@@ -283,6 +327,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Manaus, Brazil",
     timestamp: "2026-04-03T13:00:00Z",
     source: "INPE",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -295,6 +341,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Arctic Ocean",
     timestamp: "2026-04-02T16:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -307,7 +355,9 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Pacific Ocean",
     timestamp: "2026-04-03T00:30:00Z",
     source: null,
-  },
+    agentAddress: null,
+    creatorName: "John Doe",
+      },
   {
     worldIdVerified: false,
     imageUrls: [],
@@ -319,6 +369,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Delhi, India",
     timestamp: "2026-04-03T06:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   // Social
   {
@@ -332,6 +384,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Nairobi, Kenya",
     timestamp: "2026-04-03T09:30:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -344,6 +398,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Seoul, South Korea",
     timestamp: "2026-04-03T07:45:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -356,6 +412,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Stockholm, Sweden",
     timestamp: "2026-04-02T14:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -368,6 +426,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Mexico City, Mexico",
     timestamp: "2026-04-03T12:00:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -380,6 +440,8 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Addis Ababa, Ethiopia",
     timestamp: "2026-04-02T17:00:00Z",
     source: "BBC",
+    agentAddress: null,
+    creatorName: "John Doe",
   },
   {
     worldIdVerified: false,
@@ -392,5 +454,7 @@ export const MOCK_EVENTS: Omit<WorldEvent, "id" | "userId">[] = [
     location: "Reykjanes Peninsula, Iceland",
     timestamp: "2026-04-03T11:20:00Z",
     source: null,
+    agentAddress: null,
+    creatorName: "John Doe",
   },
 ]
