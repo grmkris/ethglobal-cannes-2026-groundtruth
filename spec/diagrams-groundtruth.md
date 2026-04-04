@@ -314,7 +314,6 @@ graph TB
     subgraph "Backend"
         API[API Routes<br/>oRPC + Hono]
         STORE[PostgreSQL<br/>Drizzle ORM]
-        SOCKET[Socket.io<br/>Real-time broadcast]
     end
 
     CC & CU & CA -->|SSE| READ
@@ -325,7 +324,6 @@ graph TB
     AK --> FT
     FT --> API
     API --> STORE
-    API --> SOCKET
 
     style READ fill:#10b981,color:#fff
     style WRITE fill:#ef4444,color:#fff
@@ -406,6 +404,6 @@ sequenceDiagram
     AG->>GT: submit_event + X-PAYMENT header
     GT->>AB: Verify agent in AgentBook
     AB-->>GT: ✓ Human-backed (free-trial: 2 uses left)
-    GT->>GT: Create event, broadcast via Socket.io
+    GT->>GT: Create event in DB
     GT-->>AG: Event created ✓
 ```

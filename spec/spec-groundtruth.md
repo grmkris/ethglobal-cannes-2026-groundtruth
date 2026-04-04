@@ -731,7 +731,7 @@ server.tool("submit_event", {
 }, async (args, extra) => {
   // Verify x402 + AgentKit auth
   // Create event in store
-  // Broadcast via Socket.io
+  // Create event in DB
   return { content: [{ type: "text", text: `Event created: ${args.title}` }] }
 })
 ```
@@ -871,19 +871,6 @@ Pre-loaded evidence from agents and humans to show the evidence feed is alive.
 
 ### GDELT API for bulk generation (stretch)
 [GDELT](https://gdeltproject.org) updates every 15 min with 300+ event categories, geocoded. Can batch-fetch recent events and LLM-summarize into our format.
-
----
-
-## Real-Time (Socket.io)
-
-When an event is submitted (human or agent), broadcast to all connected clients:
-```typescript
-io.emit('event:created', newEvent)
-io.emit('message:created', newMessage)
-io.emit('evidence:created', newEvidence)
-```
-
-Frontend subscribes and updates map pins in real-time. Essential for demo moment when judge submits an event and pin appears instantly.
 
 ---
 
