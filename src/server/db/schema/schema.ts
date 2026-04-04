@@ -1,3 +1,5 @@
+export * from "./auth/auth.db"
+export * from "./auth/auth.relations"
 export * from "./event/event.db"
 export * from "./event/event.relations"
 export * from "./chat/chat.db"

@@ -13,8 +13,8 @@ const fontSans = Geist({
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
-  title: "Monitoring the Situation",
-  description: "Real-time global event monitoring dashboard",
+  title: "Ground Truth",
+  description: "Verified intelligence map — powered by World ID, ENS, and Arc",
 }
 
 export default function RootLayout({

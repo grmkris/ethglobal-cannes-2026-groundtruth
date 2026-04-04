@@ -6,6 +6,11 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+  // Auth
+  BETTER_AUTH_SECRET: z.string().min(1).default("dev-secret-change-in-prod"),
+  AUTH_DOMAIN: z.string().default("localhost"),
+  // World ID
+  WORLD_APP_ID: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)

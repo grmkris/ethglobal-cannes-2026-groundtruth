@@ -1,6 +1,6 @@
 # Ground Truth — Architecture Diagrams
 
-## 1. System Architecture (Arc Submission Diagram)
+## 1. System Architecture
 
 ```mermaid
 graph TB
@@ -15,133 +15,75 @@ graph TB
     end
 
     subgraph "App (Next.js)"
-        MAP[World Map<br/>Leaflet + events/claims]
-        API[API Routes]
-        STORE[In-memory store<br/>Events + Claims]
+        MAP[World Map<br/>Leaflet + events]
+        API[API Routes<br/>oRPC + Hono]
+        DB[PostgreSQL<br/>Drizzle ORM]
     end
 
     subgraph "External Services"
         WID[World ID API<br/>developer.world.org]
-        LLM[LLM API<br/>GPT-4o / Claude]
+        LLM[LLM API<br/>Claude]
         WEB[Web Search API<br/>Tavily / Perplexity]
         ENS[ENS<br/>Ethereum Mainnet]
     end
 
-    subgraph "Arc Testnet (Chain ID 5042002)"
-        CM[ClaimMarket.sol<br/>Prediction markets]
-        USDC[USDC Native Gas]
+    subgraph "Chains"
+        WC[World Chain<br/>AgentBook + x402 USDC]
+        SEP[Sepolia<br/>ERC-8004 + ENS resolver]
     end
 
-    H1 & H2 -->|Submit events/claims| API
+    H1 & H2 -->|Submit events/chat| API
     H1 & H2 -->|Verify identity| WID
-    H1 & H2 -->|Stake on claims| CM
 
     A1 & A2 -->|x402 nanopayment| API
-    A1 & A2 -->|Stake on claims| CM
-    A1 & A2 -->|Pay for compute| USDC
+    A1 & A2 -->|Pay for compute| WC
 
     API -->|Verify| WID
     API -->|Search + Summarize| WEB
     API -->|Generate reports| LLM
     API -->|Resolve .eth names| ENS
-    API <--> STORE
-    STORE --> MAP
+    API <--> DB
+    DB --> MAP
 
-    style CM fill:#4a9eff,color:#fff
-    style USDC fill:#4a9eff,color:#fff
+    style WC fill:#4a9eff,color:#fff
+    style SEP fill:#4a9eff,color:#fff
     style WID fill:#7c3aed,color:#fff
     style ENS fill:#5eead4,color:#000
     style MAP fill:#1a1a2e,color:#fff
 ```
 
-## 2. Data Flow: Event Submission → Map → Claim → Market
+## 2. Data Flow: Event Submission + Chat + Evidence
 
 ```mermaid
 sequenceDiagram
     participant H as Human (World ID)
     participant A as AI Agent (.eth)
     participant APP as App (Next.js)
-    participant ARC as Arc Testnet
+    participant DB as PostgreSQL
 
-    Note over H,ARC: EVENT SUBMISSION
+    Note over H,DB: HUMAN EVENT SUBMISSION
 
     H->>APP: Submit event (title, location, category)
     APP->>APP: Verify World ID proof
-    APP->>APP: Store event + pin on map
+    APP->>DB: Store event with verified badge
+    APP->>APP: Pin appears on map with ✓
 
-    A->>APP: POST /api/agent/monitor (x402)
+    Note over H,DB: AGENT EVENT SUBMISSION
+
+    A->>APP: POST /api/agent/submit (x402)
     APP->>APP: Web search + LLM summarize
-    APP->>APP: Store agent event + pin on map
+    APP->>DB: Store agent event with ENS identity
+    APP->>APP: Pin appears on map with ENS name
 
-    Note over H,ARC: CLAIM CREATION
+    Note over H,DB: CHAT + EVIDENCE
 
-    H->>APP: Create claim on event
-    APP->>APP: "Ceasefire will hold until June"
-    APP->>ARC: createMarket(claimId, deadline)
-    ARC-->>APP: marketId
-
-    Note over H,ARC: MARKET ACTIVITY
-
-    H->>ARC: stakeYes(marketId) + 1 USDC
-    A->>ARC: stakeNo(marketId) + 0.5 USDC (x402)
-    APP->>APP: Update market odds on map
-
-    Note over H,ARC: EVIDENCE
-
+    H->>APP: Post chat message (global or per-event)
     A->>APP: Submit evidence (supports/contradicts)
-    APP->>APP: Update claim evidence feed
-
-    Note over H,ARC: RESOLUTION
-
-    APP->>ARC: resolveMarket(marketId, outcome)
-    H->>ARC: claimWinnings(marketId)
+    APP->>DB: Store message/evidence
+    APP->>APP: Update chat feed in real-time
 ```
 
-## 3. Smart Contract Interface
-
-```mermaid
-graph TD
-    subgraph "ClaimMarket.sol (Arc Testnet)"
-        CREATE[createMarket<br/>claimId + deadline<br/>→ marketId]
-        YES[stakeYes<br/>marketId + msg.value<br/>USDC payable]
-        NO[stakeNo<br/>marketId + msg.value<br/>USDC payable]
-        RESOLVE[resolveMarket<br/>marketId + outcome<br/>admin only]
-        CLAIM[claimWinnings<br/>marketId<br/>→ payout to winner]
-    end
-
-    subgraph "Market State"
-        STATE[Market struct:<br/>claimId, deadline,<br/>yesPool, noPool,<br/>resolved, outcome]
-        YSTK[yesStakes mapping<br/>marketId → user → amount]
-        NSTK[noStakes mapping<br/>marketId → user → amount]
-    end
-
-    CREATE --> STATE
-    YES --> STATE
-    YES --> YSTK
-    NO --> STATE
-    NO --> NSTK
-    RESOLVE --> STATE
-    CLAIM --> YSTK
-    CLAIM --> NSTK
-
-    subgraph "Events"
-        E1[MarketCreated]
-        E2[Staked]
-        E3[MarketResolved]
-        E4[Claimed]
-    end
-
-    CREATE --> E1
-    YES & NO --> E2
-    RESOLVE --> E3
-    CLAIM --> E4
-
-    style CREATE fill:#10b981,color:#fff
-    style RESOLVE fill:#ef4444,color:#fff
-    style CLAIM fill:#f59e0b,color:#000
-```
-
-## 4. AI Agent Flow
+## 3. AI Agent Flow
 
 ```mermaid
 graph LR
@@ -161,9 +103,8 @@ graph LR
     end
 
     subgraph "Act Phase"
-        POST_EVENT[POST /api/events<br/>New pin on map]
-        POST_EVIDENCE[POST /api/claims/evidence<br/>Update claim feed]
-        STAKE[Stake on claim<br/>x402 → ClaimMarket.sol]
+        POST_EVENT[POST /api/agent/submit<br/>New pin on map]
+        POST_EVIDENCE[POST /api/evidence<br/>Update evidence feed]
     end
 
     CRON & MANUAL --> SEARCH
@@ -172,11 +113,10 @@ graph LR
     LLM --> POST_EVENT
     LLM --> EVIDENCE
     EVIDENCE --> POST_EVIDENCE
-    EVIDENCE --> STAKE
 
     style SEARCH fill:#3b82f6,color:#fff
     style LLM fill:#f59e0b,color:#000
-    style STAKE fill:#4a9eff,color:#fff
+    style POST_EVENT fill:#10b981,color:#fff
 ```
 
 ## 5. World ID Verification Flow
@@ -234,11 +174,7 @@ sequenceDiagram
     EP->>LLM: Summarize into event
     LLM-->>EP: {title, description, severity, location}
 
-    EP-->>AGENT: {event, claimAnalysis}
-
-    Note over AGENT: Agent also stakes on claims
-    AGENT->>WALLET: Sign stake transaction
-    WALLET->>ARC: stakeNo(marketId) + 0.5 USDC
+    EP-->>AGENT: {event created, evidence posted}
 ```
 
 ## 7. Map Pin Visual System
@@ -256,14 +192,6 @@ EVENT PINS (circles):
 
   Size: low=small, medium=default, high=large, critical=pulsing
 
-CLAIM PINS (diamonds):
-  🟢 Market > 60% YES   — Green
-  🔴 Market > 60% NO    — Red
-  🟡 Market 40-60%      — Yellow (contested)
-  ⚪ No market activity  — Gray
-
-  Size: reflects total USDC staked
-
 BADGES:
   ✓  — World ID verified human report
   🤖 — AI agent report (shows ENS name)
@@ -274,11 +202,11 @@ BADGES:
 ```mermaid
 graph TD
     A[0:00 — Show map<br/>30+ events globally<br/>'Verified intelligence map'] 
-    --> B[0:30 — WORLD ID MOMENT<br/>Judge submits event<br/>Pin appears with ✓ badge]
-    --> C[1:00 — AI AGENT MOMENT<br/>conflict-watch.eth searches web<br/>New pin appears from AI]
-    --> D[1:30 — MARKET MOMENT<br/>Click claim, show YES/NO odds<br/>AI agent stakes USDC via x402]
-    --> E[2:15 — ZOOM OUT<br/>Color-coded claims<br/>Green=likely, Red=unlikely]
-    --> F[2:45 — CLOSE<br/>'World ID proves who reports<br/>ENS names who watches<br/>Arc settles who was right']
+    --> B[0:30 — WORLD ID MOMENT<br/>Judge connects wallet + verifies<br/>Submits event, pin appears with ✓]
+    --> C[1:00 — CHAT MOMENT<br/>Click event, per-event chat<br/>Verified humans discuss in real-time]
+    --> D[1:30 — AI AGENT MOMENT<br/>conflict-watch.eth searches web<br/>New pin appears from AI via x402]
+    --> E[2:15 — MCP MOMENT<br/>Claude Code connects via MCP<br/>Agent submits event programmatically]
+    --> F[2:45 — CLOSE<br/>'World ID proves who reports<br/>ENS names who watches<br/>Arc pays for intelligence']
 
     style B fill:#7c3aed,color:#fff
     style C fill:#5eead4,color:#000
@@ -290,68 +218,76 @@ graph TD
 
 ```
 game/groundtruth/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx                    # Main map view
-│   ├── globals.css
-│   └── api/
-│       ├── events/route.ts         # Event CRUD
-│       ├── claims/route.ts         # Claim CRUD
-│       ├── claims/[id]/
-│       │   └── evidence/route.ts   # Evidence submission
-│       ├── agent/
-│       │   └── monitor/route.ts    # x402-protected AI endpoint
-│       └── verify/
-│           └── world-id/route.ts   # World ID verification
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx                 # Root layout (fonts, providers)
+│   │   ├── page.tsx                   # Main map view
+│   │   ├── globals.css
+│   │   └── api/[...route]/route.ts    # Catch-all → Hono server
+│   │
+│   ├── components/
+│   │   ├── map/
+│   │   │   ├── world-map.tsx          # Main map container
+│   │   │   ├── event-markers.tsx      # Event pins + clustering
+│   │   │   ├── event-popup.tsx        # Event detail popup
+│   │   │   ├── event-marker-icon.tsx  # Custom marker icons
+│   │   │   ├── map-sidebar.tsx        # Sidebar (events/chat tabs)
+│   │   │   ├── map-header.tsx         # Header + legend
+│   │   │   ├── map-click-handler.ts   # Click → create event
+│   │   │   ├── category-filter.tsx    # Category toggles
+│   │   │   ├── create-event-modal.tsx # Event creation form
+│   │   │   └── agent-profile.tsx      # TODO: ENS agent card
+│   │   ├── chat/
+│   │   │   ├── chat-panel.tsx         # Chat container
+│   │   │   ├── chat-message.tsx       # Message display
+│   │   │   └── chat-input.tsx         # Message input
+│   │   ├── ui/                        # shadcn components
+│   │   ├── providers.tsx              # React Query + Theme + Nuqs
+│   │   └── theme-provider.tsx         # Dark/light mode
+│   │
+│   ├── hooks/
+│   │   ├── use-events.ts             # Event fetching
+│   │   ├── use-chat.ts               # Chat messages + send
+│   │   ├── use-create-event.ts       # Event creation mutation
+│   │   └── use-event-filters.ts      # Category/severity/search filters
+│   │
+│   ├── lib/
+│   │   ├── orpc.ts                   # oRPC client (browser)
+│   │   ├── orpc.server.ts            # oRPC client (server)
+│   │   ├── orpc-types.ts             # Inferred API types
+│   │   ├── typeid.ts                 # TypeID generation + validation
+│   │   ├── event-categories.ts       # 8 categories with colors/emojis
+│   │   ├── mock-events.ts            # 30 seed events
+│   │   └── utils.ts                  # cn() helper
+│   │
+│   └── server/
+│       ├── hono.ts                   # Hono app + oRPC mount
+│       ├── instance.ts               # Singleton services
+│       ├── env.ts                    # Environment validation
+│       ├── logger.ts                 # Console logger
+│       ├── api/
+│       │   ├── router.ts             # Root router (event + chat)
+│       │   ├── api.ts                # publicProcedure definition
+│       │   ├── context.ts            # API context factory
+│       │   └── routers/
+│       │       ├── event.router.ts   # getAll, create, getById
+│       │       └── chat.router.ts    # getMessages, send
+│       ├── services/
+│       │   ├── event.service.ts      # Event CRUD + filters
+│       │   └── chat.service.ts       # Chat CRUD + pagination
+│       └── db/
+│           ├── db.ts                 # Drizzle + PG pool
+│           ├── seed.ts               # Seed script (30 events + chat)
+│           ├── utils.ts              # TypeID column + base fields
+│           └── schema/
+│               ├── schema.ts         # Barrel export
+│               ├── event/            # world_event table + relations + zod
+│               └── chat/             # chat_message table + relations + zod
 │
-├── components/
-│   ├── map/
-│   │   ├── world-map.tsx           # Main map (existing)
-│   │   ├── event-markers.tsx       # Event pins (existing)
-│   │   ├── claim-markers.tsx       # NEW: claim diamond pins
-│   │   ├── event-popup.tsx         # Event detail (existing)
-│   │   ├── claim-popup.tsx         # NEW: claim + market detail
-│   │   ├── map-sidebar.tsx         # Sidebar (existing, extend)
-│   │   ├── map-header.tsx          # Header (existing, extend)
-│   │   ├── event-marker-icon.tsx   # Marker icons (existing)
-│   │   ├── category-filter.tsx     # Filters (existing)
-│   │   ├── submit-event-modal.tsx  # NEW: World ID gated
-│   │   ├── submit-claim-modal.tsx  # NEW: claim + market
-│   │   └── agent-profile.tsx       # NEW: ENS agent card
-│   └── ui/                         # shadcn components (existing)
-│
-├── lib/
-│   ├── types.ts                    # Extend with Claim, Evidence, Agent
-│   ├── mock-events.ts             # Seed data (existing)
-│   ├── mock-claims.ts             # NEW: seed claims + markets
-│   ├── mock-agents.ts             # NEW: agent profiles
-│   ├── event-categories.ts        # Categories (existing)
-│   ├── utils.ts                   # Utilities (existing)
-│   ├── store.ts                   # NEW: in-memory data store
-│   ├── ai/
-│   │   ├── agent.ts               # Agent monitor logic
-│   │   └── personas.ts            # Agent system prompts
-│   ├── chain/
-│   │   ├── config.ts              # Arc Testnet
-│   │   └── contracts.ts           # ClaimMarket ABI + address
-│   ├── world-id/
-│   │   └── verify.ts              # Verification helper
-│   ├── ens/
-│   │   └── resolve.ts             # Name + text record resolution
-│   └── x402/
-│       └── middleware.ts           # Payment middleware
-│
-├── contracts/
-│   ├── src/ClaimMarket.sol
-│   ├── script/Deploy.s.sol
-│   └── foundry.toml
-│
-└── hooks/
-    ├── use-event-filters.ts       # Existing
-    └── use-claims.ts              # NEW
-
-├── mcp/
-│   └── server.ts                  # NEW: MCP server (core)
+├── drizzle/                          # Migrations
+├── mcp/                              # TODO: MCP server
+│   └── server.ts
+└── package.json
 ```
 
 ## 10. MCP Server Architecture
@@ -365,8 +301,8 @@ graph TB
     end
 
     subgraph "MCP Server (SSE)"
-        READ[Read Tools<br/>query_events, query_claims<br/>get_agent_profile, get_market_odds]
-        WRITE[Write Tools<br/>submit_event, submit_claim<br/>submit_evidence, stake_on_claim]
+        READ[Read Tools<br/>query_events, get_agent_profile<br/>get_event_chat]
+        WRITE[Write Tools<br/>submit_event, submit_evidence<br/>post_message]
     end
 
     subgraph "Auth Layer"
@@ -376,8 +312,8 @@ graph TB
     end
 
     subgraph "Backend"
-        API[API Routes<br/>Next.js]
-        STORE[In-memory Store]
+        API[API Routes<br/>oRPC + Hono]
+        STORE[PostgreSQL<br/>Drizzle ORM]
         SOCKET[Socket.io<br/>Real-time broadcast]
     end
 

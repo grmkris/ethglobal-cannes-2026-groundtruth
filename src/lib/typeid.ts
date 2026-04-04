@@ -4,8 +4,18 @@ import { z } from "zod"
 const typeIdLength = 26
 
 export const idTypesMapNameToPrefix = {
+  // App entities
   worldEvent: "wev",
   chatMessage: "msg",
+  evidence: "evi",
+  agent: "agt",
+  // Auth entities (Better Auth)
+  user: "usr",
+  session: "ses",
+  account: "acc",
+  verification: "ver",
+  walletAddress: "wal",
+  worldIdVerification: "wid",
 } as const
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
@@ -53,9 +63,34 @@ export const typeIdToUuid = <const T extends IdTypePrefixNames>(
   }
 }
 
-// Exported validators and types
+// Exported validators and types — App entities
 export const WorldEventId = typeIdValidator("worldEvent")
 export type WorldEventId = z.infer<typeof WorldEventId>
 
 export const ChatMessageId = typeIdValidator("chatMessage")
 export type ChatMessageId = z.infer<typeof ChatMessageId>
+
+export const EvidenceId = typeIdValidator("evidence")
+export type EvidenceId = z.infer<typeof EvidenceId>
+
+export const AgentId = typeIdValidator("agent")
+export type AgentId = z.infer<typeof AgentId>
+
+// Exported validators and types — Auth entities
+export const UserId = typeIdValidator("user")
+export type UserId = z.infer<typeof UserId>
+
+export const SessionId = typeIdValidator("session")
+export type SessionId = z.infer<typeof SessionId>
+
+export const AccountId = typeIdValidator("account")
+export type AccountId = z.infer<typeof AccountId>
+
+export const VerificationId = typeIdValidator("verification")
+export type VerificationId = z.infer<typeof VerificationId>
+
+export const WalletAddressId = typeIdValidator("walletAddress")
+export type WalletAddressId = z.infer<typeof WalletAddressId>
+
+export const WorldIdVerificationId = typeIdValidator("worldIdVerification")
+export type WorldIdVerificationId = z.infer<typeof WorldIdVerificationId>
