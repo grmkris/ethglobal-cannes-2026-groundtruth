@@ -13,6 +13,7 @@ import {
   ArrowLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  MapPinIcon,
   MessageCircleIcon,
   MoonIcon,
   SearchIcon,
@@ -38,9 +39,11 @@ function getStoredAuthorName(): string {
 
 function EventListItem({
   event,
+  onFlyTo,
   onOpenChat,
 }: {
   event: WorldEvent
+  onFlyTo: (coordinates: [number, number]) => void
   onOpenChat: (eventId: WorldEventId) => void
 }) {
   const config = getCategoryConfig(event.category)
@@ -50,14 +53,20 @@ function EventListItem({
   })
 
   return (
-    <div className="border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-muted/50">
+    <div
+      className="cursor-pointer border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-muted/50"
+      onClick={() => onFlyTo(event.coordinates)}
+    >
       <div className="mb-1 flex items-center gap-1.5">
         <span className={cn("size-1.5 rounded-full", SEVERITY_DOT[event.severity])} />
         <span className="text-[10px] text-muted-foreground">
           {config.emoji} {config.label}
         </span>
         <button
-          onClick={() => onOpenChat(event.id as WorldEventId)}
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenChat(event.id as WorldEventId)
+          }}
           className="ml-auto flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <MessageCircleIcon size={10} />
@@ -70,7 +79,7 @@ function EventListItem({
   )
 }
 
-type SidebarTab = "events" | "chat"
+export type SidebarTab = "events" | "chat"
 
 export function MapSidebar({
   filteredEvents,
@@ -78,21 +87,29 @@ export function MapSidebar({
   activeCategories,
   searchQuery,
   selectedEventId,
+  activeTab,
+  collapsed,
   onToggleCategory,
   onSearchChange,
   onSelectEvent,
+  onTabChange,
+  onCollapsedChange,
+  onFlyTo,
 }: {
   filteredEvents: WorldEvent[]
   eventCount: number
   activeCategories: Set<EventCategory>
   searchQuery: string
   selectedEventId: WorldEventId | null
+  activeTab: SidebarTab
+  collapsed: boolean
   onToggleCategory: (category: EventCategory) => void
   onSearchChange: (query: string) => void
   onSelectEvent: (eventId: WorldEventId | null) => void
+  onTabChange: (tab: SidebarTab) => void
+  onCollapsedChange: (collapsed: boolean) => void
+  onFlyTo: (coordinates: [number, number]) => void
 }) {
-  const [collapsed, setCollapsed] = useState(false)
-  const [activeTab, setActiveTab] = useState<SidebarTab>("events")
   const [authorName, setAuthorName] = useState(getStoredAuthorName)
   const [showNameInput, setShowNameInput] = useState(!getStoredAuthorName())
   const { resolvedTheme, setTheme } = useTheme()
@@ -114,7 +131,8 @@ export function MapSidebar({
 
   function handleOpenChat(eventId: WorldEventId) {
     onSelectEvent(eventId)
-    setActiveTab("chat")
+    onTabChange("chat")
+    onCollapsedChange(false)
   }
 
   function handleSend(content: string) {
@@ -143,15 +161,15 @@ export function MapSidebar({
       {collapsed ? (
         <div className="flex flex-col gap-1.5">
           <button
-            onClick={() => setCollapsed(false)}
+            onClick={() => onCollapsedChange(false)}
             className="flex size-10 items-center justify-center rounded-lg border bg-background/90 shadow-lg backdrop-blur-md hover:bg-muted"
           >
             <ChevronRightIcon size={16} />
           </button>
           <button
             onClick={() => {
-              setCollapsed(false)
-              setActiveTab("chat")
+              onCollapsedChange(false)
+              onTabChange("chat")
             }}
             className="flex size-10 items-center justify-center rounded-lg border bg-background/90 shadow-lg backdrop-blur-md hover:bg-muted"
           >
@@ -186,7 +204,7 @@ export function MapSidebar({
                 {resolvedTheme === "dark" ? <SunIcon size={12} /> : <MoonIcon size={12} />}
               </button>
               <button
-                onClick={() => setCollapsed(true)}
+                onClick={() => onCollapsedChange(true)}
                 className="flex size-6 items-center justify-center rounded-md hover:bg-muted"
               >
                 <ChevronLeftIcon size={14} />
@@ -197,7 +215,7 @@ export function MapSidebar({
           {/* Tabs */}
           <div className="flex border-b">
             <button
-              onClick={() => setActiveTab("events")}
+              onClick={() => onTabChange("events")}
               className={cn(
                 "flex-1 py-1.5 text-xs font-medium transition-colors",
                 activeTab === "events"
@@ -208,7 +226,7 @@ export function MapSidebar({
               Events
             </button>
             <button
-              onClick={() => setActiveTab("chat")}
+              onClick={() => onTabChange("chat")}
               className={cn(
                 "flex-1 py-1.5 text-xs font-medium transition-colors",
                 activeTab === "chat"
@@ -252,6 +270,7 @@ export function MapSidebar({
                       <EventListItem
                         key={event.id}
                         event={event}
+                        onFlyTo={onFlyTo}
                         onOpenChat={handleOpenChat}
                       />
                     ))
@@ -264,7 +283,6 @@ export function MapSidebar({
           {/* Chat Tab */}
           {activeTab === "chat" && (
             <>
-              {/* Chat sub-header */}
               <div className="flex items-center gap-2 border-b px-3 py-1.5">
                 {selectedEventId ? (
                   <>

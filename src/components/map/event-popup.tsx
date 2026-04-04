@@ -26,7 +26,7 @@ export function EventPopupContent({
   })
 
   return (
-    <div className="w-64">
+    <div className="w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-xl">
       <div className="mb-2 flex items-center gap-1.5">
         <span
           className={cn(

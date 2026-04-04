@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
   Map,
   MapFullscreenControl,
@@ -15,18 +15,32 @@ import type { WorldEventId } from "@/lib/typeid"
 import { useEventFilters } from "@/hooks/use-event-filters"
 import { useEvents } from "@/hooks/use-events"
 import type { LatLngExpression } from "leaflet"
+import { useMap } from "react-leaflet"
 import { CreateEventModal } from "./create-event-modal"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
-import { MapSidebar } from "./map-sidebar"
+import { MapSidebar, type SidebarTab } from "./map-sidebar"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
+
+function MapFlyTo({ target }: { target: [number, number] | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) {
+      map.flyTo(target, Math.max(map.getZoom(), 10), { duration: 1 })
+    }
+  }, [target, map])
+  return null
+}
 
 export function WorldMap() {
   const { data: events = [], isLoading } = useEvents()
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<WorldEventId | null>(null)
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("events")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null)
 
   const {
     activeCategories,
@@ -44,6 +58,12 @@ export function WorldMap() {
 
   const handleOpenChat = useCallback((eventId: string) => {
     setSelectedEventId(eventId as WorldEventId)
+    setSidebarTab("chat")
+    setSidebarCollapsed(false)
+  }, [])
+
+  const handleFlyTo = useCallback((coordinates: [number, number]) => {
+    setFlyToTarget([...coordinates])
   }, [])
 
   if (isLoading) {
@@ -66,6 +86,7 @@ export function WorldMap() {
         className="h-full w-full"
       >
         <MapClickHandler onClick={handleMapClick} />
+        <MapFlyTo target={flyToTarget} />
 
         <MapLayers
           defaultLayerGroups={EVENT_CATEGORIES.map((c) => c.label)}
@@ -93,9 +114,14 @@ export function WorldMap() {
           activeCategories={activeCategories}
           searchQuery={searchQuery}
           selectedEventId={selectedEventId}
+          activeTab={sidebarTab}
+          collapsed={sidebarCollapsed}
           onToggleCategory={toggleCategory}
           onSearchChange={setSearchQuery}
           onSelectEvent={setSelectedEventId}
+          onTabChange={setSidebarTab}
+          onCollapsedChange={setSidebarCollapsed}
+          onFlyTo={handleFlyTo}
         />
       </Map>
 
