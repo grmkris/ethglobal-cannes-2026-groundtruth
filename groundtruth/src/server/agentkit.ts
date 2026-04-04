@@ -15,6 +15,8 @@ import {
 } from "@worldcoin/agentkit"
 import type { AgentKitStorage } from "@worldcoin/agentkit"
 import type { EvlogVariables } from "evlog/hono"
+import { put } from "@vercel/blob"
+import { UPLOAD_ALLOWED_TYPES, UPLOAD_MAX_SIZE_BYTES } from "@/lib/upload-config"
 import { WorldEventId } from "@/lib/typeid"
 import {
   createEventInputSchema,
@@ -38,6 +40,7 @@ type AgentEnv = EvlogVariables & {
     userId: UserId
     userName: string
     agentAddress: string
+    agentEnsName: string | null
   }
 }
 
@@ -118,6 +121,7 @@ export function createAgentApp(props: {
     "POST /api/agent/events": { accepts, extensions: agentExt },
     "GET /api/agent/chat": { accepts, extensions: agentExt },
     "POST /api/agent/chat": { accepts, extensions: agentExt },
+    "POST /api/agent/upload": { accepts, extensions: agentExt },
   } satisfies RoutesConfig
 
   const resourceServer = new x402ResourceServer(facilitatorClient)
@@ -160,6 +164,11 @@ export function createAgentApp(props: {
           c.set("userId", result.userId)
           c.set("userName", result.userName)
         }
+        // Look up completed agent profile for ENS name attribution
+        const profile = await authService.getAgentProfileByAddress({
+          address: payload.address,
+        })
+        c.set("agentEnsName", profile?.registrationStep === 4 ? profile.ensName : null)
       }
     } catch (err) {
       const log = c.get("log")
@@ -208,7 +217,8 @@ export function createAgentApp(props: {
 
     const body = createEventInputSchema.parse(await c.req.json())
     const agentAddress = c.get("agentAddress")
-    const event = await eventService.create({ ...body, userId, agentAddress })
+    const agentEnsName = c.get("agentEnsName")
+    const event = await eventService.create({ ...body, userId, agentAddress, agentEnsName })
     return c.json(event, 201)
   })
 
@@ -246,6 +256,40 @@ export function createAgentApp(props: {
       agentAddress,
     })
     return c.json(message, 201)
+  })
+
+  app.post("/upload", async (c) => {
+    const log = c.get("log")
+    log?.set({ route: "agent.upload" })
+
+    const userId = c.get("userId")
+    if (!userId) return c.json({ error: "Agent not linked to a user" }, 403)
+
+    const { url } = (await c.req.json()) as { url: string }
+    if (!url || typeof url !== "string") {
+      return c.json({ error: "url is required" }, 400)
+    }
+
+    const imgRes = await fetch(url)
+    if (!imgRes.ok) {
+      return c.json({ error: `Failed to fetch image: ${imgRes.status}` }, 400)
+    }
+
+    const contentType = imgRes.headers.get("content-type")?.split(";")[0]
+    if (!contentType || !UPLOAD_ALLOWED_TYPES.includes(contentType as typeof UPLOAD_ALLOWED_TYPES[number])) {
+      return c.json({ error: `Unsupported image type: ${contentType}` }, 400)
+    }
+
+    const blob = await imgRes.blob()
+    if (blob.size > UPLOAD_MAX_SIZE_BYTES) {
+      return c.json({ error: `Image too large: ${blob.size} bytes (max ${UPLOAD_MAX_SIZE_BYTES})` }, 400)
+    }
+
+    const ext = contentType.split("/")[1] ?? "jpg"
+    const filename = `agent-${Date.now()}.${ext}`
+    const result = await put(filename, blob, { access: "public" })
+
+    return c.json({ url: result.url }, 201)
   })
 
   return app

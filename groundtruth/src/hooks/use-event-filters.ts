@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
-import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf, parseAsStringLiteral } from "nuqs"
+import { useQueryState, useQueryStates, parseAsString, parseAsArrayOf, parseAsStringLiteral, parseAsBoolean } from "nuqs"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
 import { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES, type EventCategory, type SeverityLevel, type WorldEvent } from "@/lib/orpc-types"
 
@@ -16,6 +16,7 @@ export function useEventFilters(events: WorldEvent[]) {
   const [filterParams, setFilterParams] = useQueryStates({
     categories: parseAsArrayOf(parseAsStringLiteral(EVENT_CATEGORY_VALUES), ","),
     severity: parseAsArrayOf(parseAsStringLiteral(SEVERITY_LEVEL_VALUES), ","),
+    verified: parseAsBoolean,
   })
 
   // null = all selected (clean URL)
@@ -28,6 +29,8 @@ export function useEventFilters(events: WorldEvent[]) {
     if (!filterParams.severity) return new Set<SeverityLevel>(SEVERITY_LEVEL_VALUES)
     return new Set(filterParams.severity)
   }, [filterParams.severity])
+
+  const verifiedOnly = filterParams.verified ?? false
 
   const toggleCategory = useCallback(
     (category: EventCategory) => {
@@ -55,11 +58,16 @@ export function useEventFilters(events: WorldEvent[]) {
     [filterParams.severity, setFilterParams]
   )
 
+  const toggleVerified = useCallback(() => {
+    setFilterParams({ verified: verifiedOnly ? null : true })
+  }, [verifiedOnly, setFilterParams])
+
   const filteredEvents = useMemo(() => {
     const query = searchQuery.toLowerCase()
     return events.filter((event) => {
       if (!activeCategories.has(event.category)) return false
       if (!activeSeverities.has(event.severity)) return false
+      if (verifiedOnly && !event.worldIdVerified) return false
       if (
         query &&
         !event.title.toLowerCase().includes(query) &&
@@ -69,7 +77,7 @@ export function useEventFilters(events: WorldEvent[]) {
       }
       return true
     })
-  }, [events, activeCategories, activeSeverities, searchQuery])
+  }, [events, activeCategories, activeSeverities, verifiedOnly, searchQuery])
 
   const eventsByCategory = useMemo(() => {
     const grouped = new Map<EventCategory, WorldEvent[]>()
@@ -83,17 +91,19 @@ export function useEventFilters(events: WorldEvent[]) {
 
   const clearFilters = useCallback(() => {
     setSearchQuery("")
-    setFilterParams({ categories: null, severity: null })
+    setFilterParams({ categories: null, severity: null, verified: null })
   }, [setSearchQuery, setFilterParams])
 
   return {
     activeCategories,
     activeSeverities,
+    verifiedOnly,
     searchQuery,
     filteredEvents,
     eventsByCategory,
     toggleCategory,
     toggleSeverity,
+    toggleVerified,
     setSearchQuery,
     clearFilters,
   }

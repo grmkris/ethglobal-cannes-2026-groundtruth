@@ -1,6 +1,8 @@
 import {
   boolean,
   index,
+  integer,
+  uniqueIndex,
   pgTable,
   text,
 } from "drizzle-orm/pg-core"
@@ -12,6 +14,7 @@ import {
   type WalletAddressId,
   type WorldIdVerificationId,
   type AgentWalletId,
+  type AgentProfileId,
   typeIdGenerator,
 } from "@/lib/typeid"
 import { baseEntityFields, createTimestampField, typeId } from "../../utils"
@@ -161,3 +164,38 @@ export const worldIdVerification = pgTable("world_id_verification", {
     .$type<UserId>(),
   ...baseEntityFields,
 })
+
+// --- Ground Truth: Agent ENS + ERC-8004 profile ---
+export const agentProfile = pgTable(
+  "agent_profile",
+  {
+    id: typeId("agentProfile", "id")
+      .primaryKey()
+      .$defaultFn(() => typeIdGenerator("agentProfile"))
+      .$type<AgentProfileId>(),
+    userId: typeId("user", "user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" })
+      .$type<UserId>(),
+    agentWalletId: typeId("agentWallet", "agent_wallet_id")
+      .notNull()
+      .references(() => agentWallet.id, { onDelete: "cascade" })
+      .$type<AgentWalletId>(),
+    // ENS identity
+    ensName: text("ens_name").notNull(), // e.g. "monitor.kris0.eth"
+    label: text("label").notNull(), // e.g. "monitor"
+    parentEnsName: text("parent_ens_name").notNull(), // e.g. "kris0.eth"
+    // Agent metadata
+    mandate: text("mandate").notNull(),
+    sources: text("sources").notNull(),
+    // ERC-8004 on-chain identity
+    erc8004AgentId: text("erc8004_agent_id"), // set after TX3 mint
+    // Registration progress (0 = created, 1-4 = tx steps completed)
+    registrationStep: integer("registration_step").default(0).notNull(),
+    ...baseEntityFields,
+  },
+  (table) => [
+    index("agentProfile_userId_idx").on(table.userId),
+    uniqueIndex("agentProfile_ensName_idx").on(table.ensName),
+  ]
+)

@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
-import { user, worldIdVerification, agentWallet } from "../db/schema/schema"
-import type { UserId } from "@/lib/typeid"
+import { user, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
+import type { UserId, AgentProfileId, AgentWalletId } from "@/lib/typeid"
 
 export function createAuthService(props: { db: Database }) {
   const { db } = props
@@ -73,12 +73,104 @@ export function createAuthService(props: { db: Database }) {
     })
   }
 
+  async function createAgentProfile(params: {
+    userId: UserId
+    agentWalletId: AgentWalletId
+    label: string
+    parentEnsName: string
+    mandate: string
+    sources: string
+  }) {
+    const ensName = `${params.label}.${params.parentEnsName}`.toLowerCase()
+
+    const existing = await db.query.agentProfile.findFirst({
+      where: (p, { eq }) => eq(p.ensName, ensName),
+      columns: { id: true },
+    })
+    if (existing) throw new Error(`ENS name "${ensName}" is already registered`)
+
+    log.info({ msg: "Creating agent profile", ensName, service: "auth" })
+
+    const [profile] = await db
+      .insert(agentProfile)
+      .values({
+        userId: params.userId,
+        agentWalletId: params.agentWalletId,
+        ensName,
+        label: params.label,
+        parentEnsName: params.parentEnsName,
+        mandate: params.mandate,
+        sources: params.sources,
+        registrationStep: 0,
+      })
+      .returning()
+
+    return profile!
+  }
+
+  async function updateRegistrationStep(params: {
+    profileId: AgentProfileId
+    step: number
+    erc8004AgentId?: string
+  }) {
+    await db
+      .update(agentProfile)
+      .set({
+        registrationStep: params.step,
+        ...(params.erc8004AgentId ? { erc8004AgentId: params.erc8004AgentId } : {}),
+      })
+      .where(eq(agentProfile.id, params.profileId))
+  }
+
+  async function getAgentProfileById(params: { profileId: AgentProfileId }) {
+    return db.query.agentProfile.findFirst({
+      where: (p, { eq }) => eq(p.id, params.profileId),
+      columns: { id: true, userId: true, registrationStep: true },
+    })
+  }
+
+  async function deleteAgentProfile(params: { profileId: AgentProfileId }) {
+    await db.delete(agentProfile).where(eq(agentProfile.id, params.profileId))
+  }
+
+  async function getAgentProfiles(params: { userId: UserId }) {
+    return db.query.agentProfile.findMany({
+      where: (p, { eq }) => eq(p.userId, params.userId),
+      with: { agentWallet: { columns: { address: true } } },
+    })
+  }
+
+  async function resolveAgentByEnsName(params: { ensName: string }) {
+    return db.query.agentProfile.findFirst({
+      where: (p, { eq }) => eq(p.ensName, params.ensName.toLowerCase()),
+      with: { agentWallet: { columns: { address: true } } },
+    })
+  }
+
+  async function getAgentProfileByAddress(params: { address: string }) {
+    const wallet = await db.query.agentWallet.findFirst({
+      where: (a, { eq }) => eq(a.address, params.address.toLowerCase()),
+      columns: { id: true },
+    })
+    if (!wallet) return null
+    return db.query.agentProfile.findFirst({
+      where: (p, { eq }) => eq(p.agentWalletId, wallet.id),
+    })
+  }
+
   return {
     verifyWorldId,
     isWorldIdVerified,
     linkAgentWallet,
     getUserByAgentAddress,
     getAgentWallets,
+    createAgentProfile,
+    updateRegistrationStep,
+    getAgentProfiles,
+    resolveAgentByEnsName,
+    getAgentProfileById,
+    getAgentProfileByAddress,
+    deleteAgentProfile,
   }
 }
 

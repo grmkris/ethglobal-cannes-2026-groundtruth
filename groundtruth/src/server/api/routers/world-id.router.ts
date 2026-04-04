@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/server"
 import { signRequest } from "@worldcoin/idkit/signing"
 import { worldIdVerifyInputSchema } from "@/server/db/schema/auth/auth.zod"
 import { UserId } from "@/lib/typeid"
@@ -30,7 +31,7 @@ export const worldIdRouter = {
 
       const response = input.responses[0]
       if (!response) {
-        throw new Error("No proof response")
+        throw new ORPCError("BAD_REQUEST", { message: "No proof response" })
       }
 
       const res = await fetch(
@@ -45,7 +46,7 @@ export const worldIdRouter = {
       if (!res.ok) {
         const errorBody = await res.text()
         context.log.set({ worldApiError: errorBody })
-        throw new Error("World ID verification failed")
+        throw new ORPCError("BAD_REQUEST", { message: "World ID verification failed" })
       }
 
       await context.authService.verifyWorldId({

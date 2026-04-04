@@ -21,7 +21,7 @@ if (projectId) {
     metadata: {
       name: "Ground Truth",
       description: "Verified intelligence map",
-      url: "https://groundtruth.app",
+      url: "https://ethglobal-cannes-2026-groundtruth.vercel.app",
       icons: [],
     },
     features: {

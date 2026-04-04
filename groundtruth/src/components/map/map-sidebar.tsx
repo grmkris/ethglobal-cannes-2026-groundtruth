@@ -121,7 +121,13 @@ function EventListItem({
         <span>{event.location}</span>
         <span className="text-muted-foreground/40">·</span>
         <span className="truncate">{event.creatorName}</span>
-        {event.agentAddress && <BotIcon size={10} className="shrink-0 text-violet-500" />}
+        {event.agentAddress && (
+          <>
+            <span className="text-muted-foreground/40">·</span>
+            <BotIcon size={10} className="shrink-0 text-violet-500" />
+            <span className="truncate text-violet-500">{event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}</span>
+          </>
+        )}
       </div>
     </div>
   )
@@ -141,6 +147,8 @@ export function MapSidebar({
   collapsed,
   onToggleCategory,
   onToggleSeverity,
+  onToggleVerified,
+  verifiedOnly,
   onSearchChange,
   onClearFilters,
   onSelectEvent,
@@ -152,6 +160,7 @@ export function MapSidebar({
   eventCount: number
   activeCategories: Set<EventCategory>
   activeSeverities: Set<SeverityLevel>
+  verifiedOnly: boolean
   searchQuery: string
   selectedEventId: WorldEventId | null
   selectedEvent: WorldEvent | null
@@ -159,6 +168,7 @@ export function MapSidebar({
   collapsed: boolean
   onToggleCategory: (category: EventCategory) => void
   onToggleSeverity: (severity: SeverityLevel) => void
+  onToggleVerified: () => void
   onSearchChange: (query: string) => void
   onClearFilters: () => void
   onSelectEvent: (eventId: WorldEventId | null) => void
@@ -308,6 +318,19 @@ export function MapSidebar({
                       </button>
                     )
                   })}
+                  <button
+                    onClick={onToggleVerified}
+                    aria-pressed={verifiedOnly}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-all",
+                      verifiedOnly
+                        ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+                        : "border-border text-muted-foreground opacity-40"
+                    )}
+                  >
+                    <BadgeCheckIcon size={10} />
+                    Verified
+                  </button>
                 </div>
               </div>
               <ScrollArea className="flex-1 overflow-hidden">

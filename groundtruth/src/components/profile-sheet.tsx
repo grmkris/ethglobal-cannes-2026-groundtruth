@@ -22,17 +22,39 @@ import { WorldIdVerifyButton } from "@/components/world-id-verify-button"
 import { useSession, signOut } from "@/lib/auth-client"
 import { useAccount } from "wagmi"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs"
+import {
   BadgeCheckIcon,
   BotIcon,
+  CheckCircle2Icon,
+  CheckIcon,
+  CircleDotIcon,
   CopyIcon,
-  ExternalLinkIcon,
   LinkIcon,
+  Loader2Icon,
   LogOutIcon,
   MoonIcon,
   SunIcon,
+  Trash2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { client } from "@/lib/orpc"
 import { useAgentWallets } from "@/hooks/use-agent-wallets"
+import { useAgentProfiles } from "@/hooks/use-agent-profiles"
+import { useAgentRegistration, type RegistrationStep } from "@/hooks/use-agent-registration"
+import type { AgentProfileId } from "@/lib/typeid";
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -177,9 +199,21 @@ export function ProfileSheet({
 
 function AgentsSection() {
   const { agents, link } = useAgentWallets()
+  const profiles = useAgentProfiles()
+  const queryClient = useQueryClient()
   const [address, setAddress] = useState("")
+  const [registerWalletId, setRegisterWalletId] = useState<string | null>(null)
+
+  const deleteProfile = useMutation({
+    mutationFn: (profileId: AgentProfileId) => client.agent.delete({ profileId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent", "profiles"] })
+      toast.success("Profile deleted")
+    },
+  })
 
   const agentList = agents.data ?? []
+  const profileList = profiles.data ?? []
 
   function handleLink() {
     const trimmed = address.trim()
@@ -196,55 +230,421 @@ function AgentsSection() {
         Agents
       </h3>
 
-      {/* Linked agents */}
-      {agentList.length > 0 && (
-        <div className="mb-2 space-y-1">
-          {agentList.map((a) => (
-            <div
-              key={a.id}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2"
+      <Tabs defaultValue="agents">
+        <TabsList variant="line" className="mb-3 w-full">
+          <TabsTrigger value="agents" className="text-xs">My Agents</TabsTrigger>
+          <TabsTrigger value="setup" className="text-xs">Setup Guide</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agents">
+          {/* Unified agent list */}
+          {agentList.length > 0 && (
+            <div className="mb-2 space-y-1">
+              {agentList.map((wallet) => {
+                const profile = profileList.find((p) => p.agentWalletId === wallet.id)
+                return (
+                  <div
+                    key={wallet.id}
+                    className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                  >
+                    <BotIcon size={12} className={`shrink-0 ${profile ? "text-violet-500" : "text-muted-foreground"}`} />
+                    <div className="min-w-0 flex-1">
+                      {profile ? (
+                        <>
+                          <span className="block truncate text-xs font-medium">
+                            {profile.ensName}
+                          </span>
+                          <span className="block truncate text-[10px] text-muted-foreground">
+                            {profile.mandate}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="truncate font-mono text-xs">
+                          {wallet.address}
+                        </span>
+                      )}
+                    </div>
+                    {profile ? (
+                      profile.registrationStep >= 4 ? (
+                        <CheckCircle2Icon size={12} className="shrink-0 text-emerald-500" />
+                      ) : (
+                        <button
+                          onClick={() => deleteProfile.mutate(profile.id)}
+                          disabled={deleteProfile.isPending}
+                          className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-red-500 transition-colors"
+                          title="Delete incomplete registration"
+                        >
+                          <Trash2Icon size={12} />
+                        </button>
+                      )
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 shrink-0 text-[10px]"
+                        onClick={() => setRegisterWalletId(wallet.id)}
+                      >
+                        Register
+                      </Button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Link form */}
+          <div className="flex gap-1.5">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLink()}
+              placeholder="0x agent wallet address"
+              className="h-8 flex-1 rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0"
+              onClick={handleLink}
+              disabled={link.isPending || !address.trim()}
             >
-              <BotIcon size={12} className="shrink-0 text-emerald-500" />
-              <span className="flex-1 truncate font-mono text-xs">
-                {a.address}
+              <LinkIcon size={12} />
+              Link
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="setup">
+          <div className="space-y-4 text-xs">
+            <GuideStep n={1} title="Run installer">
+              <p className="mb-2 text-muted-foreground">
+                Installs MCP server config + skill automatically:
+              </p>
+              <CopyBlock code="npx groundtruth-mcp setup" />
+            </GuideStep>
+
+            <GuideStep n={2} title="Register with AgentBook">
+              <p className="mb-2 text-muted-foreground">
+                Ties your agent wallet to World ID. Replace ADDRESS with
+                the wallet address from step 1:
+              </p>
+              <CopyBlock code="npx @worldcoin/agentkit-cli register <ADDRESS>" />
+            </GuideStep>
+
+            <GuideStep n={3} title="Link wallet">
+              <p className="text-muted-foreground">
+                Switch to the{" "}
+                <span className="font-medium text-foreground">My Agents</span>{" "}
+                tab and paste the address from step 1.
+              </p>
+            </GuideStep>
+
+            <GuideStep n={4} title="Verify">
+              <p className="text-muted-foreground">
+                Ask your agent:{" "}
+                <span className="font-medium text-foreground">
+                  &quot;Query all events on Ground Truth&quot;
+                </span>
+              </p>
+            </GuideStep>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <RegisterAgentDialog
+        open={registerWalletId !== null}
+        onOpenChange={(open) => { if (!open) setRegisterWalletId(null) }}
+        agentWallets={agentList}
+        preselectedWalletId={registerWalletId}
+      />
+    </div>
+  )
+}
+
+const STEP_LABELS = [
+  "Ready",
+  "Subname",
+  "Records",
+  "ERC-8004",
+  "ENSIP-25",
+] as const
+
+function StepIndicator({ currentStep, isPending }: { currentStep: RegistrationStep; isPending: boolean }) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4].map((step) => {
+        const done = currentStep >= step
+        const active = currentStep === step - 1 && isPending
+        return (
+          <div key={step} className="flex items-center gap-1">
+            {step > 1 && (
+              <div className={`h-px w-4 ${done ? "bg-emerald-500" : "bg-border"}`} />
+            )}
+            <div className="flex flex-col items-center">
+              {done ? (
+                <CheckCircle2Icon size={16} className="text-emerald-500" />
+              ) : active ? (
+                <Loader2Icon size={16} className="animate-spin text-violet-500" />
+              ) : (
+                <CircleDotIcon size={16} className="text-muted-foreground/40" />
+              )}
+              <span className="mt-0.5 text-[9px] text-muted-foreground">
+                {STEP_LABELS[step]}
               </span>
             </div>
-          ))}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function RegisterAgentDialog({
+  open,
+  onOpenChange,
+  agentWallets,
+  preselectedWalletId,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  agentWallets: Array<{ id: string; address: string; createdAt: Date }>
+  preselectedWalletId?: string | null
+}) {
+  const { data: sessionData } = useSession()
+  const registration = useAgentRegistration()
+
+  const [selectedWalletId, setSelectedWalletId] = useState(preselectedWalletId ?? "")
+  const [label, setLabel] = useState("")
+  const [mandate, setMandate] = useState("")
+  const [sources, setSources] = useState("")
+
+  useEffect(() => {
+    if (preselectedWalletId) setSelectedWalletId(preselectedWalletId)
+  }, [preselectedWalletId])
+
+  const user = sessionData?.user
+  const userEnsName = user?.name?.endsWith(".eth") ? user.name : null
+  const selectedWallet = agentWallets.find((w) => w.id === selectedWalletId)
+  const previewName = label && userEnsName ? `${label}.${userEnsName}` : ""
+
+  const canSubmit =
+    selectedWalletId &&
+    label &&
+    mandate &&
+    userEnsName &&
+    !registration.isPending
+
+  function handleRegister() {
+    if (!canSubmit || !selectedWallet || !userEnsName) return
+    registration.register({
+      agentWalletId: selectedWalletId as any,
+      agentWalletAddress: selectedWallet.address,
+      label,
+      parentEnsName: userEnsName,
+      mandate,
+      sources,
+    })
+  }
+
+  function handleClose(open: boolean) {
+    if (!open && !registration.isPending) {
+      registration.reset()
+      setSelectedWalletId("")
+      setLabel("")
+      setMandate("")
+      setSources("")
+    }
+    onOpenChange(open)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Register Agent ENS Identity</DialogTitle>
+          <DialogDescription className="text-xs">
+            Create an ENS subname and mint an ERC-8004 identity NFT.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {(registration.isPending || registration.isComplete) && (
+            <div className="flex justify-center py-2">
+              <StepIndicator
+                currentStep={registration.currentStep}
+                isPending={registration.isPending}
+              />
+            </div>
+          )}
+
+          {registration.isComplete ? (
+            <div className="space-y-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <p className="text-center text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                Agent identity registered!
+              </p>
+              <p className="text-center font-mono text-xs">{previewName}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => handleClose(false)}
+              >
+                Done
+              </Button>
+            </div>
+          ) : (
+            <>
+              {!userEnsName && (
+                <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+                  Your wallet needs an ENS name to register agent subnames.
+                </p>
+              )}
+
+              <div>
+                <label className="mb-1 block text-[11px] text-muted-foreground">
+                  Agent Wallet
+                </label>
+                {preselectedWalletId ? (
+                  <div className="flex h-8 items-center gap-2 rounded-md border px-2">
+                    <BotIcon size={12} className="shrink-0 text-emerald-500" />
+                    <span className="font-mono text-xs">
+                      {selectedWallet ? truncateAddress(selectedWallet.address) : ""}
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedWalletId}
+                    onChange={(e) => setSelectedWalletId(e.target.value)}
+                    disabled={registration.isPending}
+                    className="h-8 w-full rounded-md border bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="">Select wallet...</option>
+                    {agentWallets.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {truncateAddress(w.address)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] text-muted-foreground">
+                  Subname
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={label}
+                    onChange={(e) =>
+                      setLabel(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                    }
+                    disabled={registration.isPending}
+                    placeholder="monitor"
+                    className="h-8 w-24 rounded-md border bg-transparent px-2 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    .{userEnsName || "your-name.eth"}
+                  </span>
+                </div>
+                {previewName && (
+                  <p className="mt-1 font-mono text-[10px] text-violet-500">
+                    {previewName}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] text-muted-foreground">
+                  Mandate
+                </label>
+                <textarea
+                  value={mandate}
+                  onChange={(e) => setMandate(e.target.value)}
+                  disabled={registration.isPending}
+                  placeholder="Monitors global conflicts using open-source intelligence"
+                  rows={2}
+                  className="w-full resize-none rounded-md border bg-transparent px-2.5 py-1.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] text-muted-foreground">
+                  Sources
+                </label>
+                <input
+                  type="text"
+                  value={sources}
+                  onChange={(e) => setSources(e.target.value)}
+                  disabled={registration.isPending}
+                  placeholder="Reuters, AP, GDELT"
+                  className="h-8 w-full rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              {registration.error && (
+                <p className="text-xs text-red-500">{registration.error}</p>
+              )}
+
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={handleRegister}
+                disabled={!canSubmit}
+              >
+                {registration.isPending ? (
+                  <>
+                    <Loader2Icon size={12} className="animate-spin" />
+                    Signing transaction {registration.currentStep + 1}/4...
+                  </>
+                ) : (
+                  "Register (4 transactions)"
+                )}
+              </Button>
+            </>
+          )}
         </div>
-      )}
+      </DialogContent>
+    </Dialog>
+  )
+}
 
-      {/* Link form */}
-      <div className="flex gap-1.5">
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLink()}
-          placeholder="0x agent wallet address"
-          className="h-8 flex-1 rounded-md border bg-transparent px-2.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 shrink-0"
-          onClick={handleLink}
-          disabled={link.isPending || !address.trim()}
-        >
-          <LinkIcon size={12} />
-          Link
-        </Button>
+function GuideStep({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
+          {n}
+        </span>
+        <span className="font-medium">{title}</span>
       </div>
+      <div className="pl-7">{children}</div>
+    </div>
+  )
+}
 
-      {/* Setup guide link */}
-      <a
-        href="/agents"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 flex w-full items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground"
+function CopyBlock({ code, className }: { code: string; className?: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className={`group relative ${className ?? ""}`}>
+      <pre className="overflow-x-auto rounded-md border bg-muted/50 p-2.5 text-[10px] leading-relaxed">
+        <code>{code}</code>
+      </pre>
+      <button
+        onClick={handleCopy}
+        className="absolute right-1.5 top-1.5 rounded border bg-background p-1 opacity-0 transition-opacity group-hover:opacity-100"
       >
-        <ExternalLinkIcon size={10} />
-        How to set up an agent
-      </a>
+        {copied ? <CheckIcon size={10} /> : <CopyIcon size={10} />}
+      </button>
     </div>
   )
 }

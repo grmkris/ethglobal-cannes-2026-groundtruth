@@ -66,7 +66,7 @@ export function EventPopupContent({
           {event.agentAddress && (
             <Badge variant="outline" className="gap-0.5 text-[9px] px-1 py-0 text-violet-500 border-violet-500/20 bg-violet-500/10">
               <BotIcon size={8} />
-              Agent
+              {event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}
             </Badge>
           )}
         </div>
@@ -76,7 +76,19 @@ export function EventPopupContent({
         </div>
         {event.source && (
           <div className="text-[10px] text-muted-foreground/60">
-            via {event.source}
+            via{" "}
+            {(() => {
+              try {
+                const domain = new URL(event.source).hostname.replace(/^www\./, "")
+                return (
+                  <a href={event.source} target="_blank" rel="noopener noreferrer" className="underline decoration-muted-foreground/30 hover:decoration-muted-foreground/60 hover:text-muted-foreground">
+                    {domain}
+                  </a>
+                )
+              } catch {
+                return <span>{event.source}</span>
+              }
+            })()}
           </div>
         )}
         {onOpenChat && (

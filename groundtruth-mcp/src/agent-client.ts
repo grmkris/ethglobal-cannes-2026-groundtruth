@@ -162,6 +162,10 @@ export function createAgentClient(props: {
     sendChat(input: { eventId?: string; content: string }) {
       return request<unknown>("POST", "/chat", input)
     },
+
+    uploadImage(url: string) {
+      return request<{ url: string }>("POST", "/upload", { url })
+    },
   }
 }
 

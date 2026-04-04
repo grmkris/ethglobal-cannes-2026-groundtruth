@@ -91,3 +91,6 @@ export type WorldIdVerificationId = z.infer<typeof WorldIdVerificationId>
 
 export const AgentWalletId = typeIdValidator("agentWallet")
 export type AgentWalletId = z.infer<typeof AgentWalletId>
+
+export const AgentProfileId = typeIdValidator("agentProfile")
+export type AgentProfileId = z.infer<typeof AgentProfileId>

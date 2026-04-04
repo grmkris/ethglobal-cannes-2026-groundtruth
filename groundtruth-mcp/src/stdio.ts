@@ -1,6 +1,6 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
-import { createAgentClient } from "./agent-client"
-import { createMcpServer } from "./server"
+import { createAgentClient } from "./agent-client.js"
+import { createMcpServer } from "./server.js"
 
 // --- Env validation ---
 const AGENT_PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY

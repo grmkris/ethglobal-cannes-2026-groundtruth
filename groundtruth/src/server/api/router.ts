@@ -1,5 +1,6 @@
 import type { RouterClient } from "@orpc/server"
 import { publicProcedure } from "./api"
+import { agentRouter } from "./routers/agent.router"
 import { chatRouter } from "./routers/chat.router"
 import { eventRouter } from "./routers/event.router"
 import { worldIdRouter } from "./routers/world-id.router"
@@ -9,6 +10,7 @@ export const appRouter = {
   event: eventRouter,
   chat: chatRouter,
   worldId: worldIdRouter,
+  agent: agentRouter,
 }
 
 export type AppRouter = typeof appRouter

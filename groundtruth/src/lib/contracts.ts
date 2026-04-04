@@ -3,15 +3,32 @@ import { type Hex } from "viem"
 // --- Contract Addresses ---
 
 // ENS (Ethereum Mainnet)
+export const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e" as const
 export const ENS_NAME_WRAPPER = "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401" as const
 export const ENS_PUBLIC_RESOLVER = "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63" as const
 
-// ERC-8004 (Base Sepolia)
-export const ERC8004_IDENTITY_REGISTRY = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as const
-export const ERC8004_REPUTATION_REGISTRY = "0x8004B663056A597Dffe9eCcC1965A193B7388713" as const
-export const ERC8004_CHAIN_ID = 84532 // Base Sepolia
+// ERC-8004 (Ethereum Mainnet)
+export const ERC8004_IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const
+export const ERC8004_REPUTATION_REGISTRY = "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63" as const
+export const ERC8004_CHAIN_ID = 1 // Ethereum Mainnet
 
 // --- Minimal ABIs ---
+
+export const ensRegistryAbi = [
+  {
+    name: "setSubnodeRecord",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "node", type: "bytes32" },
+      { name: "label", type: "bytes32" },
+      { name: "owner", type: "address" },
+      { name: "resolver", type: "address" },
+      { name: "ttl", type: "uint64" },
+    ],
+    outputs: [],
+  },
+] as const
 
 export const nameWrapperAbi = [
   {
@@ -144,7 +161,7 @@ export function buildEnsip25Key(
 }
 
 /**
- * Build the default ENSIP-25 key for our ERC-8004 Identity Registry on Base Sepolia
+ * Build the default ENSIP-25 key for our ERC-8004 Identity Registry on Ethereum Mainnet
  */
 export function buildDefaultEnsip25Key(agentId: string | number): string {
   return buildEnsip25Key(ERC8004_CHAIN_ID, ERC8004_IDENTITY_REGISTRY, agentId)

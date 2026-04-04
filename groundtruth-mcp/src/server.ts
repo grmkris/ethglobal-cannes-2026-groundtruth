@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { z } from "zod"
-import type { AgentClient } from "./agent-client"
+import type { AgentClient } from "./agent-client.js"
 
 const CATEGORIES = [
   "conflict",
@@ -114,12 +114,29 @@ export function createMcpServer(props: { client: AgentClient }) {
       longitude: z.number().describe("Longitude coordinate"),
       location: z.string().describe("Human-readable location name"),
       source: z.string().optional().describe("Source URL or 'eyewitness'"),
+      imageUrls: z.array(z.string()).optional().describe("Image URLs to attach (max 5). Use upload_image first to get hosted URLs."),
     },
     async (input) => {
       const event = await client.createEvent(input)
       return {
         content: [
           { type: "text" as const, text: JSON.stringify(event, null, 2) },
+        ],
+      }
+    }
+  )
+
+  server.tool(
+    "upload_image",
+    "Upload an image from a URL to Ground Truth storage. Returns a hosted URL to use with submit_event's imageUrls parameter.",
+    {
+      url: z.string().describe("Image URL to download and re-host"),
+    },
+    async ({ url }) => {
+      const result = await client.uploadImage(url)
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify(result, null, 2) },
         ],
       }
     }

@@ -6,6 +6,7 @@ import {
   walletAddress,
   worldIdVerification,
   agentWallet,
+  agentProfile,
 } from "./auth.db"
 import { worldEvent } from "../event/event.db"
 import { chatMessage } from "../chat/chat.db"
@@ -19,6 +20,9 @@ export const userRelations = relations(user, ({ many }) => ({
   }),
   agentWallets: many(agentWallet, {
     relationName: "userAgentWallets",
+  }),
+  agentProfiles: many(agentProfile, {
+    relationName: "userAgentProfiles",
   }),
   events: many(worldEvent, { relationName: "userEvents" }),
   chatMessages: many(chatMessage, { relationName: "userMessages" }),
@@ -59,10 +63,26 @@ export const worldIdVerificationRelations = relations(
   })
 )
 
-export const agentWalletRelations = relations(agentWallet, ({ one }) => ({
+export const agentWalletRelations = relations(agentWallet, ({ one, many }) => ({
   user: one(user, {
     fields: [agentWallet.userId],
     references: [user.id],
     relationName: "userAgentWallets",
+  }),
+  agentProfiles: many(agentProfile, {
+    relationName: "walletAgentProfiles",
+  }),
+}))
+
+export const agentProfileRelations = relations(agentProfile, ({ one }) => ({
+  user: one(user, {
+    fields: [agentProfile.userId],
+    references: [user.id],
+    relationName: "userAgentProfiles",
+  }),
+  agentWallet: one(agentWallet, {
+    fields: [agentProfile.agentWalletId],
+    references: [agentWallet.id],
+    relationName: "walletAgentProfiles",
   }),
 }))

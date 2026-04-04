@@ -68,11 +68,13 @@ export function WorldMap() {
   const {
     activeCategories,
     activeSeverities,
+    verifiedOnly,
     searchQuery,
     filteredEvents,
     eventsByCategory,
     toggleCategory,
     toggleSeverity,
+    toggleVerified,
     setSearchQuery,
     clearFilters,
   } = useEventFilters(events)
@@ -233,6 +235,7 @@ export function WorldMap() {
           eventCount={filteredEvents.length}
           activeCategories={activeCategories}
           activeSeverities={activeSeverities}
+          verifiedOnly={verifiedOnly}
           searchQuery={searchQuery}
           selectedEventId={selectedEventId}
           selectedEvent={selectedEvent}
@@ -240,6 +243,7 @@ export function WorldMap() {
           collapsed={sidebarCollapsed}
           onToggleCategory={toggleCategory}
           onToggleSeverity={toggleSeverity}
+          onToggleVerified={toggleVerified}
           onSearchChange={setSearchQuery}
           onClearFilters={clearFilters}
           onSelectEvent={handleSelectEvent}

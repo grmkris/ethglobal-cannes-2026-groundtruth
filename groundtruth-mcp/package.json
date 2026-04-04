@@ -1,21 +1,31 @@
 {
   "name": "groundtruth-mcp",
-  "version": "0.0.1",
+  "version": "0.0.3",
+  "description": "MCP server for Ground Truth — verified intelligence map",
   "type": "module",
-  "private": true,
+  "bin": {
+    "groundtruth-mcp": "dist/cli.js"
+  },
+  "files": ["dist", "SKILL.md"],
   "scripts": {
     "start": "bun run src/stdio.ts",
-    "build": "bun build --compile --minify --bytecode src/stdio.ts --outfile dist/groundtruth-mcp",
-    "build:darwin-arm64": "bun build --compile --minify --bytecode --target=bun-darwin-arm64 src/stdio.ts --outfile dist/groundtruth-mcp-darwin-arm64",
-    "build:darwin-x64": "bun build --compile --minify --bytecode --target=bun-darwin-x64 src/stdio.ts --outfile dist/groundtruth-mcp-darwin-x64",
-    "build:linux-x64": "bun build --compile --minify --bytecode --target=bun-linux-x64 src/stdio.ts --outfile dist/groundtruth-mcp-linux-x64",
-    "build:linux-arm64": "bun build --compile --minify --bytecode --target=bun-linux-arm64 src/stdio.ts --outfile dist/groundtruth-mcp-linux-arm64",
-    "build:windows-x64": "bun build --compile --minify --bytecode --target=bun-windows-x64 src/stdio.ts --outfile dist/groundtruth-mcp-windows-x64",
-    "build:all": "bun run build:darwin-arm64 && bun run build:darwin-x64 && bun run build:linux-x64 && bun run build:linux-arm64 && bun run build:windows-x64"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@clack/prompts": "^1.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "viem": "^2.47.10",
     "zod": "^4.3.6"
-  }
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grmkris/ethglobal-cannes-2026-groundtruth"
+  },
+  "keywords": ["mcp", "groundtruth", "intelligence", "worldcoin", "agentkit"],
+  "license": "MIT"
 }

@@ -27,6 +27,7 @@ function toWorldEvent(
     worldIdVerified: row.worldIdVerified,
     creatorName: row.creatorName,
     agentAddress: row.agentAddress ?? null,
+    agentEnsName: row.agentEnsName ?? null,
   }
 }
 
@@ -96,6 +97,7 @@ export function createEventService(props: { db: Database }) {
     imageUrls?: string[]
     userId: UserId
     agentAddress?: string | null
+    agentEnsName?: string | null
   }) {
     const [row] = await db
       .insert(worldEvent)
@@ -106,6 +108,7 @@ export function createEventService(props: { db: Database }) {
         imageUrls: params.imageUrls ?? [],
         userId: params.userId,
         agentAddress: params.agentAddress ?? null,
+        agentEnsName: params.agentEnsName ?? null,
       })
       .returning()
 
