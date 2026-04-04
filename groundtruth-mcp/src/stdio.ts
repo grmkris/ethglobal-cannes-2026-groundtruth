@@ -24,7 +24,7 @@ async function main() {
     apiUrl: GROUNDTRUTH_API_URL,
   })
 
-  // Fetch ERC-8004 identity (non-blocking — agent works without it)
+  // Fetch ERC-8004 identity (agent works without it, returns null on failure)
   const raw = await client.fetchIdentity()
   const identity =
     raw?.registrationStep === 4 && raw.agentId && raw.ensName

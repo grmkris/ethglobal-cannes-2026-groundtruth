@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
 import { user, walletAddress, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
@@ -54,7 +54,7 @@ export function createAuthService(props: { db: Database }) {
   }): Promise<{ userId: UserId; userName: string } | null> {
     const addr = params.address.toLowerCase()
     const wa = await db.query.walletAddress.findFirst({
-      where: (w, { eq }) => eq(w.address, addr),
+      where: (w) => eq(sql`lower(${w.address})`, addr),
       columns: { userId: true },
     })
     if (!wa) return null

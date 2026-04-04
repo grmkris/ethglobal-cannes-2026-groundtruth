@@ -154,6 +154,9 @@ export async function runSetup() {
       ``,
       `2. Link wallet on Ground Truth:`,
       `   Open app -> Profile -> Agents -> paste ${address}`,
+      ``,
+      `3. Register ENS Identity (for on-chain verification):`,
+      `   Profile -> Agents -> Register ENS Identity`,
     ].join("\n"),
     "Next steps"
   )

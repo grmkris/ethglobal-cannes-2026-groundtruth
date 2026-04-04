@@ -16,8 +16,8 @@ export function useWorldIdVerify() {
   const verify = useMutation({
     mutationFn: (params: { result: IDKitResult }) =>
       client.worldId.verify(params.result as Parameters<typeof client.worldId.verify>[0]),
-    onSuccess: async () => {
-      await authClient.getSession()
+    onSuccess: () => {
+      authClient.$store.notify("$sessionSignal")
       toast.success("World ID verified!")
     },
     onError: (error) => {

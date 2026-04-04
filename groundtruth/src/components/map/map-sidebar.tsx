@@ -126,6 +126,7 @@ function EventListItem({
             <span className="text-muted-foreground/40">·</span>
             <BotIcon size={10} className="shrink-0 text-violet-500" />
             <span className="truncate text-violet-500">{event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}</span>
+            {event.onChainVerified && <BadgeCheckIcon size={10} className="shrink-0 text-emerald-500" />}
           </>
         )}
       </div>
