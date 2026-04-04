@@ -1,6 +1,8 @@
 import { privateKeyToAccount } from "viem/accounts"
 import { getAddress } from "viem"
 
+const ERC8004_IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const
+
 /**
  * HTTP client for the /api/agent/* endpoints.
  * Handles the x402 + AgentKit challenge-response flow automatically:
@@ -177,6 +179,34 @@ export function createAgentClient(props: {
       } catch {
         return null
       }
+    },
+
+    async submitWalletLinkSignature(agentId: string) {
+      const deadline = String(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60) // 7 days
+
+      const signature = await account.signTypedData({
+        domain: {
+          name: "AgentIdentity",
+          version: "2.0.0",
+          chainId: 1,
+          verifyingContract: ERC8004_IDENTITY_REGISTRY,
+        },
+        types: {
+          SetAgentWallet: [
+            { name: "agentId", type: "uint256" },
+            { name: "wallet", type: "address" },
+            { name: "deadline", type: "uint256" },
+          ],
+        },
+        primaryType: "SetAgentWallet",
+        message: {
+          agentId: BigInt(agentId),
+          wallet: address,
+          deadline: BigInt(deadline),
+        },
+      })
+
+      await request("POST", "/wallet-signature", { signature, deadline })
     },
   }
 }

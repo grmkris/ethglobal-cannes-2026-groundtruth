@@ -175,6 +175,39 @@ export function createAuthService(props: { db: Database }) {
     })
   }
 
+  async function storeWalletLinkSignature(params: {
+    profileId: AgentProfileId
+    signature: string
+    deadline: string
+  }) {
+    await db
+      .update(agentProfile)
+      .set({
+        walletLinkSignature: params.signature,
+        walletLinkDeadline: params.deadline,
+      })
+      .where(eq(agentProfile.id, params.profileId))
+  }
+
+  async function getWalletLinkSignature(params: { profileId: AgentProfileId }) {
+    const profile = await db.query.agentProfile.findFirst({
+      where: (p, { eq }) => eq(p.id, params.profileId),
+      columns: {
+        walletLinkSignature: true,
+        walletLinkDeadline: true,
+        erc8004AgentId: true,
+      },
+      with: { agentWallet: { columns: { address: true } } },
+    })
+    if (!profile?.walletLinkSignature) return null
+    return {
+      signature: profile.walletLinkSignature,
+      deadline: profile.walletLinkDeadline!,
+      agentWalletAddress: profile.agentWallet?.address ?? "",
+      erc8004AgentId: profile.erc8004AgentId ?? "",
+    }
+  }
+
   return {
     verifyWorldId,
     isWorldIdVerified,
@@ -189,6 +222,8 @@ export function createAuthService(props: { db: Database }) {
     getUserByAddress,
     getAgentProfileByAddress,
     deleteAgentProfile,
+    storeWalletLinkSignature,
+    getWalletLinkSignature,
   }
 }
 

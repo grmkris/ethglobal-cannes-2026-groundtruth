@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { WorldIdVerifyButton } from "@/components/world-id-verify-button"
 import { useSession, signOut } from "@/lib/auth-client"
-import { useAccount } from "wagmi"
+import { useAccount, useWriteContract, useConfig } from "wagmi"
+import { getPublicClient } from "wagmi/actions"
+import { mainnet } from "wagmi/chains"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +49,7 @@ import {
   MoonIcon,
   SunIcon,
   Trash2Icon,
+  WalletIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -54,7 +57,9 @@ import { client } from "@/lib/orpc"
 import { useAgentWallets } from "@/hooks/use-agent-wallets"
 import { useAgentProfiles } from "@/hooks/use-agent-profiles"
 import { useAgentRegistration, type RegistrationStep } from "@/hooks/use-agent-registration"
+import { ERC8004_IDENTITY_REGISTRY, identityRegistryAbi } from "@/lib/contracts"
 import type { AgentProfileId } from "@/lib/typeid";
+
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -201,8 +206,11 @@ function AgentsSection() {
   const { agents, link } = useAgentWallets()
   const profiles = useAgentProfiles()
   const queryClient = useQueryClient()
+  const { writeContractAsync } = useWriteContract()
+  const config = useConfig()
   const [address, setAddress] = useState("")
   const [registerWalletId, setRegisterWalletId] = useState<string | null>(null)
+  const [linkingProfileId, setLinkingProfileId] = useState<string | null>(null)
 
   const deleteProfile = useMutation({
     mutationFn: (profileId: AgentProfileId) => client.agent.delete({ profileId }),
@@ -211,6 +219,39 @@ function AgentsSection() {
       toast.success("Profile deleted")
     },
   })
+
+  async function handleLinkWallet(profileId: AgentProfileId) {
+    try {
+      setLinkingProfileId(profileId)
+      const sig = await client.agent.getWalletSignature({ profileId })
+      if (!sig) {
+        toast.error("No wallet signature found", { description: "Run your MCP server first to generate the signature." })
+        return
+      }
+      const tx = await writeContractAsync({
+        chainId: mainnet.id,
+        address: ERC8004_IDENTITY_REGISTRY,
+        abi: identityRegistryAbi,
+        functionName: "setAgentWallet",
+        args: [
+          BigInt(sig.erc8004AgentId),
+          sig.agentWalletAddress as `0x${string}`,
+          BigInt(sig.deadline),
+          sig.signature as `0x${string}`,
+        ],
+      })
+      toast.info("Waiting for confirmation...")
+      const mainnetClient = getPublicClient(config, { chainId: mainnet.id })
+      if (mainnetClient) {
+        await mainnetClient.waitForTransactionReceipt({ hash: tx })
+      }
+      toast.success("Agent wallet linked on-chain!")
+    } catch (err: any) {
+      toast.error("Failed to link wallet", { description: err?.shortMessage || err?.message })
+    } finally {
+      setLinkingProfileId(null)
+    }
+  }
 
   const agentList = agents.data ?? []
   const profileList = profiles.data ?? []
@@ -266,7 +307,18 @@ function AgentsSection() {
                     </div>
                     {profile ? (
                       profile.registrationStep >= 4 ? (
-                        <CheckCircle2Icon size={12} className="shrink-0 text-emerald-500" />
+                        <button
+                          onClick={() => handleLinkWallet(profile.id)}
+                          disabled={linkingProfileId === profile.id}
+                          className="shrink-0 rounded p-0.5 text-emerald-500 hover:text-violet-500 transition-colors"
+                          title="Link agent wallet on-chain"
+                        >
+                          {linkingProfileId === profile.id ? (
+                            <Loader2Icon size={12} className="animate-spin" />
+                          ) : (
+                            <WalletIcon size={12} />
+                          )}
+                        </button>
                       ) : (
                         <button
                           onClick={() => deleteProfile.mutate(profile.id)}

@@ -85,6 +85,13 @@
       "when": 1775337565215,
       "tag": "0011_bumpy_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1775339052182,
+      "tag": "0012_moaning_kang",
+      "breakpoints": true
     }
   ]
 }

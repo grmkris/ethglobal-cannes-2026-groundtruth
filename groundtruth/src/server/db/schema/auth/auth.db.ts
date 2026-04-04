@@ -192,6 +192,9 @@ export const agentProfile = pgTable(
     erc8004AgentId: text("erc8004_agent_id"), // set after TX3 mint
     // Registration progress (0 = created, 1-4 = tx steps completed)
     registrationStep: integer("registration_step").default(0).notNull(),
+    // Agent wallet on-chain link (EIP-712 signature for setAgentWallet)
+    walletLinkSignature: text("wallet_link_signature"),
+    walletLinkDeadline: text("wallet_link_deadline"),
     ...baseEntityFields,
   },
   (table) => [

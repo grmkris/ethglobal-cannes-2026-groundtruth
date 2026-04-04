@@ -12,7 +12,6 @@ export function createDb(props: {
 }): Database {
   const pool = new pg.Pool({
     connectionString: props.databaseUrl,
-    ssl: true,
   })
   return drizzle(pool, {
     schema: DB_SCHEMA,

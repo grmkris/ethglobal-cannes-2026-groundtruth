@@ -87,6 +87,21 @@ export const agentRouter = {
       return { ok: true }
     }),
 
+  getWalletSignature: authedProcedure
+    .input(z.object({ profileId: AgentProfileId }))
+    .handler(async ({ input, context }) => {
+      const userId = UserId.parse(context.session.user.id)
+      const profile = await context.authService.getAgentProfileById({
+        profileId: input.profileId,
+      })
+      if (!profile || profile.userId !== userId) {
+        throw new ORPCError("FORBIDDEN", { message: "Not your agent profile" })
+      }
+      return context.authService.getWalletLinkSignature({
+        profileId: input.profileId,
+      })
+    }),
+
   resolve: publicProcedure
     .input(z.object({ ensName: z.string() }))
     .handler(async ({ input, context }) => {

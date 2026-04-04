@@ -204,6 +204,29 @@ export function createAgentApp(props: {
     })
   })
 
+  app.post("/wallet-signature", async (c) => {
+    const agentAddress = c.get("agentAddress")
+    if (!agentAddress) return c.json({ error: "No agent address" }, 401)
+
+    const profile = await authService.getAgentProfileByAddress({ address: agentAddress })
+    if (!profile || profile.registrationStep < 4 || !profile.erc8004AgentId) {
+      return c.json({ error: "Agent registration not complete" }, 400)
+    }
+
+    const { signature, deadline } = (await c.req.json()) as { signature: string; deadline: string }
+    if (!signature || !deadline) {
+      return c.json({ error: "signature and deadline required" }, 400)
+    }
+
+    await authService.storeWalletLinkSignature({
+      profileId: profile.id,
+      signature,
+      deadline,
+    })
+
+    return c.json({ ok: true })
+  })
+
   app.get("/events", async (c) => {
     const log = c.get("log")
     log?.set({ route: "agent.events.list" })

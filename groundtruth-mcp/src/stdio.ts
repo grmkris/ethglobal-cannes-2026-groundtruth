@@ -31,6 +31,15 @@ async function main() {
       ? { agentId: raw.agentId, ensName: raw.ensName }
       : null
 
+  // Auto-submit wallet link signature if identity exists
+  if (identity) {
+    try {
+      await client.submitWalletLinkSignature(identity.agentId)
+    } catch {
+      // Silent — human can trigger from browser later
+    }
+  }
+
   const server = createMcpServer({ client, identity })
   const transport = new StdioServerTransport()
 
