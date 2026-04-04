@@ -2,6 +2,7 @@ import { ORPCError } from "@orpc/server"
 import { z } from "zod"
 import { WorldEventId } from "@/lib/typeid"
 import {
+  createEventInputSchema,
   eventCategorySchema,
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
@@ -20,6 +21,12 @@ export const eventRouter = {
     )
     .handler(async ({ input, context }) => {
       return context.eventService.getAll(input)
+    }),
+
+  create: publicProcedure
+    .input(createEventInputSchema)
+    .handler(async ({ input, context }) => {
+      return context.eventService.create(input)
     }),
 
   getById: publicProcedure

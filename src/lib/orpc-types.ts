@@ -5,6 +5,10 @@ export type WorldEvent = Awaited<
   ReturnType<AppRouterClient["event"]["getAll"]>
 >[number]
 
+export type ChatMessage = Awaited<
+  ReturnType<AppRouterClient["chat"]["getMessages"]>
+>[number]
+
 // Re-export enum types and runtime arrays from the Zod layer
 export type {
   EventCategory,

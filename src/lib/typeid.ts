@@ -5,6 +5,7 @@ const typeIdLength = 26
 
 export const idTypesMapNameToPrefix = {
   worldEvent: "wev",
+  chatMessage: "msg",
 } as const
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
@@ -55,3 +56,6 @@ export const typeIdToUuid = <const T extends IdTypePrefixNames>(
 // Exported validators and types
 export const WorldEventId = typeIdValidator("worldEvent")
 export type WorldEventId = z.infer<typeof WorldEventId>
+
+export const ChatMessageId = typeIdValidator("chatMessage")
+export type ChatMessageId = z.infer<typeof ChatMessageId>

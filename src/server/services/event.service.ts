@@ -64,7 +64,28 @@ export function createEventService(props: { db: Database; logger: Logger }) {
     return row ? toWorldEvent(row) : null
   }
 
-  return { getAll, getById }
+  async function create(params: {
+    title: string
+    description: string
+    category: EventCategory
+    severity: SeverityLevel
+    latitude: number
+    longitude: number
+    location: string
+    source?: string | null
+  }) {
+    const [row] = await db
+      .insert(worldEvent)
+      .values({
+        ...params,
+        timestamp: new Date(),
+        source: params.source ?? null,
+      })
+      .returning()
+    return toWorldEvent(row)
+  }
+
+  return { getAll, getById, create }
 }
 
 export type EventService = ReturnType<typeof createEventService>

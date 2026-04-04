@@ -4,7 +4,7 @@ import { logger as honoLogger } from "hono/logger"
 import { RPCHandler } from "@orpc/server/fetch"
 import { createContext } from "./api/context"
 import { appRouter } from "./api/router"
-import { eventService, logger } from "./instance"
+import { chatService, eventService, logger } from "./instance"
 
 const rpcHandler = new RPCHandler(appRouter)
 
@@ -16,9 +16,10 @@ app.use("*", honoLogger())
 app.get("/health", (c) => c.json({ status: "ok" }))
 
 app.all("/rpc/*", async (c) => {
-  const context = await createContext({
+  const context = createContext({
     logger,
     eventService,
+    chatService,
   })
 
   const { matched, response } = await rpcHandler.handle(c.req.raw, {

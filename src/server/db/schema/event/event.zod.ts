@@ -24,5 +24,17 @@ export type EventCategory = z.infer<typeof eventCategorySchema>
 export type SeverityLevel = z.infer<typeof severityLevelSchema>
 export type WorldEventResponse = z.infer<typeof worldEventResponseSchema>
 
+// --- Create input schema ---
+export const createEventInputSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000),
+  category: eventCategorySchema,
+  severity: severityLevelSchema,
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  location: z.string().min(1).max(200),
+  source: z.string().nullable().optional(),
+})
+
 // --- Runtime enum value arrays (for iteration) ---
 export const SEVERITY_LEVEL_VALUES = severityLevelEnum.enumValues

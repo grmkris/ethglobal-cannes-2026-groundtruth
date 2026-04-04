@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Map,
   MapFullscreenControl,
@@ -9,11 +10,14 @@ import {
   MapTileLayer,
   MapZoomControl,
 } from "@/components/ui/map"
+import { ChatPanel } from "@/components/chat/chat-panel"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
 import { useEventFilters } from "@/hooks/use-event-filters"
 import { useEvents } from "@/hooks/use-events"
 import type { LatLngExpression } from "leaflet"
+import { CreateEventModal } from "./create-event-modal"
 import { EventMarkers } from "./event-markers"
+import { MapClickHandler } from "./map-click-handler"
 import { MapHeader } from "./map-header"
 import { MapSidebar } from "./map-sidebar"
 
@@ -21,6 +25,8 @@ const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
 
 export function WorldMap() {
   const { data: events = [], isLoading } = useEvents()
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null)
 
   const {
     activeCategories,
@@ -30,6 +36,11 @@ export function WorldMap() {
     toggleCategory,
     setSearchQuery,
   } = useEventFilters(events)
+
+  function handleMapClick(lat: number, lng: number) {
+    setClickedCoords([lat, lng])
+    setCreateModalOpen(true)
+  }
 
   if (isLoading) {
     return (
@@ -50,6 +61,8 @@ export function WorldMap() {
         maxZoom={18}
         className="h-full w-full"
       >
+        <MapClickHandler onClick={handleMapClick} />
+
         <MapLayers
           defaultLayerGroups={EVENT_CATEGORIES.map((c) => c.label)}
         >
@@ -75,7 +88,14 @@ export function WorldMap() {
           onSearchChange={setSearchQuery}
         />
         <MapHeader eventCount={filteredEvents.length} />
+        <ChatPanel />
       </Map>
+
+      <CreateEventModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        coordinates={clickedCoords}
+      />
     </div>
   )
 }
