@@ -125,4 +125,9 @@ export const agentRouter = {
         ensName: input.ensName,
       })
     }),
+
+  listAll: publicProcedure.handler(async ({ context }) => {
+    context.log.set({ procedure: "agent.listAll" })
+    return context.authService.listAllCompletedAgents()
+  }),
 }

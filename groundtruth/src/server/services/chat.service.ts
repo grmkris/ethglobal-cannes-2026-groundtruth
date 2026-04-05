@@ -1,4 +1,5 @@
 import { and, desc, eq, getTableColumns, isNull, lt, type SQL } from "drizzle-orm"
+import { getAddress } from "viem"
 import type { ChatMessageId, UserId, WorldEventId } from "@/lib/typeid"
 import type { ChatMessageResponse } from "@/server/db/schema/chat/chat.zod"
 import { chatMessage } from "../db/schema/chat/chat.db"
@@ -17,6 +18,7 @@ function toResponse(
     createdAt: row.createdAt.toISOString(),
     worldIdVerified: row.worldIdVerified,
     agentAddress: row.agentAddress ?? null,
+    agentEnsName: row.agentEnsName ?? null,
   }
 }
 
@@ -68,6 +70,7 @@ export function createChatService(props: { db: Database }) {
     content: string
     userId: UserId
     agentAddress?: string | null
+    agentEnsName?: string | null
   }) {
     const [row] = await db
       .insert(chatMessage)
@@ -76,7 +79,8 @@ export function createChatService(props: { db: Database }) {
         authorName: params.authorName,
         content: params.content,
         userId: params.userId,
-        agentAddress: params.agentAddress ?? null,
+        agentAddress: params.agentAddress ? getAddress(params.agentAddress) : null,
+        agentEnsName: params.agentEnsName ?? null,
       })
       .returning()
 

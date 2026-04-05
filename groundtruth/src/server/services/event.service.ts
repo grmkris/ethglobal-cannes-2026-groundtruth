@@ -1,4 +1,5 @@
-import { and, desc, eq, getTableColumns, ilike, or, type SQL } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, ilike, or, sql, type SQL } from "drizzle-orm"
+import { getAddress } from "viem"
 import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
 import type {
@@ -6,7 +7,7 @@ import type {
   SeverityLevel,
   WorldEventResponse,
 } from "@/server/db/schema/event/event.zod"
-import { worldEvent } from "../db/schema/event/event.db"
+import { worldEvent, eventDispute, type DisputeReason } from "../db/schema/event/event.db"
 import { user } from "../db/schema/auth/auth.db"
 
 function toWorldEvent(
@@ -28,7 +29,11 @@ function toWorldEvent(
     creatorName: row.creatorName,
     agentAddress: row.agentAddress ?? null,
     agentEnsName: row.agentEnsName ?? null,
+    erc8004AgentId: row.erc8004AgentId ?? null,
     onChainVerified: row.onChainVerified,
+    canonicalEventId: row.canonicalEventId ?? null,
+    corroborationCount: row.corroborationCount,
+    disputeCount: row.disputeCount,
   }
 }
 
@@ -99,21 +104,43 @@ export function createEventService(props: { db: Database }) {
     userId: UserId
     agentAddress?: string | null
     agentEnsName?: string | null
+    erc8004AgentId?: string | null
     onChainVerified?: boolean
+    corroboratesEventId?: WorldEventId | null
   }) {
+    const canonicalEventId = params.corroboratesEventId ?? null
+
     const [row] = await db
       .insert(worldEvent)
       .values({
-        ...params,
+        title: params.title,
+        description: params.description,
+        category: params.category,
+        severity: params.severity,
+        latitude: params.latitude,
+        longitude: params.longitude,
+        location: params.location,
         timestamp: new Date(),
         source: params.source ?? null,
         imageUrls: params.imageUrls ?? [],
         userId: params.userId,
-        agentAddress: params.agentAddress ?? null,
+        agentAddress: params.agentAddress ? getAddress(params.agentAddress) : null,
         agentEnsName: params.agentEnsName ?? null,
+        erc8004AgentId: params.erc8004AgentId ?? null,
         onChainVerified: params.onChainVerified ?? false,
+        canonicalEventId,
       })
       .returning()
+
+    // Increment corroboration count on canonical event
+    if (canonicalEventId) {
+      await db
+        .update(worldEvent)
+        .set({
+          corroborationCount: sql`${worldEvent.corroborationCount} + 1`,
+        })
+        .where(eq(worldEvent.id, canonicalEventId))
+    }
 
     const userRow = await db.query.user.findFirst({
       where: (u, { eq }) => eq(u.id, params.userId),
@@ -127,7 +154,54 @@ export function createEventService(props: { db: Database }) {
     })
   }
 
-  return { getAll, getById, create }
+  async function createDispute(params: {
+    eventId: WorldEventId
+    userId: UserId
+    reason: DisputeReason
+    justification?: string
+    txHash?: string
+  }) {
+    const [dispute] = await db
+      .insert(eventDispute)
+      .values({
+        eventId: params.eventId,
+        userId: params.userId,
+        reason: params.reason,
+        justification: params.justification ?? null,
+        txHash: params.txHash ?? null,
+      })
+      .returning()
+
+    await db
+      .update(worldEvent)
+      .set({
+        disputeCount: sql`${worldEvent.disputeCount} + 1`,
+      })
+      .where(eq(worldEvent.id, params.eventId))
+
+    return dispute
+  }
+
+  async function getDisputes(params: { eventId: WorldEventId }) {
+    return db.query.eventDispute.findMany({
+      where: (d, { eq }) => eq(d.eventId, params.eventId),
+      orderBy: (d, { desc }) => [desc(d.createdAt)],
+    })
+  }
+
+  async function hasUserDisputed(params: {
+    eventId: WorldEventId
+    userId: UserId
+  }): Promise<boolean> {
+    const existing = await db.query.eventDispute.findFirst({
+      where: (d, { eq, and }) =>
+        and(eq(d.eventId, params.eventId), eq(d.userId, params.userId)),
+      columns: { id: true },
+    })
+    return !!existing
+  }
+
+  return { getAll, getById, create, createDispute, getDisputes, hasUserDisputed }
 }
 
 export type EventService = ReturnType<typeof createEventService>

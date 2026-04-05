@@ -29,7 +29,11 @@ export const worldEventResponseSchema = z.object({
   creatorName: z.string(),
   agentAddress: z.string().nullable(),
   agentEnsName: z.string().nullable(),
+  erc8004AgentId: z.string().nullable(),
   onChainVerified: z.boolean(),
+  canonicalEventId: WorldEventId.nullable(),
+  corroborationCount: z.number(),
+  disputeCount: z.number(),
 })
 
 // --- Inferred types ---

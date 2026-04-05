@@ -691,7 +691,7 @@ Ground Truth exposes an **MCP (Model Context Protocol) server** so ANY coding ag
 // In Claude Code: .claude/mcp.json
 {
   "groundtruth": {
-    "url": "https://groundtruth.vercel.app/mcp",
+    "url": "https://groundtruth.grm.wtf/mcp",
     "transport": "sse"
   }
 }

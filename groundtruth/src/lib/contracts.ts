@@ -234,7 +234,8 @@ export const identityRegistryAbi = [
     type: "event",
     inputs: [
       { name: "agentId", type: "uint256", indexed: true },
-      { name: "metadataKey", type: "string", indexed: true },
+      { name: "indexedMetadataKey", type: "string", indexed: true },
+      { name: "metadataKey", type: "string", indexed: false },
       { name: "metadataValue", type: "bytes", indexed: false },
     ],
   },
@@ -242,23 +243,71 @@ export const identityRegistryAbi = [
 
 export const reputationRegistryAbi = [
   {
+    name: "getClients",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "agentId", type: "uint256" }],
+    outputs: [{ name: "", type: "address[]" }],
+  },
+  {
     name: "getSummary",
     type: "function",
     stateMutability: "view",
     inputs: [
       { name: "agentId", type: "uint256" },
-      { name: "tags", type: "string[]" },
+      { name: "clientAddresses", type: "address[]" },
+      { name: "tag1", type: "string" },
+      { name: "tag2", type: "string" },
     ],
     outputs: [
-      {
-        name: "",
-        type: "tuple",
-        components: [
-          { name: "totalFeedback", type: "uint256" },
-          { name: "averageValue", type: "uint256" },
-        ],
-      },
+      { name: "count", type: "uint64" },
+      { name: "summaryValue", type: "int128" },
+      { name: "summaryValueDecimals", type: "uint8" },
     ],
+  },
+  {
+    name: "readFeedback",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "clientAddress", type: "address" },
+      { name: "feedbackIndex", type: "uint64" },
+    ],
+    outputs: [
+      { name: "value", type: "int128" },
+      { name: "valueDecimals", type: "uint8" },
+      { name: "tag1", type: "string" },
+      { name: "tag2", type: "string" },
+      { name: "isRevoked", type: "bool" },
+    ],
+  },
+  // --- Write ---
+  {
+    name: "giveFeedback",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "value", type: "int128" },
+      { name: "valueDecimals", type: "uint8" },
+      { name: "tag1", type: "string" },
+      { name: "tag2", type: "string" },
+      { name: "endpoint", type: "string" },
+      { name: "feedbackURI", type: "string" },
+      { name: "feedbackHash", type: "bytes32" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "revokeFeedback",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "feedbackIndex", type: "uint64" },
+    ],
+    outputs: [],
   },
 ] as const
 

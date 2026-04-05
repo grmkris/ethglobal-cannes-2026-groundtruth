@@ -111,7 +111,7 @@ export function createMcpServer(props: {
 
   server.tool(
     "submit_event",
-    "Submit a new world event to the intelligence map. Requires a verified agent wallet registered in AgentBook.",
+    "Submit a new world event to the intelligence map. Requires a verified agent wallet registered in AgentBook. Use corroboratesEventId to link this report as corroboration of an existing event.",
     {
       title: z.string().describe("Event title"),
       description: z.string().describe("Event description"),
@@ -122,6 +122,7 @@ export function createMcpServer(props: {
       location: z.string().describe("Human-readable location name"),
       source: z.string().optional().describe("Source URL or 'eyewitness'"),
       imageUrls: z.array(z.string()).optional().describe("Image URLs to attach (max 5). Use upload_image first to get hosted URLs."),
+      corroboratesEventId: z.string().optional().describe("If this report corroborates an existing event, provide that event's ID (wev_...). The canonical event's corroboration count will increment."),
     },
     async (input) => {
       const event = await client.createEvent(input)

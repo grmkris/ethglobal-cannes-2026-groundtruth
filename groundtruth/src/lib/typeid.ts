@@ -7,6 +7,7 @@ export const idTypesMapNameToPrefix = {
   // App entities
   worldEvent: "wev",
   chatMessage: "msg",
+  eventDispute: "dsp",
   // Auth entities (Better Auth)
   user: "usr",
   session: "ses",
@@ -94,3 +95,6 @@ export type AgentWalletId = z.infer<typeof AgentWalletId>
 
 export const AgentProfileId = typeIdValidator("agentProfile")
 export type AgentProfileId = z.infer<typeof AgentProfileId>
+
+export const EventDisputeId = typeIdValidator("eventDispute")
+export type EventDisputeId = z.infer<typeof EventDisputeId>

@@ -10,7 +10,6 @@ import {
   MapLayers,
   MapLayersControl,
   MapLocateControl,
-  MapPopup,
   MapTileLayer,
   MapZoomControl,
 } from "@/components/ui/map"
@@ -28,7 +27,7 @@ import { useMap } from "react-leaflet"
 import { CrosshairIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CreateEventModal } from "./create-event-modal"
-import { EventPopupContent } from "./event-popup"
+import { EventDetailPanel } from "./event-detail-panel"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
@@ -108,10 +107,11 @@ export function WorldMap() {
   const handleOpenChat = useCallback(
     (eventId: WorldEventId) => {
       setSelectedEventId(eventId)
-      setSidebarTab("chat")
       setSidebarCollapsed(false)
+      const event = events.find((e) => e.id === eventId)
+      if (event) setFlyToTarget([...event.coordinates])
     },
-    [setSelectedEventId, setSidebarTab]
+    [setSelectedEventId, events]
   )
 
   const handleFlyTo = useCallback((coordinates: [number, number]) => {
@@ -131,7 +131,7 @@ export function WorldMap() {
     [setSelectedEventId, events]
   )
 
-  const handlePopupClose = useCallback(() => {
+  const handleCloseDetail = useCallback(() => {
     setSelectedEventId(null)
   }, [setSelectedEventId])
 
@@ -142,6 +142,9 @@ export function WorldMap() {
     },
     [setSidebarTab]
   )
+
+  // Shift right-side controls when detail panel is open (sm:w-80 = 320px + gap)
+  const rCtrl = selectedEvent ? "right-2 sm:right-[21.5rem]" : "right-2"
 
   if (isLoading) {
     return (
@@ -205,26 +208,23 @@ export function WorldMap() {
             onOpenChat={handleOpenChat}
             onSelectEvent={handleSelectEvent}
           />
-          <MapLayersControl position="bottom-2 right-2" />
+          <MapLayersControl position={`bottom-2 ${rCtrl}`} />
         </MapLayers>
 
         {selectedEvent && (
-          <MapPopup
+          <EventDetailPanel
             key={selectedEvent.id}
-            position={selectedEvent.coordinates}
-            className="w-auto border-0 p-0 shadow-none bg-transparent"
-            eventHandlers={{ remove: handlePopupClose }}
-          >
-            <EventPopupContent event={selectedEvent} onOpenChat={handleOpenChat} />
-          </MapPopup>
+            event={selectedEvent}
+            onClose={handleCloseDetail}
+          />
         )}
 
-        <MapZoomControl position="bottom-14 right-2" />
-        <MapFullscreenControl position="bottom-24 right-2" />
-        <MapLocateControl position="bottom-34 right-2" />
+        <MapZoomControl position={`bottom-14 ${rCtrl}`} />
+        <MapFullscreenControl position={`bottom-24 ${rCtrl}`} />
+        <MapLocateControl position={`bottom-34 ${rCtrl}`} />
 
         {/* Report mode FAB */}
-        <MapControlContainer className="bottom-44 right-2">
+        <MapControlContainer className={`bottom-44 ${rCtrl}`}>
           <Tooltip>
             <TooltipTrigger
               render={

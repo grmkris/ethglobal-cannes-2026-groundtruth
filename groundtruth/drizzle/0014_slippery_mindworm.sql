@@ -1,0 +1,1 @@
+ALTER TABLE "chat_message" ADD COLUMN "agent_ens_name" text;

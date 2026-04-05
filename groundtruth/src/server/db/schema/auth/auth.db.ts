@@ -131,6 +131,19 @@ export const agentkitNonce = pgTable("agentkit_nonce", {
   createdAt: createTimestampField("created_at").defaultNow().notNull(),
 })
 
+// --- Ground Truth: AgentKit usage tracking (free-trial mode) ---
+export const agentkitUsage = pgTable(
+  "agentkit_usage",
+  {
+    endpoint: text("endpoint").notNull(),
+    humanId: text("human_id").notNull(),
+    usageCount: integer("usage_count").default(0).notNull(),
+  },
+  (table) => [
+    index("agentkitUsage_lookup_idx").on(table.humanId, table.endpoint),
+  ]
+)
+
 // --- Ground Truth: Agent wallet linking ---
 export const agentWallet = pgTable(
   "agent_wallet",

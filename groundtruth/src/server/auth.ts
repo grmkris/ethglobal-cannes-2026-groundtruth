@@ -44,7 +44,7 @@ export function createAuth(props: {
     plugins: [
       siwe({
         domain,
-        emailDomainName: "wallet.ethglobal-cannes-2026-groundtruth.vercel.app",
+        emailDomainName: "wallet.groundtruth.grm.wtf",
         anonymous: true,
         getNonce: async () => {
           return generateRandomString(32, "a-z", "A-Z", "0-9")

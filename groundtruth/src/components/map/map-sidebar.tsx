@@ -16,7 +16,6 @@ import type { WorldEventId } from "@/lib/typeid"
 import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeftIcon,
   BadgeCheckIcon,
   BotIcon,
   ChevronLeftIcon,
@@ -126,6 +125,7 @@ function EventListItem({
             <span className="text-muted-foreground/40">·</span>
             <BotIcon size={10} className="shrink-0 text-violet-500" />
             <span className="truncate text-violet-500">{event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}</span>
+            {event.erc8004AgentId && <span className="shrink-0 text-[9px] text-violet-400">#{event.erc8004AgentId}</span>}
             {event.onChainVerified && <BadgeCheckIcon size={10} className="shrink-0 text-emerald-500" />}
           </>
         )}
@@ -182,8 +182,7 @@ export function MapSidebar({
   const { open: openAppKit } = useAppKit()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const chatEventId = activeTab === "chat" ? selectedEventId : null
-  const { messages, send } = useChat(chatEventId, { enabled: activeTab === "chat" })
+  const { messages, send } = useChat(null, { enabled: activeTab === "chat" })
   const messageList = messages.data ?? []
 
   // Legitimate effect — DOM sync (scroll to bottom on new messages)
@@ -197,7 +196,6 @@ export function MapSidebar({
 
   function handleOpenChat(eventId: WorldEventId) {
     onSelectEvent(eventId)
-    onTabChange("chat")
     onCollapsedChange(false)
   }
 
@@ -208,7 +206,7 @@ export function MapSidebar({
   return (
     <MapControlContainer
       className={cn(
-        "absolute top-2 left-2 z-[1000] flex transition-all duration-300",
+        "absolute top-0 left-0 z-[1000] flex transition-all duration-300",
         collapsed ? "w-10" : "w-[calc(100vw-3rem)] sm:w-80"
       )}
     >
@@ -230,7 +228,7 @@ export function MapSidebar({
           <TooltipContent side="right">Expand sidebar</TooltipContent>
         </Tooltip>
       ) : (
-        <div className="sidebar-grain flex h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] w-full flex-col rounded-lg border bg-background/90 shadow-lg backdrop-blur-md dark:border-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+        <div className="sidebar-grain flex h-svh max-h-svh w-full flex-col border-r bg-background/90 backdrop-blur-md dark:border-white/[0.06]">
           {/* Header */}
           <div className="flex items-center gap-2 border-b px-3 py-2">
             <div className="flex items-center gap-2">
@@ -369,24 +367,7 @@ export function MapSidebar({
           {activeTab === "chat" && (
             <>
               <div className="flex items-center gap-2 border-b px-3 py-1.5">
-                {selectedEventId ? (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto px-1 py-0.5 text-[11px] text-muted-foreground"
-                      onClick={() => onSelectEvent(null)}
-                    >
-                      <ArrowLeftIcon size={10} />
-                      Global
-                    </Button>
-                    <span className="truncate text-xs font-medium">
-                      {selectedEvent?.title ?? "Event Chat"}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs font-medium">Global Chat</span>
-                )}
+                <span className="text-xs font-medium">Global Chat</span>
               </div>
 
               <ScrollArea className="flex-1 overflow-hidden">

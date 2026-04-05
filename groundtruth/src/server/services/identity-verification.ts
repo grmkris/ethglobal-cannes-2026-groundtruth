@@ -1,6 +1,11 @@
 import { createPublicClient, http } from "viem"
 import { mainnet } from "viem/chains"
-import { ERC8004_IDENTITY_REGISTRY, identityRegistryAbi } from "@/lib/contracts"
+import {
+  ERC8004_IDENTITY_REGISTRY,
+  ERC8004_REPUTATION_REGISTRY,
+  identityRegistryAbi,
+  reputationRegistryAbi,
+} from "@/lib/contracts"
 import type { AuthService } from "./auth.service"
 
 const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
@@ -76,7 +81,30 @@ export function createIdentityVerificationService(props: {
     cache.set(key, { verified, expiry: Date.now() + CACHE_TTL_MS })
   }
 
-  return { verifyAgentIdentity }
+  async function getReputationSummary(params: {
+    erc8004AgentId: string
+  }): Promise<{ count: number; value: number } | null> {
+    const cacheKey = `rep:${params.erc8004AgentId}`
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() < cached.expiry) {
+      return cached.verified ? { count: 0, value: 0 } : null // simplified cache
+    }
+
+    try {
+      const [count, summaryValue] = await client.readContract({
+        address: ERC8004_REPUTATION_REGISTRY,
+        abi: reputationRegistryAbi,
+        functionName: "getSummary",
+        args: [BigInt(params.erc8004AgentId), [], "", ""],
+      })
+
+      return { count: Number(count), value: Number(summaryValue) }
+    } catch {
+      return null
+    }
+  }
+
+  return { verifyAgentIdentity, getReputationSummary }
 }
 
 export type IdentityVerificationService = ReturnType<typeof createIdentityVerificationService>

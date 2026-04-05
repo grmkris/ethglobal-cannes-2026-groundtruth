@@ -132,8 +132,8 @@ export async function runSetup() {
 
   const apiUrl = await p.text({
     message: "Ground Truth API URL",
-    defaultValue: "https://ethglobal-cannes-2026-groundtruth.vercel.app",
-    placeholder: "https://ethglobal-cannes-2026-groundtruth.vercel.app",
+    defaultValue: "https://groundtruth.grm.wtf",
+    placeholder: "https://groundtruth.grm.wtf",
   })
 
   if (p.isCancel(apiUrl)) {

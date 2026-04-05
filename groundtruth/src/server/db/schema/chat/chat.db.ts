@@ -21,6 +21,7 @@ export const chatMessage = pgTable(
     authorName: text("author_name").notNull(),
     content: text("content").notNull(),
     agentAddress: text("agent_address"),
+    agentEnsName: text("agent_ens_name"),
     ...baseEntityFields,
   },
   (table) => [

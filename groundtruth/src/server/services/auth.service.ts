@@ -1,4 +1,5 @@
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
+import { getAddress } from "viem"
 import { log } from "@/lib/evlog"
 import type { Database } from "../db/db"
 import { user, walletAddress, worldIdVerification, agentWallet, agentProfile } from "../db/schema/schema"
@@ -45,7 +46,7 @@ export function createAuthService(props: { db: Database }) {
   }) {
     await db
       .insert(agentWallet)
-      .values({ userId: params.userId, address: params.address.toLowerCase() })
+      .values({ userId: params.userId, address: getAddress(params.address) })
       .onConflictDoNothing()
   }
 
@@ -66,9 +67,9 @@ export function createAuthService(props: { db: Database }) {
   async function getUserByAddress(params: {
     address: string
   }): Promise<{ userId: UserId; userName: string } | null> {
-    const addr = params.address.toLowerCase()
+    const addr = getAddress(params.address)
     const wa = await db.query.walletAddress.findFirst({
-      where: (w) => eq(sql`lower(${w.address})`, addr),
+      where: (w, { eq }) => eq(w.address, addr),
       columns: { userId: true },
     })
     if (!wa) return null
@@ -83,7 +84,7 @@ export function createAuthService(props: { db: Database }) {
   async function getUserByAgentAddress(params: {
     address: string
   }): Promise<{ userId: UserId; userName: string } | null> {
-    const addr = params.address.toLowerCase()
+    const addr = getAddress(params.address)
     const wallet = await db.query.agentWallet.findFirst({
       where: (a, { eq }) => eq(a.address, addr),
       columns: { userId: true },
@@ -180,7 +181,7 @@ export function createAuthService(props: { db: Database }) {
 
   async function getAgentProfileByAddress(params: { address: string }) {
     const wallet = await db.query.agentWallet.findFirst({
-      where: (a, { eq }) => eq(a.address, params.address.toLowerCase()),
+      where: (a, { eq }) => eq(a.address, getAddress(params.address)),
       columns: { id: true },
     })
     if (!wallet) return null
@@ -222,6 +223,14 @@ export function createAuthService(props: { db: Database }) {
     }
   }
 
+  async function listAllCompletedAgents() {
+    return db.query.agentProfile.findMany({
+      where: (p, { gte }) => gte(p.registrationStep, 3),
+      with: { agentWallet: { columns: { address: true } } },
+      orderBy: (p, { desc }) => [desc(p.createdAt)],
+    })
+  }
+
   return {
     verifyWorldId,
     isWorldIdVerified,
@@ -239,6 +248,7 @@ export function createAuthService(props: { db: Database }) {
     deleteAgentProfile,
     storeWalletLinkSignature,
     getWalletLinkSignature,
+    listAllCompletedAgents,
   }
 }
 

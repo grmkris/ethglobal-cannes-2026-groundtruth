@@ -6,6 +6,7 @@ import {
   eventCategorySchema,
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
+import { DISPUTE_REASONS } from "@/server/db/schema/event/event.db"
 import { authedProcedure, publicProcedure } from "../api"
 
 export const eventRouter = {
@@ -41,5 +42,57 @@ export const eventRouter = {
         throw new ORPCError("NOT_FOUND", { message: "Event not found" })
       }
       return event
+    }),
+
+  dispute: authedProcedure
+    .input(
+      z.object({
+        eventId: WorldEventId,
+        reason: z.enum(DISPUTE_REASONS),
+        justification: z.string().max(500).optional(),
+        txHash: z.string().optional(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "event.dispute", eventId: input.eventId, userId })
+
+      // Must be World ID verified
+      const isVerified = await context.authService.isWorldIdVerified({ userId })
+      if (!isVerified) {
+        throw new ORPCError("FORBIDDEN", { message: "World ID verification required to dispute" })
+      }
+
+      // Check event exists and is agent-submitted
+      const event = await context.eventService.getById({ id: input.eventId })
+      if (!event) {
+        throw new ORPCError("NOT_FOUND", { message: "Event not found" })
+      }
+      if (!event.agentAddress) {
+        throw new ORPCError("BAD_REQUEST", { message: "Can only dispute agent-submitted events" })
+      }
+
+      // One dispute per user per event
+      const alreadyDisputed = await context.eventService.hasUserDisputed({
+        eventId: input.eventId,
+        userId,
+      })
+      if (alreadyDisputed) {
+        throw new ORPCError("BAD_REQUEST", { message: "You have already disputed this event" })
+      }
+
+      return context.eventService.createDispute({
+        eventId: input.eventId,
+        userId,
+        reason: input.reason,
+        justification: input.justification,
+        txHash: input.txHash,
+      })
+    }),
+
+  getDisputes: publicProcedure
+    .input(z.object({ eventId: WorldEventId }))
+    .handler(async ({ input, context }) => {
+      return context.eventService.getDisputes({ eventId: input.eventId })
     }),
 }

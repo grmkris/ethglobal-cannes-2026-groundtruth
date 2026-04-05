@@ -24,7 +24,8 @@ import {
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
 import { createChatMessageInputSchema } from "@/server/db/schema/chat/chat.zod"
-import { agentkitNonce } from "./db/schema/auth/auth.db"
+import { eq, and } from "drizzle-orm"
+import { agentkitNonce, agentkitUsage } from "./db/schema/auth/auth.db"
 import type { AuthService } from "./services/auth.service"
 import type { EventService } from "./services/event.service"
 import type { ChatService } from "./services/chat.service"
@@ -41,6 +42,7 @@ type AgentEnv = EvlogVariables & {
     userName: string
     agentAddress: string
     agentEnsName: string | null
+    erc8004AgentId: string | null
     onChainVerified: boolean
   }
 }
@@ -50,12 +52,28 @@ class DrizzleAgentKitStorage implements AgentKitStorage {
   constructor(private db: Database) {}
 
   async tryIncrementUsage(
-    _endpoint: string,
-    _humanId: string,
-    _limit: number
+    endpoint: string,
+    humanId: string,
+    limit: number
   ): Promise<boolean> {
-    // Free mode — never called, but interface requires it
-    return true
+    const existing = await this.db.query.agentkitUsage.findFirst({
+      where: (u, { eq, and }) => and(eq(u.humanId, humanId), eq(u.endpoint, endpoint)),
+    })
+
+    if (!existing) {
+      await this.db.insert(agentkitUsage).values({ humanId, endpoint, usageCount: 1 })
+      return true
+    }
+
+    if (existing.usageCount < limit) {
+      await this.db
+        .update(agentkitUsage)
+        .set({ usageCount: existing.usageCount + 1 })
+        .where(and(eq(agentkitUsage.humanId, humanId), eq(agentkitUsage.endpoint, endpoint)))
+      return true
+    }
+
+    return false // exceeded free trial — x402 payment required
   }
 
   async hasUsedNonce(nonce: string): Promise<boolean> {
@@ -90,7 +108,7 @@ export function createAgentApp(props: {
   const hooks = createAgentkitHooks({
     agentBook,
     storage,
-    mode: { type: "free" },
+    mode: { type: "free-trial", uses: 3 },
   })
 
   const facilitatorClient = new HTTPFacilitatorClient({
@@ -110,7 +128,7 @@ export function createAgentApp(props: {
 
   const agentExt = declareAgentkitExtension({
     statement: "Access Ground Truth API as a verified human-backed agent",
-    mode: { type: "free" },
+    mode: { type: "free-trial", uses: 3 },
   })
 
   const accepts = [
@@ -171,6 +189,7 @@ export function createAgentApp(props: {
           address: payload.address,
         })
         c.set("agentEnsName", profile?.registrationStep === 4 ? profile.ensName : null)
+        c.set("erc8004AgentId", profile?.erc8004AgentId ?? null)
 
         // On-chain ERC-8004 identity verification
         if (profile?.erc8004AgentId && identityVerification) {
@@ -263,11 +282,16 @@ export function createAgentApp(props: {
     const userId = c.get("userId")
     if (!userId) return c.json({ error: "Agent not linked to a user" }, 403)
 
-    const body = createEventInputSchema.parse(await c.req.json())
-    const agentAddress = c.get("agentAddress")
-    const agentEnsName = c.get("agentEnsName")
+    const rawBody = await c.req.json()
+    const body = createEventInputSchema.parse(rawBody)
+    const corroboratesEventId = rawBody.corroboratesEventId
+      ? WorldEventId.parse(rawBody.corroboratesEventId)
+      : null
+    const agentAddress = c.get("agentAddress") ?? null
+    const agentEnsName = c.get("agentEnsName") ?? null
+    const erc8004AgentId = c.get("erc8004AgentId") ?? null
     const onChainVerified = c.get("onChainVerified") ?? false
-    const event = await eventService.create({ ...body, userId, agentAddress, agentEnsName, onChainVerified })
+    const event = await eventService.create({ ...body, userId, agentAddress, agentEnsName, erc8004AgentId, onChainVerified, corroboratesEventId })
     return c.json(event, 201)
   })
 
@@ -295,7 +319,8 @@ export function createAgentApp(props: {
     if (!userId) return c.json({ error: "Agent not linked to a user" }, 403)
 
     const userName = c.get("userName") ?? "Agent"
-    const agentAddress = c.get("agentAddress")
+    const agentAddress = c.get("agentAddress") ?? null
+    const agentEnsName = c.get("agentEnsName") ?? null
     const body = createChatMessageInputSchema.parse(await c.req.json())
     const message = await chatService.create({
       eventId: body.eventId ?? null,
@@ -303,6 +328,7 @@ export function createAgentApp(props: {
       authorName: userName,
       userId,
       agentAddress,
+      agentEnsName,
     })
     return c.json(message, 201)
   })

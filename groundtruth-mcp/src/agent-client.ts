@@ -149,6 +149,7 @@ export function createAgentClient(props: {
       location: string
       source?: string
       imageUrls?: string[]
+      corroboratesEventId?: string
     }) {
       return request<unknown>("POST", "/events", input)
     },

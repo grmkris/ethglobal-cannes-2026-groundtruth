@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createDb } from "@/server/db/db"
 import { env } from "@/env"
 import { AgentProfileId } from "@/lib/typeid"
-import { ERC8004_IDENTITY_REGISTRY } from "@/lib/contracts"
+import { ERC8004_IDENTITY_REGISTRY, ERC8004_CHAIN_ID } from "@/lib/contracts"
 
 const db = createDb({ databaseUrl: env.DATABASE_URL })
 
@@ -30,34 +30,39 @@ export async function GET(
     return NextResponse.json({ error: "Agent not found" }, { status: 404 })
   }
 
+  const agentRegistry = `eip155:${ERC8004_CHAIN_ID}:${ERC8004_IDENTITY_REGISTRY}`
+  const walletAddress = profile.agentWallet?.address ?? ""
+
   const card = {
     type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     name: profile.label,
     description: profile.mandate,
+    image: `${env.APP_URL}/icon.png`,
     active: true,
+    x402Support: false,
+    supportedTrust: ["reputation"],
     registrations: profile.erc8004AgentId
       ? [
           {
             agentId: Number(profile.erc8004AgentId),
-            agentRegistry: ERC8004_IDENTITY_REGISTRY,
+            agentRegistry,
           },
         ]
       : [],
     services: [
       {
-        type: "ENS",
-        url: profile.ensName,
-        description: "ENS subdomain identity",
+        name: "ENS",
+        endpoint: profile.ensName,
+        version: "v1",
       },
       {
-        type: "MCP",
-        url: `${env.APP_URL}/api/agent`,
-        description: "Ground Truth intelligence API",
+        name: "MCP",
+        endpoint: `${env.APP_URL}/api/agent`,
+        version: "2025-06-18",
       },
       {
-        type: "A2A",
-        url: profile.agentWallet?.address ?? "",
-        description: "Agent-to-agent wallet",
+        name: "agentWallet",
+        endpoint: walletAddress ? `eip155:${ERC8004_CHAIN_ID}:${walletAddress}` : "",
       },
     ],
     metadata: {

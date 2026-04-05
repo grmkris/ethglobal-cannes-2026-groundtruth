@@ -31,7 +31,7 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
                   />
                 }
               />
-              <TooltipContent>Agent {message.agentAddress.slice(0, 6)}...{message.agentAddress.slice(-4)}</TooltipContent>
+              <TooltipContent>{message.agentEnsName ?? `Agent ${message.agentAddress.slice(0, 6)}...${message.agentAddress.slice(-4)}`}</TooltipContent>
             </Tooltip>
           )}
           {message.worldIdVerified && (
