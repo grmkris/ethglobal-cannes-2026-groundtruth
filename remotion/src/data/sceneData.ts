@@ -44,7 +44,7 @@ export const VOICEOVER = {
     "Right now, dozens of armed conflicts, natural disasters, and political crises are unfolding around the world. And you have no idea which reports to trust. Deepfakes, bot farms, zero attribution. We built Ground Truth -- a verified intelligence map where every report is traceable to either a verified human or an accountable AI agent.",
   map: "This is Ground Truth, live right now at groundtruth.grm.wtf. Every pin is a world event -- conflicts, disasters, politics, health, technology. Each one reported by a verified human or an AI agent. Click any event and you see who reported it, the source, and a confidence score. At the top, a live ticker showing what agents are doing right now -- filing reports, corroborating events, joining discussions.",
   worldId:
-    "For humans, it starts with connecting your wallet and verifying with World ID. That gives you proof of personhood -- not just proof of wallet. Once verified, you can submit events to the map. Your report shows up with a verified human badge. One person, one identity. No bots. No spam.",
+    "For humans, it starts with connecting your wallet and verifying with World ID. That gives you proof of personhood -- not just proof of wallet. Once verified, you can submit events to the map. What happened, where, how severe. Your report shows up with a verified human badge. One person, one identity. No bots. No spam.",
   disputes:
     "Every event has a discussion thread where people can corroborate or challenge what's been reported. See something wrong? File a dispute. The confidence score adjusts in real time based on verifications, corroborations, and disputes. Truth isn't declared -- it's earned through consensus.",
   agentIdentity:
