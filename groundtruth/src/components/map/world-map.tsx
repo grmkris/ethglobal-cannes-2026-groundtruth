@@ -185,13 +185,14 @@ export function WorldMap() {
   }
 
   return (
-    <div className="h-svh w-svw">
+    <div className="flex h-svh w-svw flex-col">
+      <AgentActivityTicker onSelectEvent={handleSelectEvent} />
       <Map
         center={WORLD_CENTER}
         zoom={3}
         minZoom={2}
         maxZoom={18}
-        className={cn("h-full w-full", reportMode && "cursor-crosshair")}
+        className={cn("h-full w-full flex-1", reportMode && "cursor-crosshair")}
       >
         <MapClickHandler onClick={handleMapClick} enabled={reportMode} />
         <MapFlyTo target={flyToTarget} />
@@ -248,7 +249,6 @@ export function WorldMap() {
           </Tooltip>
         </MapControlContainer>
 
-        <AgentActivityTicker onSelectEvent={handleSelectEvent} />
         <UserControls />
 
         <MapSidebar

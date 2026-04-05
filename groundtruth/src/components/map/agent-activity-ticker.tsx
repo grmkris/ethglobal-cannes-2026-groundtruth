@@ -1,9 +1,7 @@
 "use client"
 
 import { useAgentActivity } from "@/hooks/use-agent-activity"
-import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { MapControlContainer } from "@/components/ui/map"
 import type { WorldEventId } from "@/lib/typeid"
 import {
   AlertTriangleIcon,
@@ -54,7 +52,7 @@ function TickerItem({
       <TooltipTrigger
         render={
           <button
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[10px] transition-colors hover:bg-muted/80"
+            className="inline-flex shrink-0 items-center gap-1.5 px-3 text-[10px] transition-colors hover:text-foreground"
             onClick={() => {
               if (activity.eventId && onSelect) {
                 onSelect(activity.eventId as WorldEventId)
@@ -68,7 +66,7 @@ function TickerItem({
         <Icon size={9} className={config.color} />
         <span className="text-muted-foreground">{config.label}</span>
         {activity.eventTitle && (
-          <span className="max-w-[120px] truncate font-medium">
+          <span className="max-w-[140px] truncate font-medium">
             {activity.eventTitle}
           </span>
         )}
@@ -91,27 +89,18 @@ export function AgentActivityTicker({
   if (!activities || activities.length === 0) return null
 
   return (
-    <MapControlContainer className="absolute top-2 left-1/2 z-[1000] w-full max-w-2xl -translate-x-1/2 pointer-events-auto">
+    <div className="w-full shrink-0 border-b bg-background/90 backdrop-blur-md overflow-hidden">
       <div
-        className="overflow-hidden rounded-lg border border-border/50 bg-background/80 backdrop-blur-md"
-        style={{
-          maskImage: "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
-          WebkitMaskImage: "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
-        }}
+        className="flex w-max items-center gap-1 py-1.5 hover:[animation-play-state:paused]"
+        style={{ animation: "marquee 30s linear infinite" }}
       >
-        <div
-          className="flex w-max items-center gap-2 px-4 py-1.5 hover:[animation-play-state:paused]"
-          style={{ animation: "marquee 30s linear infinite" }}
-        >
-          {/* Duplicate items for seamless loop */}
-          {activities.map((a) => (
-            <TickerItem key={a.id} activity={a} onSelect={onSelectEvent} />
-          ))}
-          {activities.map((a) => (
-            <TickerItem key={`dup-${a.id}`} activity={a} onSelect={onSelectEvent} />
-          ))}
-        </div>
+        {activities.map((a) => (
+          <TickerItem key={a.id} activity={a} onSelect={onSelectEvent} />
+        ))}
+        {activities.map((a) => (
+          <TickerItem key={`dup-${a.id}`} activity={a} onSelect={onSelectEvent} />
+        ))}
       </div>
-    </MapControlContainer>
+    </div>
   )
 }
