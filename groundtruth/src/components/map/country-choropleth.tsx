@@ -6,24 +6,24 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon"
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import type { Layer, LeafletMouseEvent, PathOptions } from "leaflet"
 import type { WorldEvent } from "@/lib/orpc-types"
-import { MapGeoJSON, MapLayerGroup, MapPane } from "@/components/ui/map"
+import { MapGeoJSON, MapPane } from "@/components/ui/map"
 
 let cachedGeoJSON: FeatureCollection | null = null
 
 const COLOR_STEPS = [
-  { max: 0, fillColor: "transparent", fillOpacity: 0 },
-  { max: 2, fillColor: "#3b82f6", fillOpacity: 0.12 },
-  { max: 5, fillColor: "#3b82f6", fillOpacity: 0.25 },
-  { max: 10, fillColor: "#2563eb", fillOpacity: 0.35 },
-  { max: Infinity, fillColor: "#1d4ed8", fillOpacity: 0.5 },
+  { max: 0, fillColor: "#94a3b8", fillOpacity: 0.06 },
+  { max: 2, fillColor: "#3b82f6", fillOpacity: 0.15 },
+  { max: 5, fillColor: "#3b82f6", fillOpacity: 0.28 },
+  { max: 10, fillColor: "#2563eb", fillOpacity: 0.4 },
+  { max: Infinity, fillColor: "#1d4ed8", fillOpacity: 0.55 },
 ]
 
 const COLOR_STEPS_DARK = [
-  { max: 0, fillColor: "transparent", fillOpacity: 0 },
-  { max: 2, fillColor: "#60a5fa", fillOpacity: 0.1 },
-  { max: 5, fillColor: "#60a5fa", fillOpacity: 0.2 },
-  { max: 10, fillColor: "#3b82f6", fillOpacity: 0.3 },
-  { max: Infinity, fillColor: "#2563eb", fillOpacity: 0.45 },
+  { max: 0, fillColor: "#475569", fillOpacity: 0.08 },
+  { max: 2, fillColor: "#60a5fa", fillOpacity: 0.12 },
+  { max: 5, fillColor: "#60a5fa", fillOpacity: 0.22 },
+  { max: 10, fillColor: "#3b82f6", fillOpacity: 0.35 },
+  { max: Infinity, fillColor: "#2563eb", fillOpacity: 0.5 },
 ]
 
 function getCountryStyle(
@@ -35,7 +35,7 @@ function getCountryStyle(
   return {
     fillColor: step.fillColor,
     fillOpacity: step.fillOpacity,
-    weight: count > 0 ? 1 : 0.3,
+    weight: count > 0 ? 1 : 0.5,
     color: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
     pane: "choropleth",
   }
@@ -141,15 +141,13 @@ export function CountryChoropleth({ events }: { events: WorldEvent[] }) {
   if (!geoData) return null
 
   return (
-    <MapLayerGroup name="Country Activity">
-      <MapPane name="choropleth" style={{ zIndex: 350 }}>
-        <MapGeoJSON
-          key={geoKey}
-          data={geoData}
-          style={style}
-          onEachFeature={onEachFeature}
-        />
-      </MapPane>
-    </MapLayerGroup>
+    <MapPane name="choropleth" style={{ zIndex: 350 }}>
+      <MapGeoJSON
+        key={geoKey}
+        data={geoData}
+        style={style}
+        onEachFeature={onEachFeature}
+      />
+    </MapPane>
   )
 }
