@@ -49,10 +49,17 @@ export const worldIdRouter = {
         throw new ORPCError("BAD_REQUEST", { message: "World ID verification failed" })
       }
 
-      await context.authService.verifyWorldId({
-        userId,
-        nullifierHash: response.nullifier,
-      })
+      try {
+        await context.authService.verifyWorldId({
+          userId,
+          nullifierHash: response.nullifier,
+        })
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("already linked")) {
+          throw new ORPCError("CONFLICT", { message: err.message })
+        }
+        throw err
+      }
 
       context.log.set({ verified: true })
       return { verified: true }

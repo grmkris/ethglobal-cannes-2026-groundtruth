@@ -16,6 +16,13 @@ export function createAuthService(props: { db: Database }) {
     log.info({ msg: "Storing World ID verification", userId, service: "auth" })
 
     await db.transaction(async (tx) => {
+      const existing = await tx.query.worldIdVerification.findFirst({
+        where: (v, { eq }) => eq(v.nullifierHash, nullifierHash),
+      })
+      if (existing && existing.userId !== userId) {
+        throw new Error("This World ID is already linked to another account")
+      }
+
       await tx
         .insert(worldIdVerification)
         .values({ nullifierHash, userId })

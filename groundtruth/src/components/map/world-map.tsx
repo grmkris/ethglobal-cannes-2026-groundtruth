@@ -125,7 +125,6 @@ export function WorldMap() {
     (eventId: WorldEventId | null) => {
       setSelectedEventId(eventId)
       if (eventId) {
-        setSidebarCollapsed(false)
         const event = events.find((e) => e.id === eventId)
         if (event) setFlyToTarget([...event.coordinates])
       }

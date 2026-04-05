@@ -17,6 +17,7 @@ export const idTypesMapNameToPrefix = {
   worldIdVerification: "wid",
   agentWallet: "agw",
   agentProfile: "agt",
+  paymentLedger: "pay",
 } as const
 
 export type IdTypePrefixNames = keyof typeof idTypesMapNameToPrefix
@@ -98,3 +99,6 @@ export type AgentProfileId = z.infer<typeof AgentProfileId>
 
 export const EventDisputeId = typeIdValidator("eventDispute")
 export type EventDisputeId = z.infer<typeof EventDisputeId>
+
+export const PaymentLedgerId = typeIdValidator("paymentLedger")
+export type PaymentLedgerId = z.infer<typeof PaymentLedgerId>

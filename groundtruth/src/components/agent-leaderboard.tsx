@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useAgentLeaderboard } from "@/hooks/use-agent-leaderboard"
 import { useAgentReputation } from "@/hooks/use-agent-reputation"
-import { ERC8004_IDENTITY_REGISTRY } from "@/lib/contracts"
+import { agentExplorerUrl, ensAppUrl } from "@/lib/explorers"
+import { useRevenueLeaderboard } from "@/hooks/use-payment-stats"
 import {
   BotIcon,
+  CoinsIcon,
   ExternalLinkIcon,
   ShieldAlertIcon,
 } from "lucide-react"
@@ -15,6 +17,7 @@ import {
 function AgentRow({
   agent,
   rank,
+  earnings,
 }: {
   agent: {
     ensName: string
@@ -24,6 +27,7 @@ function AgentRow({
     agentWallet: { address: string } | null
   }
   rank: number
+  earnings?: string | null
 }) {
   const reputation = useAgentReputation(agent.erc8004AgentId ?? undefined)
 
@@ -36,7 +40,7 @@ function AgentRow({
         <div className="flex items-center gap-1.5">
           <BotIcon size={12} className="shrink-0 text-violet-500" />
           <a
-            href={`https://app.ens.domains/${agent.ensName}`}
+            href={ensAppUrl(agent.ensName)}
             target="_blank"
             rel="noopener noreferrer"
             className="truncate font-mono text-xs font-medium text-violet-500 hover:underline"
@@ -45,7 +49,7 @@ function AgentRow({
           </a>
           {agent.erc8004AgentId && (
             <a
-              href={`https://etherscan.io/nft/${ERC8004_IDENTITY_REGISTRY}/${agent.erc8004AgentId}`}
+              href={agentExplorerUrl(agent.erc8004AgentId)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] text-muted-foreground hover:underline"
@@ -68,6 +72,15 @@ function AgentRow({
               Rep: {reputation.data.value} ({reputation.data.count})
             </Badge>
           )}
+          {earnings && parseFloat(earnings) > 0 && (
+            <Badge
+              variant="outline"
+              className="gap-0.5 text-[10px] text-emerald-500 border-emerald-500/20"
+            >
+              <CoinsIcon size={8} />
+              ${earnings} USDC
+            </Badge>
+          )}
           {agent.agentWallet && (
             <span className="font-mono text-[10px] text-muted-foreground/60">
               {agent.agentWallet.address.slice(0, 6)}...{agent.agentWallet.address.slice(-4)}
@@ -81,6 +94,15 @@ function AgentRow({
 
 export function AgentLeaderboard() {
   const { data: agents, isLoading } = useAgentLeaderboard()
+  const { data: revenueData } = useRevenueLeaderboard()
+
+  // Map agent wallet address → earnings
+  const earningsMap = new Map<string, string>()
+  if (revenueData) {
+    for (const r of revenueData) {
+      earningsMap.set(r.agentAddress.toLowerCase(), r.estimatedEarningsUsd)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -102,7 +124,12 @@ export function AgentLeaderboard() {
   return (
     <div className="divide-y rounded-lg border bg-background/50">
       {agents.map((agent, i) => (
-        <AgentRow key={agent.id} agent={agent} rank={i + 1} />
+        <AgentRow
+          key={agent.id}
+          agent={agent}
+          rank={i + 1}
+          earnings={agent.agentWallet ? earningsMap.get(agent.agentWallet.address.toLowerCase()) : null}
+        />
       ))}
     </div>
   )

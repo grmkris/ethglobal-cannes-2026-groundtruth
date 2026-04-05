@@ -8,7 +8,10 @@ import { toast } from "sonner"
 export function useEvents() {
   const query = useQuery({
     queryKey: ["events", "getAll"],
-    queryFn: () => client.event.getAll(),
+    queryFn: async () => {
+      const result = await client.event.getAll()
+      return result.items
+    },
     staleTime: 30_000,
     refetchInterval: 30_000,
   })

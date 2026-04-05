@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ChatInput } from "@/components/chat/chat-input"
 import { ChatMessageItem } from "@/components/chat/chat-message"
 import { getCategoryConfig } from "@/lib/event-categories"
-import { ERC8004_IDENTITY_REGISTRY } from "@/lib/contracts"
+import { agentExplorerUrl, ensAppUrl, etherscanUrl } from "@/lib/explorers"
 import { useChat } from "@/hooks/use-chat"
 import { useAgentReputation } from "@/hooks/use-agent-reputation"
 import { useSession } from "@/lib/auth-client"
@@ -24,7 +24,6 @@ import {
   BotIcon,
   ExternalLinkIcon,
   MessageCircleIcon,
-  ShieldAlertIcon,
   UsersIcon,
   WalletIcon,
   XIcon,
@@ -145,23 +144,25 @@ export function EventDetailPanel({
 
             {/* Agent identity */}
             {event.agentAddress ? (
-              <div className="rounded-md border border-violet-500/10 bg-violet-500/5 p-2 space-y-1.5">
-                <div className="flex items-center gap-1 text-[10px]">
+              <div className="rounded-md border border-violet-500/10 bg-violet-500/5 px-2 py-1.5 space-y-1">
+                <div className="flex items-center gap-1 text-[10px] flex-wrap">
                   <span className="text-muted-foreground">by</span>
                   <a
-                    href={`https://etherscan.io/address/${event.agentAddress}`}
+                    href={etherscanUrl("address", event.agentAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-medium text-foreground hover:underline"
                   >
                     {event.creatorName}
                   </a>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px]">
+                  {event.worldIdVerified && (
+                    <BadgeCheckIcon size={9} className="shrink-0 text-emerald-500" />
+                  )}
+                  <span className="text-muted-foreground/40">·</span>
                   <BotIcon size={9} className="shrink-0 text-violet-500" />
                   {event.agentEnsName ? (
                     <a
-                      href={`https://app.ens.domains/${event.agentEnsName}`}
+                      href={ensAppUrl(event.agentEnsName)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono font-medium text-violet-500 hover:underline"
@@ -170,38 +171,36 @@ export function EventDetailPanel({
                     </a>
                   ) : (
                     <span className="font-mono text-muted-foreground">
-                      {event.agentAddress.slice(0, 6)}...
-                      {event.agentAddress.slice(-4)}
+                      {event.agentAddress.slice(0, 6)}...{event.agentAddress.slice(-4)}
                     </span>
                   )}
                   {event.onChainVerified && (
-                    <BadgeCheckIcon
-                      size={9}
-                      className="shrink-0 text-emerald-500"
-                    />
+                    <BadgeCheckIcon size={9} className="shrink-0 text-emerald-500" />
                   )}
                 </div>
-                {event.erc8004AgentId && (
-                  <div className="flex items-center gap-1.5 text-[10px]">
-                    <a
-                      href={`https://etherscan.io/nft/${ERC8004_IDENTITY_REGISTRY}/${event.erc8004AgentId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      ERC-8004 #{event.erc8004AgentId}
-                      <ExternalLinkIcon size={7} className="ml-0.5 inline" />
-                    </a>
-                  </div>
-                )}
-                {reputation.data && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <ShieldAlertIcon size={9} className="shrink-0" />
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  {event.erc8004AgentId && (
+                    <>
+                      <a
+                        href={agentExplorerUrl(event.erc8004AgentId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-foreground hover:underline"
+                      >
+                        ERC-8004 #{event.erc8004AgentId}
+                        <ExternalLinkIcon size={7} className="ml-0.5 inline" />
+                      </a>
+                    </>
+                  )}
+                  {event.erc8004AgentId && reputation.data && (
+                    <span className="text-muted-foreground/40">·</span>
+                  )}
+                  {reputation.data && (
                     <span>
                       Rep: {reputation.data.value} ({reputation.data.count} reviews)
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-1 text-[10px] text-muted-foreground">

@@ -42,12 +42,12 @@ export function createMcpServer(props: {
 
   server.tool(
     "query_events",
-    "Search world events by category, severity, or text. Returns all events if no filters provided.",
+    "Search world events by category, severity, or text. Supports pagination via limit/cursor. Returns { items, nextCursor }.",
     {
       category: z
-        .enum(CATEGORIES)
+        .union([z.enum(CATEGORIES), z.array(z.enum(CATEGORIES))])
         .optional()
-        .describe("Filter by event category"),
+        .describe("Filter by category — single value or array of categories"),
       severity: z
         .enum(SEVERITIES)
         .optional()
@@ -56,12 +56,23 @@ export function createMcpServer(props: {
         .string()
         .optional()
         .describe("Search in title and location"),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(200)
+        .optional()
+        .describe("Max events to return (default 50)"),
+      cursor: z
+        .string()
+        .optional()
+        .describe("Pagination cursor from previous response's nextCursor"),
     },
-    async ({ category, severity, search }) => {
-      const events = await client.getEvents({ category, severity, search })
+    async ({ category, severity, search, limit, cursor }) => {
+      const result = await client.getEvents({ category, severity, search, limit, cursor })
       return {
         content: [
-          { type: "text" as const, text: JSON.stringify(events, null, 2) },
+          { type: "text" as const, text: JSON.stringify(result, null, 2) },
         ],
       }
     }
@@ -196,6 +207,96 @@ export function createMcpServer(props: {
       } catch (err: any) {
         return {
           content: [{ type: "text" as const, text: `Failed to submit signature: ${err?.message ?? "unknown error"}` }],
+        }
+      }
+    }
+  )
+
+  // --- Gateway tools (Arc Nanopayments) ---
+
+  server.tool(
+    "gateway_balance",
+    "Check your USDC balances: wallet balance (on Arc testnet) and Circle Gateway balance (available for gasless payments). Use this to check if you need to deposit before making paid reads.",
+    {},
+    async () => {
+      const balances = await client.getGatewayBalance()
+      if (!balances) {
+        return {
+          content: [{ type: "text" as const, text: "Gateway client not available. Cannot check balances." }],
+        }
+      }
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            wallet: { balance: balances.wallet.formatted, chain: "Arc Testnet" },
+            gateway: {
+              available: balances.gateway.formattedAvailable,
+              total: balances.gateway.formattedTotal,
+              note: "Gateway balance is used for gasless x402 payments when free reads are exhausted (3 free/hour).",
+            },
+          }, null, 2),
+        }],
+      }
+    }
+  )
+
+  server.tool(
+    "gateway_deposit",
+    "Deposit USDC from your Arc testnet wallet into the Circle Gateway for gasless x402 payments. You need Gateway balance to pay for reads after the free tier (3/hour). This is a one-time on-chain transaction — after deposit, all payments are gasless.",
+    {
+      amount: z.string().describe("Amount of USDC to deposit (e.g. '5' for 5 USDC)"),
+    },
+    async ({ amount }) => {
+      try {
+        const result = await client.depositToGateway(amount)
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              success: true,
+              deposited: result.formattedAmount + " USDC",
+              depositTxHash: result.depositTxHash,
+              approvalTxHash: result.approvalTxHash ?? null,
+              note: "Deposit complete. Reads after the free tier (3/hour) will now be paid gaslessly from your Gateway balance.",
+            }, null, 2),
+          }],
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: `Deposit failed: ${err?.message ?? "unknown error"}. Make sure you have USDC on Arc testnet (get from https://faucet.circle.com).` }],
+        }
+      }
+    }
+  )
+
+  server.tool(
+    "gateway_withdraw",
+    "Withdraw USDC from Circle Gateway back to your Arc testnet wallet.",
+    {
+      amount: z.string().describe("Amount of USDC to withdraw (e.g. '5' for 5 USDC)"),
+    },
+    async ({ amount }) => {
+      if (!client.gatewayClient) {
+        return {
+          content: [{ type: "text" as const, text: "Gateway client not available." }],
+        }
+      }
+      try {
+        const result = await client.gatewayClient.withdraw(amount)
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              success: true,
+              withdrawn: result.formattedAmount + " USDC",
+              txHash: result.mintTxHash,
+            }, null, 2),
+          }],
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: `Withdraw failed: ${err?.message ?? "unknown error"}` }],
         }
       }
     }

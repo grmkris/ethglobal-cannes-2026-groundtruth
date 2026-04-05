@@ -3,7 +3,7 @@ import type { AppRouterClient } from "@/server/api/router"
 // Extract frontend types from oRPC client return types — always in sync with API
 export type WorldEvent = Awaited<
   ReturnType<AppRouterClient["event"]["getAll"]>
->[number]
+>["items"][number]
 
 export type ChatMessage = Awaited<
   ReturnType<AppRouterClient["chat"]["getMessages"]>

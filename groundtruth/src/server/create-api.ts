@@ -14,6 +14,7 @@ import { createEventService } from "./services/event.service"
 import { createChatService } from "./services/chat.service"
 import { createAgentApp } from "./agentkit"
 import { createIdentityVerificationService } from "./services/identity-verification"
+import { createPaymentService } from "./services/payment.service"
 import { env } from "@/env"
 import { UserId } from "@/lib/typeid"
 import type { Database } from "./db/db"
@@ -25,6 +26,7 @@ export function createApi(props: { db: Database }) {
   const authService = createAuthService({ db })
   const eventService = createEventService({ db })
   const chatService = createChatService({ db })
+  const paymentService = createPaymentService({ db })
 
   // --- Auth ---
   const auth = createAuth({
@@ -61,12 +63,13 @@ export function createApi(props: { db: Database }) {
     authService,
   })
 
-  // Agent API — x402 + AgentKit protected REST endpoints
+  // Agent API — x402 + AgentKit protected REST endpoints (Arc Nanopayments)
   const agentApp = createAgentApp({
     db,
     eventService,
     chatService,
     authService,
+    paymentService,
     identityVerification,
     payTo: env.AGENT_PAY_TO_ADDRESS,
   })
@@ -114,6 +117,7 @@ export function createApi(props: { db: Database }) {
       authService,
       eventService,
       chatService,
+      paymentService,
       session,
     })
 

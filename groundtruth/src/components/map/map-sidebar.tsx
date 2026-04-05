@@ -10,6 +10,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ChatInput } from "@/components/chat/chat-input"
 import { ChatMessageItem } from "@/components/chat/chat-message"
 import { getCategoryConfig } from "@/lib/event-categories"
+import { agentExplorerUrl } from "@/lib/explorers"
 import { ConfidenceMeter } from "./confidence-meter"
 import { useSession } from "@/lib/auth-client"
 import type { EventCategory, SeverityLevel, WorldEvent } from "@/lib/orpc-types"
@@ -28,6 +29,7 @@ import {
 import { useLayoutEffect, useRef } from "react"
 import { useAppKit } from "@reown/appkit/react"
 import { CategoryFilter } from "./category-filter"
+import { usePaymentStats } from "@/hooks/use-payment-stats"
 
 const SEVERITY_DOT: Record<SeverityLevel, string> = {
   critical: "bg-red-500",
@@ -57,6 +59,7 @@ function EventListItem({
   onFlyTo,
   onSelectEvent,
   onOpenChat,
+  onCollapseMobile,
 }: {
   event: WorldEvent
   index: number
@@ -64,6 +67,7 @@ function EventListItem({
   onFlyTo: (coordinates: [number, number]) => void
   onSelectEvent: (eventId: WorldEventId) => void
   onOpenChat: (eventId: WorldEventId) => void
+  onCollapseMobile: () => void
 }) {
   const config = getCategoryConfig(event.category)
   const time = new Date(event.timestamp).toLocaleString("en-US", {
@@ -82,6 +86,7 @@ function EventListItem({
       onClick={() => {
         onSelectEvent(event.id)
         onFlyTo(event.coordinates)
+        onCollapseMobile()
       }}
     >
       <div className="mb-1 flex items-center gap-1.5">
@@ -129,7 +134,7 @@ function EventListItem({
             <span className="text-muted-foreground/40">·</span>
             <BotIcon size={10} className="shrink-0 text-violet-500" />
             <span className="truncate text-violet-500">{event.agentEnsName ?? `${event.agentAddress.slice(0, 6)}...${event.agentAddress.slice(-4)}`}</span>
-            {event.erc8004AgentId && <span className="shrink-0 text-[9px] text-violet-400">#{event.erc8004AgentId}</span>}
+            {event.erc8004AgentId && <a href={agentExplorerUrl(event.erc8004AgentId)} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[9px] text-violet-400 hover:underline">#{event.erc8004AgentId}</a>}
             {event.onChainVerified && <BadgeCheckIcon size={10} className="shrink-0 text-emerald-500" />}
           </>
         )}
@@ -185,6 +190,7 @@ export function MapSidebar({
   const isSignedIn = !!sessionData?.session
   const { open: openAppKit } = useAppKit()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { data: paymentStats } = usePaymentStats()
 
   const { messages, send } = useChat(null, { enabled: activeTab === "chat" })
   const messageList = messages.data ?? []
@@ -264,6 +270,17 @@ export function MapSidebar({
               <TooltipContent>Collapse sidebar</TooltipContent>
             </Tooltip>
           </div>
+
+          {/* Micropayment stats bar */}
+          {paymentStats && paymentStats.totalTransactions > 0 && (
+            <div className="flex items-center gap-3 border-b px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
+              <span>{paymentStats.totalTransactions} txns</span>
+              <span className="text-muted-foreground/40">|</span>
+              <span className="text-emerald-500">${parseFloat(paymentStats.totalRevenueUsd).toFixed(4)} USDC</span>
+              <span className="text-muted-foreground/40">|</span>
+              <span>Arc</span>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs
@@ -359,6 +376,9 @@ export function MapSidebar({
                         onFlyTo={onFlyTo}
                         onSelectEvent={onSelectEvent}
                         onOpenChat={handleOpenChat}
+                        onCollapseMobile={() => {
+                          if (window.innerWidth < 640) onCollapsedChange(true)
+                        }}
                       />
                     ))
                   )}

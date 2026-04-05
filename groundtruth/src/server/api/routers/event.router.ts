@@ -14,9 +14,11 @@ export const eventRouter = {
     .input(
       z
         .object({
-          category: eventCategorySchema.optional(),
+          category: z.union([eventCategorySchema, z.array(eventCategorySchema)]).optional(),
           severity: severityLevelSchema.optional(),
           search: z.string().optional(),
+          limit: z.number().int().min(1).max(200).optional(),
+          cursor: WorldEventId.optional(),
         })
         .optional()
     )

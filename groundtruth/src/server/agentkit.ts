@@ -1,6 +1,5 @@
 import { Hono } from "hono"
-import { HTTPFacilitatorClient } from "@x402/core/http"
-import { ExactEvmScheme } from "@x402/evm/exact/server"
+import { BatchFacilitatorClient, GatewayEvmScheme } from "@circle-fin/x402-batching/server"
 import {
   paymentMiddlewareFromHTTPServer,
   x402HTTPResourceServer,
@@ -29,12 +28,12 @@ import { agentkitNonce, agentkitUsage } from "./db/schema/auth/auth.db"
 import type { AuthService } from "./services/auth.service"
 import type { EventService } from "./services/event.service"
 import type { ChatService } from "./services/chat.service"
+import type { PaymentService } from "./services/payment.service"
 import type { RoutesConfig } from "@x402/core/server"
 import type { UserId } from "@/lib/typeid"
 import type { Database } from "./db/db"
 
-const WORLD_CHAIN = "eip155:480" as const
-const WORLD_USDC = "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1"
+const ARC_TESTNET = "eip155:5042002" as const
 
 type AgentEnv = EvlogVariables & {
   Variables: {
@@ -60,8 +59,21 @@ class DrizzleAgentKitStorage implements AgentKitStorage {
       where: (u, { eq, and }) => and(eq(u.humanId, humanId), eq(u.endpoint, endpoint)),
     })
 
+    const ONE_HOUR = 60 * 60 * 1000
+
     if (!existing) {
-      await this.db.insert(agentkitUsage).values({ humanId, endpoint, usageCount: 1 })
+      await this.db.insert(agentkitUsage).values({
+        humanId, endpoint, usageCount: 1, windowStart: new Date(),
+      })
+      return true
+    }
+
+    // Reset window if expired (3 free per hour)
+    if (Date.now() - existing.windowStart.getTime() > ONE_HOUR) {
+      await this.db
+        .update(agentkitUsage)
+        .set({ usageCount: 1, windowStart: new Date() })
+        .where(and(eq(agentkitUsage.humanId, humanId), eq(agentkitUsage.endpoint, endpoint)))
       return true
     }
 
@@ -73,7 +85,7 @@ class DrizzleAgentKitStorage implements AgentKitStorage {
       return true
     }
 
-    return false // exceeded free trial — x402 payment required
+    return false // exceeded free trial — Arc Nanopayment required
   }
 
   async hasUsedNonce(nonce: string): Promise<boolean> {
@@ -96,19 +108,21 @@ export function createAgentApp(props: {
   eventService: EventService
   chatService: ChatService
   authService: AuthService
+  paymentService: PaymentService
   identityVerification?: { verifyAgentIdentity: (params: { erc8004AgentId: string; agentAddress: string }) => Promise<boolean> }
   payTo: string
 }) {
-  const { db, eventService, chatService, authService, identityVerification, payTo } = props
+  const { db, eventService, chatService, authService, paymentService, identityVerification, payTo } = props
 
   // --- AgentKit setup ---
   const storage = new DrizzleAgentKitStorage(db)
 
-  // Custom permissive hook: verifies SIWE signature but does NOT require AgentBook registration.
-  // Agents without World ID / AgentBook can still authenticate — they just won't get a verification badge.
-  const permissiveRequestHook = async (context: {
+  // Dual-mode hook: verifies SIWE signature for identity.
+  // POST (writes) = always free. GET (reads) = 3 free/hour, then Arc Nanopayment.
+  const dualModeRequestHook = async (context: {
     adapter: { getHeader(name: string): string | undefined; getUrl(): string }
     path: string
+    method?: string
   }): Promise<void | { grantAccess: true }> => {
     const header = context.adapter.getHeader("agentkit")
     if (!header) return
@@ -124,53 +138,74 @@ export function createAgentApp(props: {
       if (!verification.valid) return
 
       await storage.recordNonce(payload.nonce)
-      return { grantAccess: true }
+
+      // Determine if this is a write (POST) or read (GET)
+      // context.method is set by the Hono x402 middleware (c.req.method)
+      const method = context.method ?? "GET"
+
+      // POST = always free (writes are free, we want agents to contribute)
+      if (method === "POST") {
+        return { grantAccess: true }
+      }
+
+      // GET = 3 free per hour, then Arc Nanopayment required
+      // Rate-limit by userId (sybil-resistant) with address fallback
+      const result = await authService.getUserByAgentAddress({ address: payload.address })
+      const rateLimitKey = result?.userId ?? payload.address.toLowerCase()
+      const hasFreeUses = await storage.tryIncrementUsage(context.path, rateLimitKey, 3)
+
+      if (hasFreeUses) {
+        return { grantAccess: true }
+      }
+
+      // Exhausted free tier — fall through to x402 Arc Nanopayment
+      return
     } catch {
       return
     }
   }
 
-  const facilitatorClient = new HTTPFacilitatorClient({
-    url: "https://x402-worldchain.vercel.app/facilitator",
-  })
+  // Circle Gateway facilitator for Arc testnet (gasless, batched settlement)
+  const arcFacilitator = new BatchFacilitatorClient()
 
-  const evmScheme = new ExactEvmScheme().registerMoneyParser(
-    async (amount, network) => {
-      if (network !== WORLD_CHAIN) return null
-      return {
-        amount: String(Math.round(amount * 1e6)),
-        asset: WORLD_USDC,
-        extra: { name: "USD Coin", version: "2" },
-      }
-    }
-  )
+  // GatewayEvmScheme auto-registers money parsers for all Gateway-supported chains
+  const gatewayScheme = new GatewayEvmScheme()
 
   const agentExt = declareAgentkitExtension({
     statement: "Access Ground Truth API as a verified human-backed agent",
     mode: { type: "free-trial", uses: 3 },
   })
 
-  const accepts = [
-    { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo },
+  // Reads: $0.005 on Arc testnet (after 3 free/hour)
+  const readAccepts = [
+    { scheme: "exact" as const, price: "$0.005", network: ARC_TESTNET, payTo },
+  ]
+  // Writes: $0.01 on Arc testnet (but always free via hook — accepts needed for 402 challenge)
+  const writeAccepts = [
+    { scheme: "exact" as const, price: "$0.01", network: ARC_TESTNET, payTo },
   ]
 
   const routes = {
-    "GET /api/agent/events": { accepts, extensions: agentExt },
-    "GET /api/agent/events/:id": { accepts, extensions: agentExt },
-    "POST /api/agent/events": { accepts, extensions: agentExt },
-    "GET /api/agent/chat": { accepts, extensions: agentExt },
-    "POST /api/agent/chat": { accepts, extensions: agentExt },
-    "POST /api/agent/upload": { accepts, extensions: agentExt },
+    "GET /api/agent/events": { accepts: readAccepts, extensions: agentExt },
+    "GET /api/agent/events/:id": { accepts: readAccepts, extensions: agentExt },
+    "POST /api/agent/events": { accepts: writeAccepts, extensions: agentExt },
+    "GET /api/agent/chat": { accepts: readAccepts, extensions: agentExt },
+    "POST /api/agent/chat": { accepts: writeAccepts, extensions: agentExt },
+    "POST /api/agent/upload": { accepts: writeAccepts, extensions: agentExt },
   } satisfies RoutesConfig
 
-  const resourceServer = new x402ResourceServer(facilitatorClient)
-    .register(WORLD_CHAIN, evmScheme)
+  // Cast: BatchFacilitatorClient's PaymentPayload types are slightly narrower than @x402/core's
+  // (description: string vs string | undefined) — structurally compatible at runtime
+  const resourceServer = new x402ResourceServer(
+    arcFacilitator as unknown as import("@x402/core/server").FacilitatorClient
+  )
+    .register(ARC_TESTNET, gatewayScheme)
     .registerExtension(agentkitResourceServerExtension)
 
   const httpServer = new x402HTTPResourceServer(
     resourceServer,
     routes
-  ).onProtectedRequest(permissiveRequestHook)
+  ).onProtectedRequest(dualModeRequestHook)
 
   // --- Hono sub-app ---
   const app = new Hono<AgentEnv>()
@@ -228,6 +263,12 @@ export function createAgentApp(props: {
 
   // --- Routes ---
 
+  // Public stats endpoint (no auth, no payment)
+  app.get("/stats", async (c) => {
+    const stats = await paymentService.getStats()
+    return c.json(stats)
+  })
+
   app.get("/identity", async (c) => {
     const agentAddress = c.get("agentAddress")
     if (!agentAddress) return c.json({ error: "No agent address" }, 401)
@@ -271,17 +312,37 @@ export function createAgentApp(props: {
 
     const query = c.req.query()
     const category = query.category
-      ? eventCategorySchema.parse(query.category)
+      ? query.category.includes(",")
+        ? query.category.split(",").map(c => eventCategorySchema.parse(c.trim()))
+        : eventCategorySchema.parse(query.category)
       : undefined
     const severity = query.severity
       ? severityLevelSchema.parse(query.severity)
       : undefined
-    const events = await eventService.getAll({
+    const limit = query.limit ? Number(query.limit) : undefined
+    const cursor = query.cursor ? WorldEventId.parse(query.cursor) : undefined
+    const result = await eventService.getAll({
       category,
       severity,
       search: query.search,
+      limit,
+      cursor,
     })
-    return c.json(events)
+
+    // Record if this was a paid read (payment-signature header = x402 payment happened)
+    const agentAddress = c.get("agentAddress")
+    const wasPaid = c.req.header("payment-signature") || c.req.header("x-payment")
+    if (agentAddress && wasPaid) {
+      paymentService.recordPayment({
+        payerAddress: agentAddress,
+        route: "GET /api/agent/events",
+        amountUsd: "0.005",
+        network: ARC_TESTNET,
+        category: Array.isArray(category) ? category[0] : category ?? null,
+      }).catch(() => {})
+    }
+
+    return c.json(result)
   })
 
   app.get("/events/:id", async (c) => {
@@ -291,6 +352,19 @@ export function createAgentApp(props: {
     const id = WorldEventId.parse(c.req.param("id"))
     const event = await eventService.getById({ id })
     if (!event) return c.json({ error: "Event not found" }, 404)
+
+    // Record paid reads only
+    const agentAddress = c.get("agentAddress")
+    const wasPaid = c.req.header("payment-signature") || c.req.header("x-payment")
+    if (agentAddress && wasPaid) {
+      paymentService.recordPayment({
+        payerAddress: agentAddress,
+        route: "GET /api/agent/events/:id",
+        amountUsd: "0.005",
+        network: ARC_TESTNET,
+      }).catch(() => {})
+    }
+
     return c.json(event)
   })
 

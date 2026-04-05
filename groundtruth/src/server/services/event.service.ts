@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, ilike, isNotNull, or, sql, type SQL } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, ilike, inArray, isNotNull, lt, or, sql, type SQL } from "drizzle-orm"
 import { getAddress } from "viem"
 import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
@@ -52,14 +52,21 @@ export function createEventService(props: { db: Database }) {
   const { db } = props
 
   async function getAll(params?: {
-    category?: EventCategory
+    category?: EventCategory | EventCategory[]
     severity?: SeverityLevel
     search?: string
+    limit?: number
+    cursor?: WorldEventId
   }) {
     const conditions: SQL[] = []
+    const limit = params?.limit ? Math.min(params.limit, 200) : undefined
 
     if (params?.category) {
-      conditions.push(eq(worldEvent.category, params.category))
+      if (Array.isArray(params.category)) {
+        conditions.push(inArray(worldEvent.category, params.category))
+      } else {
+        conditions.push(eq(worldEvent.category, params.category))
+      }
     }
     if (params?.severity) {
       conditions.push(eq(worldEvent.severity, params.severity))
@@ -73,7 +80,17 @@ export function createEventService(props: { db: Database }) {
       if (searchCondition) conditions.push(searchCondition)
     }
 
-    const rows = await db
+    if (params?.cursor) {
+      const cursorRow = await db.query.worldEvent.findFirst({
+        where: eq(worldEvent.id, params.cursor),
+        columns: { timestamp: true },
+      })
+      if (cursorRow) {
+        conditions.push(lt(worldEvent.timestamp, cursorRow.timestamp))
+      }
+    }
+
+    const baseQuery = db
       .select({
         ...getTableColumns(worldEvent),
         worldIdVerified: user.worldIdVerified,
@@ -84,7 +101,18 @@ export function createEventService(props: { db: Database }) {
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(desc(worldEvent.timestamp))
 
-    return rows.map(toWorldEvent)
+    const rows = limit
+      ? await baseQuery.limit(limit + 1)
+      : await baseQuery
+
+    if (limit) {
+      const hasMore = rows.length > limit
+      const items = rows.slice(0, limit).map(toWorldEvent)
+      const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null
+      return { items, nextCursor }
+    }
+
+    return { items: rows.map(toWorldEvent), nextCursor: null }
   }
 
   async function getById(params: { id: WorldEventId }) {

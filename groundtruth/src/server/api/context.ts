@@ -3,6 +3,7 @@ import type { Auth } from "../auth"
 import type { AuthService } from "../services/auth.service"
 import type { ChatService } from "../services/chat.service"
 import type { EventService } from "../services/event.service"
+import type { PaymentService } from "../services/payment.service"
 
 export type Session = Awaited<ReturnType<Auth["api"]["getSession"]>>
 
@@ -12,6 +13,7 @@ export function createContext(props: {
   authService: AuthService
   eventService: EventService
   chatService: ChatService
+  paymentService: PaymentService
   session: Session
 }) {
   return {
@@ -20,6 +22,7 @@ export function createContext(props: {
     authService: props.authService,
     eventService: props.eventService,
     chatService: props.chatService,
+    paymentService: props.paymentService,
     session: props.session,
   }
 }

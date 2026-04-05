@@ -1,15 +1,20 @@
 import { privateKeyToAccount } from "viem/accounts"
 import { getAddress } from "viem"
+import { GatewayClient } from "@circle-fin/x402-batching/client"
 
 const ERC8004_IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const
 
 /**
  * HTTP client for the /api/agent/* endpoints.
- * Handles the x402 + AgentKit challenge-response flow automatically:
- *   1. Send request (no auth)
- *   2. If 402 → parse challenge from `payment-required` header
- *   3. Sign SIWE message with agent wallet
- *   4. Retry with signed `agentkit` header
+ * Dual-mode x402 flow:
+ *   - Writes (POST): always free — just AgentKit SIWE for identity
+ *   - Reads (GET): 3 free/hour, then Arc Nanopayment via Circle Gateway
+ *
+ * Flow:
+ *   1. Send request → 402 with agentkit challenge
+ *   2. Sign SIWE → retry with `agentkit` header
+ *   3. If free tier OK → done
+ *   4. If 402 again → GatewayClient pays via Arc Nanopayment
  */
 export function createAgentClient(props: {
   privateKey: `0x${string}`
@@ -19,40 +24,33 @@ export function createAgentClient(props: {
   const baseUrl = props.apiUrl.replace(/\/$/, "")
   const address = getAddress(account.address)
 
-  /**
-   * Fetch with automatic 402 challenge-response handling.
-   * Mirrors the flow from scripts/agent-demo.ts.
-   */
-  async function agentFetch(
-    url: string,
-    init?: RequestInit
-  ): Promise<Response> {
-    const res = await fetch(url, init)
+  // Circle Gateway client for paid reads (Arc testnet, gasless batched settlement)
+  let gateway: GatewayClient | null = null
+  try {
+    gateway = new GatewayClient({
+      chain: "arcTestnet",
+      privateKey: props.privateKey,
+    })
+  } catch {
+    // Gateway not available — reads limited to free tier
+  }
 
-    if (res.status !== 402) return res
-
-    // Parse 402 challenge from payment-required header (base64-encoded JSON)
+  /** Sign AgentKit SIWE challenge from a 402 response */
+  async function signAgentkitChallenge(res: Response): Promise<string | null> {
     const prHeader = res.headers.get("payment-required")
-    if (!prHeader) throw new Error("402 without payment-required header")
+    if (!prHeader) return null
 
     const challenge = JSON.parse(atob(prHeader))
     const agentkit = challenge?.extensions?.agentkit
-
-    if (!agentkit) {
-      throw new Error("402 without agentkit extension — payment required")
-    }
+    if (!agentkit) return null
 
     const { info, supportedChains } = agentkit
-
-    // Pick first EVM chain
     const chain = supportedChains?.find((c: { chainId: string }) =>
       c.chainId.startsWith("eip155:")
     )
-    if (!chain) throw new Error("No supported EVM chain in 402 challenge")
+    if (!chain) return null
 
     const numericChainId = chain.chainId.split(":")[1]
-
-    // Construct SIWE message from server-provided challenge
     const lines = [
       `${info.domain} wants you to sign in with your Ethereum account:`,
       address,
@@ -65,8 +63,7 @@ export function createAgentClient(props: {
       `Nonce: ${info.nonce}`,
       `Issued At: ${info.issuedAt}`,
     ]
-    if (info.expirationTime)
-      lines.push(`Expiration Time: ${info.expirationTime}`)
+    if (info.expirationTime) lines.push(`Expiration Time: ${info.expirationTime}`)
     if (info.notBefore) lines.push(`Not Before: ${info.notBefore}`)
     if (info.requestId) lines.push(`Request ID: ${info.requestId}`)
     if (info.resources?.length) {
@@ -77,24 +74,64 @@ export function createAgentClient(props: {
     const message = lines.join("\n")
     const signature = await account.signMessage({ message })
 
-    // Build agentkit header from challenge + signature
-    const header = btoa(
-      JSON.stringify({
-        ...info,
-        address,
-        chainId: chain.chainId,
-        type: chain.type,
-        signature,
-      })
-    )
+    return btoa(JSON.stringify({
+      ...info,
+      address,
+      chainId: chain.chainId,
+      type: chain.type,
+      signature,
+    }))
+  }
 
-    // Retry with signed header
+  /**
+   * Fetch with dual-mode 402 handling:
+   * 1. First 402: sign SIWE for identity → retry
+   * 2. Second 402 (free tier exhausted): pay via Arc Gateway → retry
+   */
+  async function agentFetch(
+    url: string,
+    init?: RequestInit
+  ): Promise<Response> {
+    const res = await fetch(url, init)
+    if (res.status !== 402) return res
+
+    // First 402: sign AgentKit SIWE
+    const agentkitHeader = await signAgentkitChallenge(res)
+    if (!agentkitHeader) throw new Error("402 without agentkit extension")
+
     const retryHeaders = new Headers(init?.headers)
-    retryHeaders.set("agentkit", header)
+    retryHeaders.set("agentkit", agentkitHeader)
 
-    return fetch(url, {
+    const res2 = await fetch(url, {
       ...init,
       headers: Object.fromEntries(retryHeaders.entries()),
+    })
+
+    // Free tier accepted — done
+    if (res2.status !== 402) return res2
+
+    // Second 402: free tier exhausted — need Arc Nanopayment
+    if (!gateway) {
+      throw new Error("Free tier exhausted and no Gateway client configured for Arc payments")
+    }
+
+    // Use GatewayClient to handle payment — it sends its own 402 flow
+    // Pass agentkit header so the server can still identify the agent
+    const payResult = await gateway.pay(url, {
+      method: (init?.method as "GET" | "POST") ?? "GET",
+      body: init?.body ? JSON.parse(init.body as string) : undefined,
+      headers: {
+        agentkit: agentkitHeader,
+        ...(init?.headers && typeof init.headers === "object" && !("entries" in init.headers)
+          ? (init.headers as Record<string, string>)
+          : {}),
+      },
+    })
+
+    // Convert PayResult to Response for the request() function
+    return new Response(JSON.stringify(payResult.data), {
+      status: payResult.status,
+      headers: { "content-type": "application/json" },
     })
   }
 
@@ -121,18 +158,37 @@ export function createAgentClient(props: {
 
   return {
     walletAddress: address,
+    gatewayClient: gateway,
+
+    /** Deposit USDC into Circle Gateway for gasless payments (one-time setup) */
+    async depositToGateway(amount: string) {
+      if (!gateway) throw new Error("Gateway client not configured")
+      return gateway.deposit(amount)
+    },
+
+    /** Check Gateway balance */
+    async getGatewayBalance() {
+      if (!gateway) return null
+      return gateway.getBalances()
+    },
 
     getEvents(params?: {
-      category?: string
+      category?: string | string[]
       severity?: string
       search?: string
+      limit?: number
+      cursor?: string
     }) {
       const qs = new URLSearchParams()
-      if (params?.category) qs.set("category", params.category)
+      if (params?.category) {
+        qs.set("category", Array.isArray(params.category) ? params.category.join(",") : params.category)
+      }
       if (params?.severity) qs.set("severity", params.severity)
       if (params?.search) qs.set("search", params.search)
+      if (params?.limit) qs.set("limit", String(params.limit))
+      if (params?.cursor) qs.set("cursor", params.cursor)
       const query = qs.toString()
-      return request<unknown[]>("GET", `/events${query ? `?${query}` : ""}`)
+      return request<{ items: unknown[]; nextCursor: string | null }>("GET", `/events${query ? `?${query}` : ""}`)
     },
 
     getEvent(id: string) {

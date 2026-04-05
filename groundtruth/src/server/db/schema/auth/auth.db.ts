@@ -15,6 +15,7 @@ import {
   type WorldIdVerificationId,
   type AgentWalletId,
   type AgentProfileId,
+  type PaymentLedgerId,
   typeIdGenerator,
 } from "@/lib/typeid"
 import { baseEntityFields, createTimestampField, typeId } from "../../utils"
@@ -131,16 +132,38 @@ export const agentkitNonce = pgTable("agentkit_nonce", {
   createdAt: createTimestampField("created_at").defaultNow().notNull(),
 })
 
-// --- Ground Truth: AgentKit usage tracking (free-trial mode) ---
+// --- Ground Truth: AgentKit usage tracking (free-trial mode, time-windowed) ---
 export const agentkitUsage = pgTable(
   "agentkit_usage",
   {
     endpoint: text("endpoint").notNull(),
     humanId: text("human_id").notNull(),
     usageCount: integer("usage_count").default(0).notNull(),
+    windowStart: createTimestampField("window_start").defaultNow().notNull(),
   },
   (table) => [
     index("agentkitUsage_lookup_idx").on(table.humanId, table.endpoint),
+  ]
+)
+
+// --- Ground Truth: Payment ledger (Arc Nanopayments tracking) ---
+export const paymentLedger = pgTable(
+  "payment_ledger",
+  {
+    id: typeId("paymentLedger", "id")
+      .primaryKey()
+      .$defaultFn(() => typeIdGenerator("paymentLedger"))
+      .$type<PaymentLedgerId>(),
+    payerAddress: text("payer_address").notNull(),
+    route: text("route").notNull(),
+    amountUsd: text("amount_usd").notNull(),
+    network: text("network"),
+    category: text("category"),
+    createdAt: createTimestampField("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("paymentLedger_payer_idx").on(table.payerAddress),
+    index("paymentLedger_category_idx").on(table.category),
   ]
 )
 
