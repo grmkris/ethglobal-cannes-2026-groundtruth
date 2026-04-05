@@ -8,6 +8,13 @@
       "when": 1775351090035,
       "tag": "0000_odd_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775362480169,
+      "tag": "0001_spotty_venom",
+      "breakpoints": true
     }
   ]
 }
