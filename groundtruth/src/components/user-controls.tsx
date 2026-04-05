@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAppKit } from "@reown/appkit/react"
-import { MapControlContainer } from "@/components/ui/map"
 import {
   Avatar,
   AvatarImage,
@@ -43,32 +42,29 @@ export function UserControls() {
 
   return (
     <>
-      <MapControlContainer className="absolute top-2 right-2 z-[1000]">
-        {isSignedIn && user ? (
-          <button
-            onClick={() => setProfileOpen(true)}
-            className="rounded-full shadow-lg ring-2 ring-background transition-opacity hover:opacity-80"
-          >
-            <Avatar size="default">
-              {user.image && <AvatarImage src={user.image} alt={displayName} />}
-              <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-              {user.worldIdVerified && (
-                <AvatarBadge className="bg-emerald-500" />
-              )}
-            </Avatar>
-          </button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => open()}
-            className="bg-background/90 shadow-lg backdrop-blur-md"
-          >
-            <WalletIcon size={14} />
-            Connect
-          </Button>
-        )}
-      </MapControlContainer>
+      {isSignedIn && user ? (
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="rounded-full ring-2 ring-background transition-opacity hover:opacity-80"
+        >
+          <Avatar size="default">
+            {user.image && <AvatarImage src={user.image} alt={displayName} />}
+            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+            {user.worldIdVerified && (
+              <AvatarBadge className="bg-emerald-500" />
+            )}
+          </Avatar>
+        </button>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => open()}
+        >
+          <WalletIcon size={14} />
+          Connect
+        </Button>
+      )}
 
       <ProfileSheet
         open={profileOpen}

@@ -137,32 +137,45 @@ function TickerItem({
 
 export function AgentActivityTicker({
   onSelectEvent,
+  children,
 }: {
   onSelectEvent?: (eventId: WorldEventId) => void
+  children?: React.ReactNode
 }) {
   const { data: activities } = useAgentActivity()
 
-  if (!activities || activities.length === 0) return null
-
   return (
-    <div
-      className="w-full shrink-0 border-b bg-background/90 backdrop-blur-md overflow-hidden"
-      style={{
-        maskImage: "linear-gradient(to right, transparent, black 2%, black 98%, transparent)",
-        WebkitMaskImage: "linear-gradient(to right, transparent, black 2%, black 98%, transparent)",
-      }}
-    >
+    <div className="flex w-full shrink-0 items-center border-b bg-background/90 backdrop-blur-md">
       <div
-        className="flex w-max items-center gap-2 px-4 py-1.5 hover:[animation-play-state:paused]"
-        style={{ animation: "marquee 90s linear infinite" }}
+        className="min-w-0 flex-1 overflow-hidden"
+        style={{
+          maskImage: "linear-gradient(to right, transparent, black 2%, black 98%, transparent)",
+          WebkitMaskImage: "linear-gradient(to right, transparent, black 2%, black 98%, transparent)",
+        }}
       >
-        {activities.map((a) => (
-          <TickerItem key={a.id} activity={a} onSelect={onSelectEvent} />
-        ))}
-        {activities.map((a) => (
-          <TickerItem key={`dup-${a.id}`} activity={a} onSelect={onSelectEvent} />
-        ))}
+        {activities && activities.length > 0 ? (
+          <div
+            className="flex w-max items-center gap-2 px-4 py-1.5 hover:[animation-play-state:paused]"
+            style={{ animation: "marquee 90s linear infinite" }}
+          >
+            {activities.map((a) => (
+              <TickerItem key={a.id} activity={a} onSelect={onSelectEvent} />
+            ))}
+            {activities.map((a) => (
+              <TickerItem key={`dup-${a.id}`} activity={a} onSelect={onSelectEvent} />
+            ))}
+          </div>
+        ) : (
+          <div className="px-4 py-1.5 text-[10px] text-muted-foreground/50">
+            No agent activity yet
+          </div>
+        )}
       </div>
+      {children && (
+        <div className="shrink-0 px-2">
+          {children}
+        </div>
+      )}
     </div>
   )
 }

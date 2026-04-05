@@ -186,7 +186,9 @@ export function WorldMap() {
 
   return (
     <div className="flex h-svh w-svw flex-col">
-      <AgentActivityTicker onSelectEvent={handleSelectEvent} />
+      <AgentActivityTicker onSelectEvent={handleSelectEvent}>
+        <UserControls />
+      </AgentActivityTicker>
       <Map
         center={WORLD_CENTER}
         zoom={3}
@@ -248,8 +250,6 @@ export function WorldMap() {
             </TooltipContent>
           </Tooltip>
         </MapControlContainer>
-
-        <UserControls />
 
         <MapSidebar
           filteredEvents={filteredEvents}
