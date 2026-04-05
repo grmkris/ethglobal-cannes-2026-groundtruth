@@ -31,6 +31,7 @@ import { EventDetailPanel } from "./event-detail-panel"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
+import { CountryChoropleth } from "./country-choropleth"
 import { UserControls } from "@/components/user-controls"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
@@ -203,6 +204,7 @@ export function WorldMap() {
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution="Tiles &copy; Esri"
           />
+          <CountryChoropleth events={filteredEvents} />
           <EventMarkers
             eventsByCategory={eventsByCategory}
             onOpenChat={handleOpenChat}

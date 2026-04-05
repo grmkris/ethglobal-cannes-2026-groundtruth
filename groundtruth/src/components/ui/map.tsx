@@ -95,6 +95,8 @@ import {
     type RectangleProps,
     type TileLayerProps,
     type TooltipProps,
+    type GeoJSONProps,
+    type PaneProps,
 } from "react-leaflet"
 import type { MarkerClusterGroupProps } from "react-leaflet-markercluster"
 
@@ -185,6 +187,16 @@ const LeafletFeatureGroup = createLazyComponent(() =>
 const LeafletMarkerClusterGroup = createLazyComponent(async () =>
     import("react-leaflet-markercluster").then((mod) => ({
         default: mod.default,
+    }))
+)
+const LeafletGeoJSON = createLazyComponent(() =>
+    import("react-leaflet").then((mod) => ({
+        default: mod.GeoJSON,
+    }))
+)
+const LeafletPane = createLazyComponent(() =>
+    import("react-leaflet").then((mod) => ({
+        default: mod.Pane,
     }))
 )
 
@@ -665,6 +677,18 @@ function MapPolygon({
             {...props}
         />
     )
+}
+
+function MapGeoJSON(props: GeoJSONProps) {
+    return (
+        <LeafletGeoJSON 
+            {...props}
+        />
+    )
+}
+
+function MapPane({ ...props }: PaneProps) {
+    return <LeafletPane {...props} />
 }
 
 function MapRectangle({
@@ -1515,12 +1539,14 @@ export {
     MapDrawUndo,
     MapFeatureGroup,
     MapFullscreenControl,
+    MapGeoJSON,
     MapLayerGroup,
     MapLayers,
     MapLayersControl,
     MapLocateControl,
     MapMarker,
     MapMarkerClusterGroup,
+    MapPane,
     MapPolygon,
     MapPolyline,
     MapPopup,

@@ -24,6 +24,7 @@
     "@reown/appkit-siwe": "^1.8.19",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.96.2",
+    "@turf/boolean-point-in-polygon": "^7.3.4",
     "@vercel/blob": "^2.3.3",
     "@worldcoin/agentkit": "^0.1.6",
     "@worldcoin/idkit": "^4.0.11",
