@@ -1,1 +1,0 @@
-ALTER TABLE "world_event" ADD COLUMN "erc8004_agent_id" text;

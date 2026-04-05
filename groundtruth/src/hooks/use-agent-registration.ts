@@ -2,17 +2,20 @@
 
 import { useState, useCallback } from "react"
 import { useWriteContract, useSwitchChain, useAccount, useConfig } from "wagmi"
-import { getPublicClient } from "wagmi/actions"
-import { namehash, encodeFunctionData, encodeAbiParameters, decodeEventLog, keccak256, toBytes } from "viem"
+import { getPublicClient, getConnectorClient } from "wagmi/actions"
+import { namehash, encodeAbiParameters, decodeEventLog, createWalletClient, custom } from "viem"
 import { mainnet } from "wagmi/chains"
 import { useQueryClient } from "@tanstack/react-query"
+import { addEnsContracts } from "@ensdomains/ensjs"
+import { createSubname } from "@ensdomains/ensjs/wallet"
+import { setRecords, setTextRecord } from "@ensdomains/ensjs/wallet"
 import { client } from "@/lib/orpc"
 import {
   ENS_REGISTRY,
+  ENS_NAME_WRAPPER,
   ENS_PUBLIC_RESOLVER,
   ERC8004_IDENTITY_REGISTRY,
   ensRegistryAbi,
-  publicResolverAbi,
   identityRegistryAbi,
   buildDefaultEnsip25Key,
 } from "@/lib/contracts"
@@ -69,31 +72,37 @@ export function useAgentRegistration() {
 
         const fullName = `${params.label}.${params.parentEnsName}`
         const parentNode = namehash(params.parentEnsName)
-        const subnameNode = namehash(fullName)
-        const labelHash = keccak256(toBytes(params.label))
 
         // Ensure we're on mainnet
         await switchChainAsync({ chainId: mainnet.id })
         const mainnetClient = getPublicClient(config, { chainId: mainnet.id })
-        if (!mainnetClient) {
-          throw new Error("Mainnet client not found")
-        }
+        if (!mainnetClient) throw new Error("Mainnet client not found")
 
-        // --- TX1: Create ENS subname via Registry ---
-        toast.info("Step 1/4: Creating ENS subname...")
+        // Create ensjs-compatible wallet client from wagmi connector
+        const connectorClient = await getConnectorClient(config, { chainId: mainnet.id })
+        const ensWallet = createWalletClient({
+          account: connectorClient.account,
+          chain: addEnsContracts(mainnet),
+          transport: custom({ request: connectorClient.request }),
+        })
 
-        const tx1 = await writeContractAsync({
-          chainId: mainnet.id,
+        // Detect if parent name is wrapped in NameWrapper
+        const registryOwner = await mainnetClient.readContract({
           address: ENS_REGISTRY,
           abi: ensRegistryAbi,
-          functionName: "setSubnodeRecord",
-          args: [
-            parentNode,
-            labelHash,
-            address as `0x${string}`,
-            ENS_PUBLIC_RESOLVER,
-            BigInt(0),
-          ],
+          functionName: "owner",
+          args: [parentNode],
+        })
+        const isWrapped = registryOwner.toLowerCase() === ENS_NAME_WRAPPER.toLowerCase()
+
+        // --- TX1: Create ENS subname ---
+        toast.info("Step 1/4: Creating ENS subname...")
+
+        const tx1 = await createSubname(ensWallet, {
+          name: fullName,
+          owner: address as `0x${string}`,
+          contract: isWrapped ? "nameWrapper" : "registry",
+          resolverAddress: ENS_PUBLIC_RESOLVER,
         })
 
         toast.info("Waiting for confirmation...")
@@ -103,43 +112,19 @@ export function useAgentRegistration() {
         setState((s) => ({ ...s, currentStep: 1 }))
         toast.success("Subname created!")
 
-        // --- TX2: Set text records ---
-        toast.info("Step 2/4: Setting agent text records...")
+        // --- TX2: Set text records + addr ---
+        toast.info("Step 2/4: Setting agent records...")
 
-        const setTextCalls = [
-          encodeFunctionData({
-            abi: publicResolverAbi,
-            functionName: "setText",
-            args: [subnameNode, "mandate", params.mandate],
-          }),
-          encodeFunctionData({
-            abi: publicResolverAbi,
-            functionName: "setText",
-            args: [subnameNode, "sources", params.sources],
-          }),
-          encodeFunctionData({
-            abi: publicResolverAbi,
-            functionName: "setText",
-            args: [subnameNode, "platform", "groundtruth"],
-          }),
-          encodeFunctionData({
-            abi: publicResolverAbi,
-            functionName: "setText",
-            args: [subnameNode, "agent-wallet", params.agentWalletAddress],
-          }),
-          encodeFunctionData({
-            abi: publicResolverAbi,
-            functionName: "setAddr",
-            args: [subnameNode, params.agentWalletAddress as `0x${string}`],
-          }),
-        ]
-
-        const tx2 = await writeContractAsync({
-          chainId: mainnet.id,
-          address: ENS_PUBLIC_RESOLVER,
-          abi: publicResolverAbi,
-          functionName: "multicall",
-          args: [setTextCalls],
+        const tx2 = await setRecords(ensWallet, {
+          name: fullName,
+          resolverAddress: ENS_PUBLIC_RESOLVER,
+          texts: [
+            { key: "mandate", value: params.mandate },
+            { key: "sources", value: params.sources },
+            { key: "platform", value: "groundtruth" },
+            { key: "agent-wallet", value: params.agentWalletAddress },
+          ],
+          coins: [{ coin: "ETH", value: params.agentWalletAddress as `0x${string}` }],
         })
 
         toast.info("Waiting for confirmation...")
@@ -147,13 +132,12 @@ export function useAgentRegistration() {
 
         await client.agent.recordStep({ profileId, step: 2 })
         setState((s) => ({ ...s, currentStep: 2 }))
-        toast.success("Text records set!")
+        toast.success("Records set!")
 
         // --- TX3: Mint ERC-8004 identity on mainnet ---
         toast.info("Step 3/4: Minting ERC-8004 identity...")
 
         const agentCardUrl = `${window.location.origin}/api/agents/${profileId}`
-
         const encodeString = (v: string) =>
           encodeAbiParameters([{ type: "string" }], [v])
 
@@ -204,12 +188,11 @@ export function useAgentRegistration() {
 
         const ensip25Key = buildDefaultEnsip25Key(erc8004AgentId ?? "0")
 
-        const tx4 = await writeContractAsync({
-          chainId: mainnet.id,
-          address: ENS_PUBLIC_RESOLVER,
-          abi: publicResolverAbi,
-          functionName: "setText",
-          args: [subnameNode, ensip25Key, "1"],
+        const tx4 = await setTextRecord(ensWallet, {
+          name: fullName,
+          key: ensip25Key,
+          value: "1",
+          resolverAddress: ENS_PUBLIC_RESOLVER,
         })
 
         toast.info("Waiting for confirmation...")

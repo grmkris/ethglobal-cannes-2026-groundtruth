@@ -28,6 +28,13 @@ export const ensRegistryAbi = [
     ],
     outputs: [],
   },
+  {
+    name: "owner",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "node", type: "bytes32" }],
+    outputs: [{ name: "", type: "address" }],
+  },
 ] as const
 
 export const nameWrapperAbi = [

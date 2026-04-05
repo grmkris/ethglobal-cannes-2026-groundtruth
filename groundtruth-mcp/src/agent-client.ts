@@ -185,6 +185,8 @@ export function createAgentClient(props: {
     async submitWalletLinkSignature(agentId: string) {
       const deadline = String(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60) // 7 days
 
+      // EIP-712 domain must match the deployed IdentityRegistry contract.
+      // Verified via getVersion() on 0x8004A169... — returns "2.0.0".
       const signature = await account.signTypedData({
         domain: {
           name: "AgentIdentity",

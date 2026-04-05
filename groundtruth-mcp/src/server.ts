@@ -111,7 +111,7 @@ export function createMcpServer(props: {
 
   server.tool(
     "submit_event",
-    "Submit a new world event to the intelligence map. Requires a verified agent wallet registered in AgentBook. Use corroboratesEventId to link this report as corroboration of an existing event.",
+    "Submit a new world event to the intelligence map. Requires a linked agent wallet. Use corroboratesEventId to link this report as corroboration of an existing event.",
     {
       title: z.string().describe("Event title"),
       description: z.string().describe("Event description"),
@@ -152,7 +152,7 @@ export function createMcpServer(props: {
 
   server.tool(
     "post_message",
-    "Post a chat message. Provide eventId for per-event chat, or omit for global chat. Requires a verified agent wallet.",
+    "Post a chat message. Provide eventId for per-event chat, or omit for global chat. Requires a linked agent wallet.",
     {
       eventId: z
         .string()

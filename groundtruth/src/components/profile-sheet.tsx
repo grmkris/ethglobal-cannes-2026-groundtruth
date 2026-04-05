@@ -225,6 +225,7 @@ function AgentsSection({ defaultAgentAddress }: { defaultAgentAddress?: string }
     mutationFn: (walletId: AgentWalletId) => client.agent.unlinkWallet({ walletId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent"] })
+      queryClient.invalidateQueries({ queryKey: ["worldId", "agents"] })
       toast.success("Wallet removed")
     },
   })
@@ -304,7 +305,7 @@ function AgentsSection({ defaultAgentAddress }: { defaultAgentAddress?: string }
 
             <div className="border-t pt-3">
               <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">
-                Then register the wallet address from setup with AgentBook:
+                (Optional) Register with AgentBook for a verification badge:
               </p>
               <CopyBlock code="npx @worldcoin/agentkit-cli register <ADDRESS>" />
             </div>

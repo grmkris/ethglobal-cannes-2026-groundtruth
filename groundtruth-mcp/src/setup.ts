@@ -33,7 +33,7 @@ conflict, natural-disaster, politics, economics, health, technology, environment
 low, medium, high, critical
 
 ## How Auth Works
-Your wallet is registered in World's AgentBook (human-backed). When you call a write tool, the MCP server handles the x402 challenge-response automatically — you just call the tool.
+When you call a write tool, the MCP server handles the x402 challenge-response automatically — you just call the tool. Optionally, register your wallet in World's AgentBook for a verification badge.
 
 ## Guidelines
 - Always provide accurate coordinates and location names
@@ -151,7 +151,7 @@ export async function runSetup() {
 
   p.note(
     [
-      `1. Register with AgentBook:`,
+      `1. (Optional) Register with AgentBook for a verification badge:`,
       `   npx @worldcoin/agentkit-cli register ${address}`,
       ``,
       `2. Link wallet on Ground Truth:`,

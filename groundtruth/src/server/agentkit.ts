@@ -8,10 +8,10 @@ import {
 } from "@x402/hono"
 import {
   agentkitResourceServerExtension,
-  createAgentBookVerifier,
-  createAgentkitHooks,
   declareAgentkitExtension,
   parseAgentkitHeader,
+  validateAgentkitMessage,
+  verifyAgentkitSignature,
 } from "@worldcoin/agentkit"
 import type { AgentKitStorage } from "@worldcoin/agentkit"
 import type { EvlogVariables } from "evlog/hono"
@@ -102,14 +102,33 @@ export function createAgentApp(props: {
   const { db, eventService, chatService, authService, identityVerification, payTo } = props
 
   // --- AgentKit setup ---
-  const agentBook = createAgentBookVerifier()
   const storage = new DrizzleAgentKitStorage(db)
 
-  const hooks = createAgentkitHooks({
-    agentBook,
-    storage,
-    mode: { type: "free-trial", uses: 3 },
-  })
+  // Custom permissive hook: verifies SIWE signature but does NOT require AgentBook registration.
+  // Agents without World ID / AgentBook can still authenticate — they just won't get a verification badge.
+  const permissiveRequestHook = async (context: {
+    adapter: { getHeader(name: string): string | undefined; getUrl(): string }
+    path: string
+  }): Promise<void | { grantAccess: true }> => {
+    const header = context.adapter.getHeader("agentkit")
+    if (!header) return
+
+    try {
+      const payload = parseAgentkitHeader(header)
+      const resourceUri = context.adapter.getUrl()
+      const checkNonce = async (nonce: string) => !(await storage.hasUsedNonce(nonce))
+      const validation = await validateAgentkitMessage(payload, resourceUri, { checkNonce })
+      if (!validation.valid) return
+
+      const verification = await verifyAgentkitSignature(payload)
+      if (!verification.valid) return
+
+      await storage.recordNonce(payload.nonce)
+      return { grantAccess: true }
+    } catch {
+      return
+    }
+  }
 
   const facilitatorClient = new HTTPFacilitatorClient({
     url: "https://x402-worldchain.vercel.app/facilitator",
@@ -151,7 +170,7 @@ export function createAgentApp(props: {
   const httpServer = new x402HTTPResourceServer(
     resourceServer,
     routes
-  ).onProtectedRequest(hooks.requestHook)
+  ).onProtectedRequest(permissiveRequestHook)
 
   // --- Hono sub-app ---
   const app = new Hono<AgentEnv>()
