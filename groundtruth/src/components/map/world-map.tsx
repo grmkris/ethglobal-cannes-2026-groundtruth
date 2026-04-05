@@ -26,6 +26,7 @@ import type { LatLngExpression } from "leaflet"
 import { useMap } from "react-leaflet"
 import { CrosshairIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AgentActivityTicker } from "./agent-activity-ticker"
 import { CreateEventModal } from "./create-event-modal"
 import { EventDetailPanel } from "./event-detail-panel"
 import { EventMarkers } from "./event-markers"
@@ -247,6 +248,7 @@ export function WorldMap() {
           </Tooltip>
         </MapControlContainer>
 
+        <AgentActivityTicker onSelectEvent={handleSelectEvent} />
         <UserControls />
 
         <MapSidebar

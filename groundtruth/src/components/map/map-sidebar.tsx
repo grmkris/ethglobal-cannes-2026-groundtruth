@@ -10,6 +10,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ChatInput } from "@/components/chat/chat-input"
 import { ChatMessageItem } from "@/components/chat/chat-message"
 import { getCategoryConfig } from "@/lib/event-categories"
+import { ConfidenceMeter } from "./confidence-meter"
 import { useSession } from "@/lib/auth-client"
 import type { EventCategory, SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
@@ -85,6 +86,9 @@ function EventListItem({
     >
       <div className="mb-1 flex items-center gap-1.5">
         <span className={cn("size-1.5 rounded-full", SEVERITY_DOT[event.severity])} />
+        {"confidenceScore" in event && (
+          <ConfidenceMeter score={(event as any).confidenceScore} level={(event as any).confidenceLevel} compact />
+        )}
         <span className="text-[11px] text-muted-foreground">
           {config.emoji} {config.label}
         </span>

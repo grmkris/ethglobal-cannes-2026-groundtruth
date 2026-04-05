@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, ilike, or, sql, type SQL } from "drizzle-orm"
+import { and, desc, eq, getTableColumns, ilike, isNotNull, or, sql, type SQL } from "drizzle-orm"
 import { getAddress } from "viem"
 import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
@@ -8,11 +8,20 @@ import type {
   WorldEventResponse,
 } from "@/server/db/schema/event/event.zod"
 import { worldEvent, eventDispute, type DisputeReason } from "../db/schema/event/event.db"
+import { chatMessage } from "../db/schema/chat/chat.db"
 import { user } from "../db/schema/auth/auth.db"
+import { computeConfidence } from "@/lib/confidence"
 
 function toWorldEvent(
   row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean; creatorName: string }
-): WorldEventResponse {
+): WorldEventResponse & { confidenceScore: number; confidenceLevel: string } {
+  const confidence = computeConfidence({
+    corroborationCount: row.corroborationCount,
+    disputeCount: row.disputeCount,
+    worldIdVerified: row.worldIdVerified,
+    onChainVerified: row.onChainVerified,
+    source: row.source,
+  })
   return {
     id: row.id,
     title: row.title,
@@ -34,6 +43,8 @@ function toWorldEvent(
     canonicalEventId: row.canonicalEventId ?? null,
     corroborationCount: row.corroborationCount,
     disputeCount: row.disputeCount,
+    confidenceScore: confidence.score,
+    confidenceLevel: confidence.level,
   }
 }
 
@@ -201,7 +212,65 @@ export function createEventService(props: { db: Database }) {
     return !!existing
   }
 
-  return { getAll, getById, create, createDispute, getDisputes, hasUserDisputed }
+  async function getAgentActivity() {
+    // Recent agent-submitted events
+    const agentEvents = await db
+      .select({
+        id: worldEvent.id,
+        agentEnsName: worldEvent.agentEnsName,
+        agentAddress: worldEvent.agentAddress,
+        eventTitle: worldEvent.title,
+        eventId: worldEvent.id,
+        createdAt: worldEvent.createdAt,
+        canonicalEventId: worldEvent.canonicalEventId,
+      })
+      .from(worldEvent)
+      .where(isNotNull(worldEvent.agentAddress))
+      .orderBy(desc(worldEvent.createdAt))
+      .limit(15)
+
+    // Recent agent chat messages
+    const agentMessages = await db
+      .select({
+        id: chatMessage.id,
+        agentEnsName: chatMessage.agentEnsName,
+        agentAddress: chatMessage.agentAddress,
+        eventId: chatMessage.eventId,
+        createdAt: chatMessage.createdAt,
+      })
+      .from(chatMessage)
+      .where(isNotNull(chatMessage.agentAddress))
+      .orderBy(desc(chatMessage.createdAt))
+      .limit(10)
+
+    // Merge and sort
+    const activities = [
+      ...agentEvents.map((e) => ({
+        id: e.id,
+        type: e.canonicalEventId ? ("corroborate" as const) : ("report" as const),
+        agentEnsName: e.agentEnsName,
+        agentAddress: e.agentAddress!,
+        eventTitle: e.eventTitle,
+        eventId: e.eventId,
+        timestamp: e.createdAt.toISOString(),
+      })),
+      ...agentMessages.map((m) => ({
+        id: m.id,
+        type: "chat" as const,
+        agentEnsName: m.agentEnsName,
+        agentAddress: m.agentAddress!,
+        eventTitle: null,
+        eventId: m.eventId,
+        timestamp: m.createdAt.toISOString(),
+      })),
+    ]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 20)
+
+    return activities
+  }
+
+  return { getAll, getById, create, createDispute, getDisputes, hasUserDisputed, getAgentActivity }
 }
 
 export type EventService = ReturnType<typeof createEventService>

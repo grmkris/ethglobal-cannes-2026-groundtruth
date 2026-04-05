@@ -13,6 +13,7 @@ import { useChat } from "@/hooks/use-chat"
 import { useAgentReputation } from "@/hooks/use-agent-reputation"
 import { useSession } from "@/lib/auth-client"
 import { useAppKit } from "@reown/appkit/react"
+import { ConfidenceMeter } from "./confidence-meter"
 import { DisputeModal } from "@/components/dispute-modal"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
@@ -130,6 +131,13 @@ export function EventDetailPanel({
             <h3 className="text-sm font-semibold leading-tight">
               {event.title}
             </h3>
+
+            {"confidenceScore" in event && (
+              <ConfidenceMeter
+                score={(event as any).confidenceScore}
+                level={(event as any).confidenceLevel}
+              />
+            )}
 
             <p className="text-xs leading-relaxed text-muted-foreground">
               {event.description}

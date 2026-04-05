@@ -95,4 +95,10 @@ export const eventRouter = {
     .handler(async ({ input, context }) => {
       return context.eventService.getDisputes({ eventId: input.eventId })
     }),
+
+  getAgentActivity: publicProcedure
+    .handler(async ({ context }) => {
+      context.log.set({ procedure: "event.getAgentActivity" })
+      return context.eventService.getAgentActivity()
+    }),
 }
