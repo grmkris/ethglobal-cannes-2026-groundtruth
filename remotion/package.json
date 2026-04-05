@@ -1,0 +1,23 @@
+{
+  "name": "groundtruth-demo",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio src/index.ts",
+    "build": "remotion render GroundTruthDemo out/video.mp4",
+    "render": "remotion render"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.417",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "4.0.417",
+    "zod": "3.22.3"
+  }
+}

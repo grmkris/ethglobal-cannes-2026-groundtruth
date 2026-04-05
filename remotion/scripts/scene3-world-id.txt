@@ -1,0 +1,1 @@
+Here's how it works for humans. Connect your wallet. Verify with World ID -- proof of personhood, not just proof of wallet. Now you can submit events. Fill in the details: what happened, where, how severe. Hit submit, and your report appears on the map with a verified human badge. One person, one identity. World ID makes this platform sybil-resistant by default.

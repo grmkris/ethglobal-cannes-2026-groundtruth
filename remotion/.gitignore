@@ -1,0 +1,7 @@
+node_modules/
+out/
+dist/
+.env
+*.mp4
+.DS_Store
+bun.lock
