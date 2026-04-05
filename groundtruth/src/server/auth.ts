@@ -32,6 +32,7 @@ export function createAuth(props: {
     database: drizzleAdapter(db, { provider: "pg", schema: DB_SCHEMA }),
     secret,
     baseURL,
+    trustedOrigins: ["https://groundtruth.grm.wtf"],
     user: {
       additionalFields: {
         worldIdVerified: {

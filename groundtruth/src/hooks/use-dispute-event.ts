@@ -11,7 +11,7 @@ import {
 import { DISPUTE_VALUES, type DisputeReason } from "@/server/db/schema/event/event.db"
 import type { WorldEventId } from "@/lib/typeid"
 
-const ENDPOINT = "https://ethglobal-cannes-2026-groundtruth.vercel.app"
+const ENDPOINT = "https://groundtruth.grm.wtf"
 
 export function useDisputeEvent() {
   const queryClient = useQueryClient()
