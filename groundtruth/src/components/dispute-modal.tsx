@@ -52,7 +52,7 @@ export function DisputeModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<>{children}</>} />
+      <DialogTrigger render={children as React.ReactElement} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Dispute Event</DialogTitle>
