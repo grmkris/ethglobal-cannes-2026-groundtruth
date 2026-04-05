@@ -16,10 +16,10 @@ export const MapScene: React.FC = () => {
   });
 
   // Ken Burns: slow zoom shifting focus
-  const scale = interpolate(frame, [0, 751], [1, 1.08], {
+  const scale = interpolate(frame, [0, 779], [1, 1.08], {
     extrapolateRight: "clamp",
   });
-  const translateX = interpolate(frame, [0, 751], [0, -20], {
+  const translateX = interpolate(frame, [0, 779], [0, -20], {
     extrapolateRight: "clamp",
   });
 

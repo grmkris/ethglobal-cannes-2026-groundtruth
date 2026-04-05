@@ -1,11 +1,11 @@
 export const SCENE_DURATIONS = {
-  coldOpen: 704, // 23.45s
-  map: 751, // 25.03s
-  worldId: 609, // 20.29s
-  disputes: 481, // 16.02s
-  agentIdentity: 1188, // 39.57s
-  mcp: 744, // 24.80s
-  outro: 831, // 27.68s
+  coldOpen: 615, // 20.48s
+  map: 779, // 25.96s
+  worldId: 548, // 18.25s
+  disputes: 510, // 17.00s
+  agentIdentity: 1232, // 41.05s
+  mcp: 708, // 23.59s
+  outro: 740, // 24.66s
 } as const;
 
 // Audio file paths (relative to public/) -- populated after TTS generation
@@ -22,10 +22,10 @@ export const AUDIO_FILES = {
 export const VOICE_SETTINGS = {
   voiceId: "vZVgwWVGoit6svXMWYbo", // kristjan-pro (cloned voice)
   model: "eleven_multilingual_v2",
-  stability: 0.35,
+  stability: 0.50,
   similarityBoost: 0.75,
-  style: 0.4,
-  speed: 1.05,
+  style: 0.20,
+  speed: 1.0,
 } as const;
 
 export const SCENE_TITLES = {

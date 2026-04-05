@@ -15,28 +15,28 @@ export const OutroScene: React.FC = () => {
 
   // Background globe
   const globeOpacity = interpolate(frame, [0, 40], [0, 0.25], { extrapolateRight: "clamp" });
-  const globeScale = interpolate(frame, [0, 831], [1, 1.08], { extrapolateRight: "clamp" });
+  const globeScale = interpolate(frame, [0, 740], [1, 1.08], { extrapolateRight: "clamp" });
 
-  // Phase 1: Deployment info (0-350)
+  // Phase 1: Deployment info (0-300)
   const deployOpacity = interpolate(frame, [20, 50], [0, 1], { extrapolateRight: "clamp" });
-  const deployFade = interpolate(frame, [320, 370], [1, 0], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const deployFade = interpolate(frame, [270, 310], [1, 0], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
   // Chain badges staggered
-  const chain1 = interpolate(frame, [60, 90], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const chain2 = interpolate(frame, [90, 120], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const chain3 = interpolate(frame, [120, 150], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const urlOpacity = interpolate(frame, [170, 200], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const chain1 = interpolate(frame, [50, 80], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const chain2 = interpolate(frame, [80, 110], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const chain3 = interpolate(frame, [110, 140], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const urlOpacity = interpolate(frame, [160, 190], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
-  // Phase 2: Taglines (380-660)
-  const line1 = interpolate(frame, [380, 410], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const line2 = interpolate(frame, [430, 460], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const line3 = interpolate(frame, [480, 510], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  // Phase 2: Taglines (320-560)
+  const line1 = interpolate(frame, [320, 350], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const line2 = interpolate(frame, [370, 400], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const line3 = interpolate(frame, [420, 450], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
   // Fade out taglines smoothly before Phase 3
-  const taglineFade = interpolate(frame, [630, 670], [1, 0], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const taglineFade = interpolate(frame, [530, 570], [1, 0], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
-  // Phase 3: Final title (670-end)
-  const finalScale = spring({ frame: Math.max(0, frame - 680), fps, config: SPRING.default });
-  const finalOpacity = interpolate(frame, [670, 700], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  // Phase 3: Final title (570-end)
+  const finalScale = spring({ frame: Math.max(0, frame - 580), fps, config: SPRING.default });
+  const finalOpacity = interpolate(frame, [570, 600], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
   const chains = [
     { label: "Ethereum Mainnet", desc: "ENS + ERC-8004", color: COLORS.erc8004, opacity: chain1 },
@@ -52,7 +52,7 @@ export const OutroScene: React.FC = () => {
       </AbsoluteFill>
 
       {/* Phase 1: Deployment info */}
-      {frame < 380 && (
+      {frame < 320 && (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", opacity: deployOpacity * deployFade }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 44, fontWeight: 700, color: COLORS.white, marginBottom: 40 }}>
@@ -90,7 +90,7 @@ export const OutroScene: React.FC = () => {
       )}
 
       {/* Phase 2: Taglines */}
-      {frame >= 380 && frame < 680 && (
+      {frame >= 320 && frame < 580 && (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", opacity: taglineFade }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 38, color: COLORS.worldId, opacity: line1, marginBottom: 20 }}>
@@ -107,7 +107,7 @@ export const OutroScene: React.FC = () => {
       )}
 
       {/* Phase 3: Final */}
-      {frame >= 670 && (
+      {frame >= 570 && (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
           <div style={{ textAlign: "center", opacity: finalOpacity, transform: `scale(${finalScale})` }}>
             <div style={{ fontSize: 72, fontWeight: 800, color: COLORS.white, letterSpacing: 4 }}>

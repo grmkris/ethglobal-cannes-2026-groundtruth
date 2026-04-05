@@ -52,10 +52,10 @@ async function generateWithTimestamps(text: string, outputName: string) {
       text,
       model_id: "eleven_multilingual_v2",
       voice_settings: {
-        stability: 0.35,
+        stability: 0.50,
         similarity_boost: 0.75,
-        style: 0.4,
-        speed: 1.05,
+        style: 0.20,
+        speed: 1.0,
       },
     }),
   });

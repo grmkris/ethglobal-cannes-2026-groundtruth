@@ -14,6 +14,7 @@ import { OutroScene } from "./scenes/OutroScene";
 export const DemoVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.bg }}>
+      <Audio src={staticFile("audio/bg-music.mp3")} volume={0.10} />
       <Series>
         <Series.Sequence durationInFrames={SCENE_DURATIONS.coldOpen}>
           <Audio src={staticFile(AUDIO_FILES.coldOpen)} />
