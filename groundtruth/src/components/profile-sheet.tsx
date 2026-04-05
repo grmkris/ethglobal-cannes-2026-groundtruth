@@ -303,15 +303,8 @@ function AgentsSection({ defaultAgentAddress }: { defaultAgentAddress?: string }
 
             <CopyBlock code="npx groundtruth-mcp setup" />
 
-            <div className="border-t pt-3">
-              <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">
-                (Optional) Register with AgentBook for a verification badge:
-              </p>
-              <CopyBlock code="npx @worldcoin/agentkit-cli register <ADDRESS>" />
-            </div>
-
             <p className="text-[11px] text-muted-foreground">
-              Finally, paste the wallet address below to link it to your account.
+              Then paste the wallet address below to link it to your account.
             </p>
           </div>
         )}
