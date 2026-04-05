@@ -15,7 +15,7 @@ export const OutroScene: React.FC = () => {
 
   // Background globe
   const globeOpacity = interpolate(frame, [0, 40], [0, 0.25], { extrapolateRight: "clamp" });
-  const globeScale = interpolate(frame, [0, 905], [1, 1.08], { extrapolateRight: "clamp" });
+  const globeScale = interpolate(frame, [0, 831], [1, 1.08], { extrapolateRight: "clamp" });
 
   // Phase 1: Deployment info (0-350)
   const deployOpacity = interpolate(frame, [20, 50], [0, 1], { extrapolateRight: "clamp" });
