@@ -40,7 +40,7 @@ export const OutroScene: React.FC = () => {
 
   const chains = [
     { label: "Ethereum Mainnet", desc: "ENS + ERC-8004", color: COLORS.erc8004, opacity: chain1 },
-    { label: "Worldcoin Mainnet", desc: "Human verification", color: COLORS.worldId, opacity: chain2 },
+    { label: "World Chain", desc: "Human verification", color: COLORS.worldId, opacity: chain2 },
     { label: "Arc Testnet", desc: "x402 Nanopayments", color: COLORS.arc, opacity: chain3 },
   ];
 
