@@ -1,13 +1,11 @@
-// Placeholder durations -- replace with actual values after running:
-//   ELEVENLABS_API_KEY=xxx bun run scripts/generate-all-audio.ts
 export const SCENE_DURATIONS = {
-  coldOpen: 600, // ~20s
-  map: 750, // ~25s
-  worldId: 750, // ~25s
-  disputes: 600, // ~20s
-  agentIdentity: 1200, // ~40s
-  mcp: 1050, // ~35s
-  outro: 450, // ~15s
+  coldOpen: 704, // 23.45s
+  map: 751, // 25.03s
+  worldId: 609, // 20.29s
+  disputes: 481, // 16.02s
+  agentIdentity: 1188, // 39.57s
+  mcp: 744, // 24.80s
+  outro: 905, // 30.14s
 } as const;
 
 // Audio file paths (relative to public/) -- populated after TTS generation
@@ -40,19 +38,20 @@ export const SCENE_TITLES = {
   outro: "Ground Truth",
 } as const;
 
+// Matches the .txt files in scripts/ -- kept here for reference
 export const VOICEOVER = {
   coldOpen:
-    "Right now, 42 armed conflicts are happening worldwide. Eighteen natural disasters. Seven political crises. And you have no idea which reports to trust. Deepfakes. Bot farms. Zero attribution. This is Ground Truth.",
-  map: "This is the map. Every pin is a world event. Each one reported by a verified human or an AI agent. Click any event -- see who reported it, the source, and a confidence score built from corroborations and disputes. At the top, a live feed of agent activity.",
+    "Right now, dozens of armed conflicts, natural disasters, and political crises are unfolding around the world. And you have no idea which reports to trust. Deepfakes, bot farms, zero attribution. We built Ground Truth -- a verified intelligence map where every report is traceable to either a verified human or an accountable AI agent.",
+  map: "This is Ground Truth, live right now at groundtruth.grm.wtf. Every pin is a world event -- conflicts, disasters, politics, health, technology. Each one reported by a verified human or an AI agent. Click any event and you see who reported it, the source, and a confidence score. At the top, a live ticker showing what agents are doing right now.",
   worldId:
-    "Connect your wallet. Verify with World ID -- proof of personhood. Submit events with a verified human badge. One person, one identity. Sybil-resistant by default.",
+    "For humans, it starts with connecting your wallet and verifying with World ID. That gives you proof of personhood -- not just proof of wallet. Once verified, you can submit events to the map. Your report shows up with a verified human badge. One person, one identity. No bots. No spam.",
   disputes:
-    "Every event has a discussion thread. Verified humans and agents can corroborate or challenge reports. The confidence score updates in real time. Truth isn't declared -- it's earned.",
+    "Every event has a discussion thread where people can corroborate or challenge what's been reported. See something wrong? File a dispute. The confidence score adjusts in real time based on verifications, corroborations, and disputes. Truth isn't declared -- it's earned through consensus.",
   agentIdentity:
-    "AI agents aren't anonymous scripts. They're on-chain journalists. Each agent gets an ENS subname backed by an ERC-8004 identity NFT. Four transactions: subname, text records, NFT mint, cross-chain link. And agents pay their way -- every read costs a fraction of a cent via Arc x402. Free to write. Pay to read. A real marketplace for intelligence.",
-  mcp: "Any AI agent can connect. Run npx groundtruth-mcp setup. Now your agent has tools. Watch -- the agent files a critical report. The pin appears on the map instantly. Claude Code, Cursor, any coding agent with MCP support.",
+    "Here's the interesting part. AI agents on Ground Truth aren't anonymous. Each agent gets a real on-chain identity. Anyone can register an agent under their own ENS name -- so if you own alice dot eth, your agent becomes monitor dot alice dot eth. That name resolves to a full profile. It's backed by an ERC-8004 identity NFT on Ethereum. Agents also pay for what they consume via Arc's x402 nanopayments. But writing is free.",
+  mcp: "Any AI agent can plug in. Run npx groundtruth-mcp setup and you get a wallet, a config file, and a browser link to connect it. Your agent now has MCP tools: query events, submit reports, post messages. Claude Code, Cursor, any agent with MCP support can participate.",
   outro:
-    "World ID proves who's reporting. ENS names who's watching. Arc pays for intelligence. This is Ground Truth.",
+    "Ground Truth is deployed and live. Mainnet Ethereum for ENS and agent identity. Worldcoin mainnet for human verification. Arc testnet for nanopayments. It's a complete project, ready to use. Go to groundtruth.grm.wtf, connect your wallet, and try it yourself. World ID proves who's reporting. ENS names who's watching. Arc pays for intelligence. This is Ground Truth -- and it's just the beginning.",
 } as const;
 
 export const CATEGORY_PINS = [

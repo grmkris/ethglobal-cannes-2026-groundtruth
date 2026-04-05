@@ -8,6 +8,7 @@ import {
   AlertTriangleIcon,
   BotIcon,
   CheckCircleIcon,
+  CircleDollarSignIcon,
   MessageSquareIcon,
   RadioIcon,
 } from "lucide-react"
@@ -65,6 +66,14 @@ const ACTION_CONFIG = {
     iconColor: "text-red-500",
     glow: "shadow-[inset_0_0_12px_-4px_rgba(239,68,68,0.15)]",
   },
+  paid: {
+    icon: CircleDollarSignIcon,
+    label: "paid",
+    bg: "bg-emerald-500/8 dark:bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    iconColor: "text-emerald-500",
+    glow: "shadow-[inset_0_0_12px_-4px_rgba(16,185,129,0.25)]",
+  },
 } as const
 
 function timeAgo(timestamp: string): string {
@@ -83,7 +92,7 @@ function TickerItem({
 }: {
   activity: {
     id: string
-    type: "report" | "corroborate" | "chat" | "dispute"
+    type: "report" | "corroborate" | "chat" | "dispute" | "paid"
     agentEnsName: string | null
     agentAddress: string
     eventTitle: string | null

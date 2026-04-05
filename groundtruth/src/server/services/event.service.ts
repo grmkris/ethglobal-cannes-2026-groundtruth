@@ -9,7 +9,7 @@ import type {
 } from "@/server/db/schema/event/event.zod"
 import { worldEvent, eventDispute, type DisputeReason } from "../db/schema/event/event.db"
 import { chatMessage } from "../db/schema/chat/chat.db"
-import { user } from "../db/schema/auth/auth.db"
+import { user, paymentLedger } from "../db/schema/auth/auth.db"
 import { computeConfidence } from "@/lib/confidence"
 
 function toWorldEvent(
@@ -271,6 +271,19 @@ export function createEventService(props: { db: Database }) {
       .orderBy(desc(chatMessage.createdAt))
       .limit(10)
 
+    // Recent paid API calls (x402 nanopayments)
+    const paidCalls = await db
+      .select({
+        id: paymentLedger.id,
+        payerAddress: paymentLedger.payerAddress,
+        amountUsd: paymentLedger.amountUsd,
+        category: paymentLedger.category,
+        createdAt: paymentLedger.createdAt,
+      })
+      .from(paymentLedger)
+      .orderBy(desc(paymentLedger.createdAt))
+      .limit(10)
+
     // Merge and sort
     const activities = [
       ...agentEvents.map((e) => ({
@@ -290,6 +303,15 @@ export function createEventService(props: { db: Database }) {
         eventTitle: null,
         eventId: m.eventId,
         timestamp: m.createdAt.toISOString(),
+      })),
+      ...paidCalls.map((p) => ({
+        id: p.id,
+        type: "paid" as const,
+        agentEnsName: null as string | null,
+        agentAddress: p.payerAddress,
+        eventTitle: `$${p.amountUsd} \u2192 ${p.category ?? "data"}`,
+        eventId: null as string | null,
+        timestamp: p.createdAt.toISOString(),
       })),
     ]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

@@ -29,6 +29,7 @@ import {
 import { useLayoutEffect, useRef } from "react"
 import { useAppKit } from "@reown/appkit/react"
 import { CategoryFilter } from "./category-filter"
+import { RevenueDashboard } from "./revenue-dashboard"
 import { usePaymentStats } from "@/hooks/use-payment-stats"
 
 const SEVERITY_DOT: Record<SeverityLevel, string> = {
@@ -216,7 +217,7 @@ export function MapSidebar({
   return (
     <MapControlContainer
       className={cn(
-        "absolute top-0 left-0 z-[1000] flex transition-all duration-300",
+        "absolute top-0 left-0 z-[1000] flex h-full transition-all duration-300",
         collapsed ? "w-10" : "w-[calc(100vw-3rem)] sm:w-80"
       )}
     >
@@ -238,7 +239,7 @@ export function MapSidebar({
           <TooltipContent side="right">Expand sidebar</TooltipContent>
         </Tooltip>
       ) : (
-        <div className="sidebar-grain flex h-svh max-h-svh w-full flex-col border-r bg-background/90 backdrop-blur-md dark:border-white/[0.06]">
+        <div className="sidebar-grain flex h-full max-h-full w-full flex-col border-r bg-background/90 backdrop-blur-md dark:border-white/[0.06]">
           {/* Header */}
           <div className="flex items-center gap-2 border-b px-3 py-2">
             <div className="flex items-center gap-2">
@@ -271,16 +272,8 @@ export function MapSidebar({
             </Tooltip>
           </div>
 
-          {/* Micropayment stats bar */}
-          {paymentStats && paymentStats.totalTransactions > 0 && (
-            <div className="flex items-center gap-3 border-b px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
-              <span>{paymentStats.totalTransactions} txns</span>
-              <span className="text-muted-foreground/40">|</span>
-              <span className="text-emerald-500">${parseFloat(paymentStats.totalRevenueUsd).toFixed(4)} USDC</span>
-              <span className="text-muted-foreground/40">|</span>
-              <span>Arc</span>
-            </div>
-          )}
+          {/* Revenue mini-dashboard */}
+          <RevenueDashboard stats={paymentStats} />
 
           {/* Tabs */}
           <Tabs

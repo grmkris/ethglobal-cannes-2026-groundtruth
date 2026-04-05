@@ -1,6 +1,7 @@
-import { AbsoluteFill, Series } from "remotion";
-import { SCENE_DURATIONS } from "./data/sceneData";
+import { AbsoluteFill, Series, Audio, staticFile } from "remotion";
+import { SCENE_DURATIONS, AUDIO_FILES } from "./data/sceneData";
 import { COLORS } from "./config/theme";
+import { SceneTransition } from "./components/SceneTransition";
 
 import { ColdOpenScene } from "./scenes/ColdOpenScene";
 import { MapScene } from "./scenes/MapScene";
@@ -14,39 +15,53 @@ export const DemoVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.bg }}>
       <Series>
-        {/* Scene 1: Cold Open -- The Problem */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.coldOpen}>
-          <ColdOpenScene />
+          <Audio src={staticFile(AUDIO_FILES.coldOpen)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.coldOpen}>
+            <ColdOpenScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 2: The Map */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.map}>
-          <MapScene />
+          <Audio src={staticFile(AUDIO_FILES.map)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.map}>
+            <MapScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 3: World ID + Human Verification */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.worldId}>
-          <WorldIdScene />
+          <Audio src={staticFile(AUDIO_FILES.worldId)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.worldId}>
+            <WorldIdScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 4: Chat + Disputes + Confidence */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.disputes}>
-          <DisputeScene />
+          <Audio src={staticFile(AUDIO_FILES.disputes)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.disputes}>
+            <DisputeScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 5: AI Agents + ENS + ERC-8004 + x402 */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.agentIdentity}>
-          <AgentIdentityScene />
+          <Audio src={staticFile(AUDIO_FILES.agentIdentity)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.agentIdentity}>
+            <AgentIdentityScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 6: MCP + Agent Delegation */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.mcp}>
-          <McpScene />
+          <Audio src={staticFile(AUDIO_FILES.mcp)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.mcp}>
+            <McpScene />
+          </SceneTransition>
         </Series.Sequence>
 
-        {/* Scene 7: Close */}
         <Series.Sequence durationInFrames={SCENE_DURATIONS.outro}>
-          <OutroScene />
+          <Audio src={staticFile(AUDIO_FILES.outro)} />
+          <SceneTransition durationInFrames={SCENE_DURATIONS.outro}>
+            <OutroScene />
+          </SceneTransition>
         </Series.Sequence>
       </Series>
     </AbsoluteFill>

@@ -163,7 +163,18 @@ export function createAgentClient(props: {
     /** Deposit USDC into Circle Gateway for gasless payments (one-time setup) */
     async depositToGateway(amount: string) {
       if (!gateway) throw new Error("Gateway client not configured")
-      return gateway.deposit(amount)
+      const result = await gateway.deposit(amount)
+
+      // Circle SDK doesn't check receipt.status — verify deposit actually succeeded on-chain
+      const receipt = await gateway.publicClient.getTransactionReceipt({ hash: result.depositTxHash })
+      if (receipt.status === "reverted") {
+        throw new Error(
+          `Deposit tx reverted on-chain: ${result.depositTxHash}. ` +
+          `USDC was not transferred to Gateway. Gas used: ${receipt.gasUsed}`
+        )
+      }
+
+      return result
     },
 
     /** Check Gateway balance */

@@ -9,6 +9,10 @@ export type ChatMessage = Awaited<
   ReturnType<AppRouterClient["chat"]["getMessages"]>
 >[number]
 
+export type PaymentStats = Awaited<
+  ReturnType<AppRouterClient["payment"]["stats"]>
+>
+
 // Re-export from shared constants — no server code in client bundle
 export type { EventCategory, SeverityLevel } from "@/lib/event-constants"
 export { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES } from "@/lib/event-constants"

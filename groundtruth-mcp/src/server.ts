@@ -249,7 +249,14 @@ export function createMcpServer(props: {
     },
     async ({ amount }) => {
       try {
+        const balanceBefore = await client.getGatewayBalance()
         const result = await client.depositToGateway(amount)
+        const balanceAfter = await client.getGatewayBalance()
+
+        const gatewayBefore = balanceBefore?.gateway.formattedAvailable ?? "unknown"
+        const gatewayAfter = balanceAfter?.gateway.formattedAvailable ?? "unknown"
+        const walletAfter = balanceAfter?.wallet.formatted ?? "unknown"
+
         return {
           content: [{
             type: "text" as const,
@@ -258,7 +265,14 @@ export function createMcpServer(props: {
               deposited: result.formattedAmount + " USDC",
               depositTxHash: result.depositTxHash,
               approvalTxHash: result.approvalTxHash ?? null,
-              note: "Deposit complete. Reads after the free tier (3/hour) will now be paid gaslessly from your Gateway balance.",
+              walletBalanceAfter: walletAfter,
+              gatewayBalanceBefore: gatewayBefore,
+              gatewayBalanceAfter: gatewayAfter,
+              ...(gatewayAfter === "0" ? {
+                warning: "Gateway balance still 0 after deposit — Circle API may take time to reflect the deposit, or the tx may have issues.",
+              } : {
+                note: "Deposit complete. Reads after the free tier (3/hour) will now be paid gaslessly from your Gateway balance.",
+              }),
             }, null, 2),
           }],
         }

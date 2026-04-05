@@ -47,3 +47,11 @@ export const VIDEO = {
   height: 1080,
   fps: 30,
 } as const;
+
+export const SPRING = {
+  default: { damping: 13, mass: 0.8 },
+  gentle: { damping: 16, mass: 1 },
+} as const;
+
+// Transition: frames to fade in/out between scenes
+export const TRANSITION_FRAMES = 15;

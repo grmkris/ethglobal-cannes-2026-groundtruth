@@ -75,8 +75,8 @@ export function EventDetailPanel({
   }
 
   return (
-    <MapControlContainer className="absolute top-0 right-0 z-[1000] w-[calc(100vw-3rem)] sm:w-80">
-      <div className="sidebar-grain flex h-svh max-h-svh w-full flex-col border-l bg-background/90 backdrop-blur-md dark:border-white/[0.06]">
+    <MapControlContainer className="absolute top-0 right-0 z-[1000] h-full w-[calc(100vw-3rem)] sm:w-80">
+      <div className="sidebar-grain flex h-full max-h-full w-full flex-col border-l bg-background/90 backdrop-blur-md dark:border-white/[0.06]">
         {/* Header */}
         <div className="flex items-center gap-2 border-b px-3 py-2">
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
