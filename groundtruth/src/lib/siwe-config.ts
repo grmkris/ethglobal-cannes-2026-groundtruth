@@ -11,6 +11,9 @@ import { getAccount } from "wagmi/actions"
 import { authClient } from "./auth-client"
 import { wagmiConfig, chainIds } from "./wagmi-config"
 
+const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/i
+const EMBEDDED_FLOW_FLAG = "siwe-embedded-flow"
+
 export const siweConfig = createSIWEConfig({
   getMessageParams: async () => ({
     domain: window.location.host,
@@ -21,8 +24,17 @@ export const siweConfig = createSIWEConfig({
 
   getNonce: async (address?: string) => {
     const account = getAccount(wagmiConfig)
-    const walletAddress = address ?? account.address
-    if (!walletAddress) throw new Error("No wallet connected")
+    const isValidAddress = !!address && ETH_ADDRESS_REGEX.test(address)
+    const walletAddress = isValidAddress ? address : account.address
+
+    if (!walletAddress) {
+      // Embedded wallet (social login) flow: Reown calls getNonce with the
+      // placeholder '<<AccountAddress>>' before the wallet exists. Return a
+      // client-generated nonce; verifyMessage will register a real one
+      // server-side once the embedded wallet address is known.
+      sessionStorage.setItem(EMBEDDED_FLOW_FLAG, "1")
+      return crypto.randomUUID().replace(/-/g, "")
+    }
 
     const { data, error } = await authClient.siwe.nonce({
       walletAddress,
@@ -42,12 +54,27 @@ export const siweConfig = createSIWEConfig({
       ? rawChainId.split(":")[1]
       : rawChainId
     if (!parsed) throw new Error("Invalid chain ID in SIWE message")
+    const chainId = Number(parsed)
+
+    // Embedded wallet flow: no server-side nonce exists for the real address
+    // (getNonce ran with a placeholder). Register one now so better-auth's
+    // verify endpoint can find it. Our backend verifyMessage callback uses
+    // viem and only checks the signature, so the nonce value itself is not
+    // compared against the SIWE message.
+    if (sessionStorage.getItem(EMBEDDED_FLOW_FLAG) === "1") {
+      sessionStorage.removeItem(EMBEDDED_FLOW_FLAG)
+      const { error: nonceError } = await authClient.siwe.nonce({
+        walletAddress: address,
+        chainId,
+      })
+      if (nonceError) return false
+    }
 
     const { error } = await authClient.siwe.verify({
       message,
       signature,
       walletAddress: address,
-      chainId: Number(parsed),
+      chainId,
     })
     return !error
   },
