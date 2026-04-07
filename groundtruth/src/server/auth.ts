@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth"
 import { siwe } from "better-auth/plugins"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { generateRandomString } from "better-auth/crypto"
-import { createPublicClient, http, type PublicClient } from "viem"
+import { createPublicClient, http } from "viem"
 import { verifyMessage } from "viem/actions"
 import { mainnet, base, baseSepolia } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
@@ -34,10 +34,19 @@ const baseSepoliaClient = createPublicClient({
   transport: reownRpc(baseSepolia.id),
 })
 
-const clientByChainId: Record<number, PublicClient> = {
-  [mainnet.id]: mainnetClient,
-  [base.id]: baseClient,
-  [baseSepolia.id]: baseSepoliaClient,
+// Use a switch to dispatch — a Record<number, PublicClient> can't unify
+// Ethereum mainnet with OP-stack chains (Base) because OP-stack getBlock
+// returns deposit transactions the base PublicClient type doesn't include.
+function getClientForChain(chainId: number) {
+  switch (chainId) {
+    case base.id:
+      return baseClient
+    case baseSepolia.id:
+      return baseSepoliaClient
+    case mainnet.id:
+    default:
+      return mainnetClient
+  }
 }
 
 // ENS lookups need an Infura mainnet client (Reown RPC doesn't expose ENS).
@@ -99,7 +108,7 @@ export function createAuth(props: {
           // ERC-1271 / ERC-6492 signatures from embedded smart wallets
           // (Reown social login) verify correctly. Falls back to mainnet
           // if the chain isn't in our supported set.
-          const client = clientByChainId[chainId] ?? mainnetClient
+          const client = getClientForChain(chainId)
           try {
             const ok = await verifyMessage(client, {
               address: ensureHexString(address),
