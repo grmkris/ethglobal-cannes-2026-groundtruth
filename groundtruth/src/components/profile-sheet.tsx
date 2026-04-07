@@ -19,7 +19,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { WorldIdVerifyButton } from "@/components/world-id-verify-button"
-import { useSession, signOut } from "@/lib/auth-client"
+import { useSession } from "@/lib/auth-client"
+import { useAppKit, useDisconnect } from "@reown/appkit/react"
 import { useAccount, useWriteContract, useConfig } from "wagmi"
 import { getPublicClient } from "wagmi/actions"
 import { mainnet } from "wagmi/chains"
@@ -87,6 +88,8 @@ export function ProfileSheet({
 }) {
   const { data: sessionData } = useSession()
   const { address } = useAccount()
+  const { open: openAppKit } = useAppKit()
+  const { disconnect } = useDisconnect()
   const { resolvedTheme, setTheme } = useTheme()
   const isMobile = useIsMobile()
   const user = sessionData?.user
@@ -110,7 +113,12 @@ export function ProfileSheet({
         className={isMobile ? "max-h-[85svh] rounded-t-2xl" : undefined}
       >
         <SheetHeader>
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openAppKit({ view: "Account" })}
+            className="flex items-center gap-3 rounded-lg p-1 -m-1 text-left transition-colors hover:bg-muted/50"
+            title="Open wallet details"
+          >
             <Avatar size="lg">
               {user.image && <AvatarImage src={user.image} alt={displayName} />}
               <AvatarFallback>{initials}</AvatarFallback>
@@ -125,16 +133,28 @@ export function ProfileSheet({
                   <span className="truncate font-mono text-xs">
                     {truncateAddress(address)}
                   </span>
-                  <button
-                    onClick={handleCopyAddress}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCopyAddress()
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleCopyAddress()
+                      }
+                    }}
                     className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
                     <CopyIcon size={10} />
-                  </button>
+                  </span>
                 </SheetDescription>
               )}
             </div>
-          </div>
+          </button>
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6">
@@ -189,8 +209,13 @@ export function ProfileSheet({
         <SheetFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              signOut()
+            onClick={async () => {
+              try {
+                await disconnect()
+              } catch (err) {
+                // Defensive: still close the sheet even if disconnect throws.
+                console.error("[profile-sheet] disconnect failed", err)
+              }
               onOpenChange(false)
             }}
           >
