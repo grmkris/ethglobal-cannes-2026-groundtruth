@@ -497,7 +497,7 @@ function MapLayersControl({
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger render={<Button type="button" variant="secondary" size="icon-sm" aria-label="Select layers" title="Select layers" className={cn(
+            <DropdownMenuTrigger render={<Button type="button" variant="secondary" size="icon-touch" aria-label="Select layers" title="Select layers" className={cn(
                                     "absolute z-1000 border",
                                     position,
                                     className
@@ -789,7 +789,7 @@ function MapZoomControl({
                 {...props}>
                 <Button
                     type="button"
-                    size="icon-sm"
+                    size="icon-touch"
                     variant="secondary"
                     aria-label="Zoom in"
                     title="Zoom in"
@@ -800,7 +800,7 @@ function MapZoomControl({
                 </Button>
                 <Button
                     type="button"
-                    size="icon-sm"
+                    size="icon-touch"
                     variant="secondary"
                     aria-label="Zoom out"
                     title="Zoom out"
@@ -852,7 +852,7 @@ function MapFullscreenControl({
         <MapControlContainer className={cn(position, className)}>
             <Button
                 type="button"
-                size="icon-sm"
+                size="icon-touch"
                 variant="secondary"
                 onClick={() => map.toggleFullscreen()}
                 aria-label={
@@ -921,7 +921,7 @@ function MapLocateControl({
         <MapControlContainer className={cn(position, className)}>
             <Button
                 type="button"
-                size="icon-sm"
+                size="icon-touch"
                 variant={location ? "default" : "secondary"}
                 onClick={location ? stopLocating : startLocating}
                 disabled={isLocating}

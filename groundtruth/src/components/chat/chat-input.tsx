@@ -31,16 +31,16 @@ export function ChatInput({
         placeholder="Type a message..."
         disabled={disabled}
         aria-label="Message"
-        className="h-8 flex-1 text-xs"
+        className="h-9 flex-1 text-base sm:h-8 sm:text-xs"
       />
       <Button
         type="submit"
-        size="icon-xs"
+        size="icon-touch"
         disabled={disabled || !content.trim()}
         aria-label="Send message"
-        className="size-8 shrink-0"
+        className="shrink-0"
       >
-        <SendIcon size={12} />
+        <SendIcon />
       </Button>
     </form>
   )

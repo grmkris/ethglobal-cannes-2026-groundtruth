@@ -30,7 +30,7 @@ export function EventMarkers({
             {!events?.length ? null : <MapMarkerClusterGroup
               icon={(count) => (
                 <div
-                  className="flex size-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg dark:border-neutral-800"
+                  className="flex size-11 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg dark:border-neutral-800"
                   style={{ backgroundColor: category.markerColor }}
                 >
                   {count}
@@ -41,6 +41,7 @@ export function EventMarkers({
                 <MapMarker
                   key={event.id}
                   position={event.coordinates}
+                  iconAnchor={[22, 22]}
                   icon={
                     <EventMarkerIcon
                       category={event.category}

@@ -12,7 +12,7 @@ export function EventMarkerIcon({
   const config = getCategoryConfig(category)
 
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative flex size-11 items-center justify-center">
       {severity === "critical" && (
         <span
           className="absolute size-8 animate-ping rounded-full opacity-40"

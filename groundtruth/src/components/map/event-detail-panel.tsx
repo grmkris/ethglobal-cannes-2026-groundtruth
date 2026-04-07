@@ -110,21 +110,21 @@ export function EventDetailPanel({
           </div>
           <Button
             variant="ghost"
-            size="icon-xs"
+            size="icon-touch"
             className="shrink-0"
             aria-label="Show on map"
             onClick={() => onShowOnMap(event.coordinates)}
           >
-            <MapPinIcon size={14} />
+            <MapPinIcon />
           </Button>
           <Button
             variant="ghost"
-            size="icon-xs"
+            size="icon-touch"
             className="shrink-0"
             aria-label="Close panel"
             onClick={onClose}
           >
-            <XIcon size={14} />
+            <XIcon />
           </Button>
         </div>
 

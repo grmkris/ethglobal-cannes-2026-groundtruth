@@ -218,7 +218,7 @@ export function MapSidebar({
     <MapControlContainer
       className={cn(
         "absolute top-0 left-0 z-[1000] flex h-full transition-all duration-300",
-        collapsed ? "w-10" : "w-[calc(100vw-3rem)] sm:w-80"
+        collapsed ? "w-12" : "w-[calc(100vw-3rem)] sm:w-80"
       )}
     >
       {collapsed ? (
@@ -227,14 +227,14 @@ export function MapSidebar({
             render={
               <Button
                 variant="outline"
-                size="icon"
+                size="icon-touch"
                 aria-label="Expand sidebar"
                 onClick={() => onCollapsedChange(false)}
                 className="bg-background/90 shadow-lg backdrop-blur-md"
               />
             }
           >
-            <ChevronRightIcon size={16} />
+            <ChevronRightIcon />
           </TooltipTrigger>
           <TooltipContent side="right">Expand sidebar</TooltipContent>
         </Tooltip>
@@ -259,14 +259,14 @@ export function MapSidebar({
                 render={
                   <Button
                     variant="ghost"
-                    size="icon-xs"
+                    size="icon-touch"
                     className="ml-auto"
                     aria-label="Collapse sidebar"
                     onClick={() => onCollapsedChange(true)}
                   />
                 }
               >
-                <ChevronLeftIcon size={14} />
+                <ChevronLeftIcon />
               </TooltipTrigger>
               <TooltipContent>Collapse sidebar</TooltipContent>
             </Tooltip>
@@ -304,7 +304,7 @@ export function MapSidebar({
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     aria-label="Search events"
-                    className="h-8 pl-7 text-xs"
+                    className="h-9 pl-7 text-base sm:h-8 sm:text-xs"
                   />
                 </div>
                 <CategoryFilter

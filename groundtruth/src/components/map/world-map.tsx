@@ -33,6 +33,8 @@ import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
 import { CountryChoropleth } from "./country-choropleth"
+import { OverlayLayers } from "./overlays/overlay-layers"
+import { LayersPopover } from "./layers-popover"
 import { UserControls } from "@/components/user-controls"
 
 const WORLD_CENTER = [20, 0] as const satisfies LatLngExpression
@@ -64,7 +66,7 @@ export function WorldMap() {
   const [reportMode, setReportMode] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null)
 
   const {
@@ -132,26 +134,8 @@ export function WorldMap() {
   if (isLoading) {
     return (
       <div className="flex h-svh w-svw bg-background">
-        <div className="hidden w-80 border-r border-border/50 p-3 sm:block">
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-10 w-full rounded-3xl" />
-            <Separator />
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-6 w-16 rounded-full" />
-              ))}
-            </div>
-            <div className="space-y-1">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="h-14 w-full"
-                  style={{ animationDelay: `${i * 75}ms` }}
-                />
-              ))}
-            </div>
-          </div>
+        <div className="hidden w-12 border-r border-border/50 p-2 sm:block">
+          <Skeleton className="size-11 rounded-4xl" />
         </div>
         <div className="flex flex-1 items-center justify-center bg-muted/20">
           <div className="flex flex-col items-center gap-3">
@@ -190,6 +174,7 @@ export function WorldMap() {
             attribution="Tiles &copy; Esri"
           />
           <CountryChoropleth events={filteredEvents} />
+          <OverlayLayers />
           <EventMarkers
             eventsByCategory={eventsByCategory}
             onOpenChat={handleOpenChat}
@@ -207,17 +192,19 @@ export function WorldMap() {
           />
         )}
 
-        <MapZoomControl position={`bottom-14 ${rCtrl}`} />
-        <MapFullscreenControl position={`bottom-24 ${rCtrl}`} />
-        <MapLocateControl position={`bottom-34 ${rCtrl}`} />
+        <LayersPopover className={`top-2 ${rCtrl}`} />
+
+        <MapZoomControl position={`bottom-[3.75rem] ${rCtrl}`} />
+        <MapFullscreenControl position={`bottom-[9.75rem] ${rCtrl}`} />
+        <MapLocateControl position={`bottom-52 ${rCtrl}`} />
 
         {/* Report mode FAB */}
-        <MapControlContainer className={`bottom-44 ${rCtrl}`}>
+        <MapControlContainer className={`bottom-[16.25rem] ${rCtrl}`}>
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
-                  size="icon"
+                  size="icon-touch"
                   variant={reportMode ? "default" : "outline"}
                   onClick={() => setReportMode((p) => !p)}
                   aria-label={reportMode ? "Cancel report" : "Report event"}
@@ -225,7 +212,7 @@ export function WorldMap() {
                 />
               }
             >
-              <CrosshairIcon size={18} />
+              <CrosshairIcon />
             </TooltipTrigger>
             <TooltipContent side="left">
               {reportMode ? "Cancel report" : "Report event"}
