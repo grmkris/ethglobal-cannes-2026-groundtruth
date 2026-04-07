@@ -145,12 +145,12 @@ export function createEventService(props: {
 
     if (limit) {
       const hasMore = rows.length > limit
-      const items = rows.slice(0, limit).map(toWorldEvent)
+      const items = rows.slice(0, limit).map((row) => toWorldEvent(row))
       const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null
       return { items, nextCursor }
     }
 
-    return { items: rows.map(toWorldEvent), nextCursor: null }
+    return { items: rows.map((row) => toWorldEvent(row)), nextCursor: null }
   }
 
   async function getById(params: { id: WorldEventId }) {

@@ -1,20 +1,31 @@
 "use client"
 
-import L from "leaflet"
 import { MapMarker, MapPane, MapTooltip } from "@/components/ui/map"
 import type { EonetEvent } from "@/hooks/feeds/use-eonet"
 
 const PANE_NAME = "overlay-point-large"
 const PANE_Z_INDEX = 560
 
-/** Build a small DOM-icon showing the EONET category emoji on a tinted disc. */
-function makeEmojiIcon(emoji: string): L.DivIcon {
-  return L.divIcon({
-    className: "",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:9999px;background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.55);font-size:13px;line-height:1;">${emoji}</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-  })
+/** Small disc with the EONET category emoji. Rendered to HTML by MapMarker. */
+function EmojiDisc({ emoji }: { emoji: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 22,
+        height: 22,
+        borderRadius: 9999,
+        background: "rgba(59,130,246,0.18)",
+        border: "1px solid rgba(59,130,246,0.55)",
+        fontSize: 13,
+        lineHeight: 1,
+      }}
+    >
+      {emoji}
+    </div>
+  )
 }
 
 export function EonetLayer({ data }: { data: EonetEvent[] | undefined }) {
@@ -26,7 +37,8 @@ export function EonetLayer({ data }: { data: EonetEvent[] | undefined }) {
         <MapMarker
           key={event.id}
           position={[event.lat, event.lng]}
-          icon={makeEmojiIcon(event.emoji)}
+          icon={<EmojiDisc emoji={event.emoji} />}
+          iconAnchor={[11, 11]}
           pane={PANE_NAME}
         >
           <MapTooltip side="top" sideOffset={10}>

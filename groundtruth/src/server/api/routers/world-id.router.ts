@@ -10,7 +10,10 @@ export const worldIdRouter = {
   getSignature: authedProcedure.handler(async ({ context }) => {
     context.log.set({ procedure: "worldId.getSignature" })
 
-    const rpSig = signRequest("verify-human", env.WORLD_SIGNING_KEY)
+    const rpSig = signRequest({
+      signingKeyHex: env.WORLD_SIGNING_KEY,
+      action: "verify-human",
+    })
 
     return {
       rp_context: {
