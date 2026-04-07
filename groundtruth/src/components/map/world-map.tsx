@@ -34,6 +34,7 @@ import { MapClickHandler } from "./map-click-handler"
 import { MapSidebar, type SidebarTab } from "./map-sidebar"
 import { CountryChoropleth } from "./country-choropleth"
 import { OverlayLayers } from "./overlays/overlay-layers"
+import { NasaGibsTileLayer } from "./overlays/nasa-gibs-tile-layer"
 import { LayersPopover } from "./layers-popover"
 import { UserControls } from "@/components/user-controls"
 
@@ -173,6 +174,7 @@ export function WorldMap() {
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution="Tiles &copy; Esri"
           />
+          <NasaGibsTileLayer />
           <CountryChoropleth events={filteredEvents} />
           <OverlayLayers />
           <EventMarkers

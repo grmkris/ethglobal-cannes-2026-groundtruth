@@ -15,6 +15,7 @@ import { useSession } from "@/lib/auth-client"
 import { useAppKit } from "@reown/appkit/react"
 import { ConfidenceMeter } from "./confidence-meter"
 import { DisputeModal } from "@/components/dispute-modal"
+import { RelatedContext } from "./related-context"
 import type { SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
 import { cn } from "@/lib/utils"
@@ -289,6 +290,8 @@ export function EventDetailPanel({
                 })()}
               </div>
             )}
+
+            <RelatedContext event={event} onShowOnMap={onShowOnMap} />
           </div>
 
           {/* Chat section */}
