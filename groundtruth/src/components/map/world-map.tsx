@@ -120,16 +120,11 @@ export function WorldMap() {
     setFlyToTarget([...coordinates])
   }, [])
 
-  // Event handlers fold in sidebar expansion + flyTo (no effects needed)
   const handleSelectEvent = useCallback(
     (eventId: WorldEventId | null) => {
       setSelectedEventId(eventId)
-      if (eventId) {
-        const event = events.find((e) => e.id === eventId)
-        if (event) setFlyToTarget([...event.coordinates])
-      }
     },
-    [setSelectedEventId, events]
+    [setSelectedEventId]
   )
 
   const handleCloseDetail = useCallback(() => {
@@ -221,6 +216,7 @@ export function WorldMap() {
             key={selectedEvent.id}
             event={selectedEvent}
             onClose={handleCloseDetail}
+            onShowOnMap={handleFlyTo}
           />
         )}
 

@@ -23,6 +23,7 @@ import {
   BadgeCheckIcon,
   BotIcon,
   ExternalLinkIcon,
+  MapPinIcon,
   MessageCircleIcon,
   UsersIcon,
   WalletIcon,
@@ -39,9 +40,11 @@ const SEVERITY_STYLES: Record<SeverityLevel, string> = {
 export function EventDetailPanel({
   event,
   onClose,
+  onShowOnMap,
 }: {
   event: WorldEvent
   onClose: () => void
+  onShowOnMap: (coordinates: [number, number]) => void
 }) {
   const { messages, send } = useChat(event.id)
   const { data: sessionData } = useSession()
@@ -105,6 +108,15 @@ export function EventDetailPanel({
               </Badge>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="shrink-0"
+            aria-label="Show on map"
+            onClick={() => onShowOnMap(event.coordinates)}
+          >
+            <MapPinIcon size={14} />
+          </Button>
           <Button
             variant="ghost"
             size="icon-xs"
