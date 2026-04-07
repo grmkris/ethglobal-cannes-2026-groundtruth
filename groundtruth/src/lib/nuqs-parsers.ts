@@ -8,3 +8,10 @@ export const parseAsWorldEventId = createParser<WorldEventIdType>({
   },
   serialize: (value) => value,
 })
+
+const COUNTRY_ISO3_RE = /^[A-Z]{3}$/
+
+export const parseAsCountryIso3 = createParser<string>({
+  parse: (value) => (COUNTRY_ISO3_RE.test(value) ? value : null),
+  serialize: (value) => value,
+})

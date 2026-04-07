@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { z } from "zod"
 import type { AgentClient } from "./agent-client.js"
+import { publishEventToGeo, type GroundTruthEvent } from "./geo-publisher.js"
+import { queryGeoEvents } from "./geo-reader.js"
+import { isGeoSchemaBootstrapped } from "./geo-constants.js"
 
 const CATEGORIES = [
   "conflict",
@@ -18,8 +21,13 @@ const SEVERITIES = ["low", "medium", "high", "critical"] as const
 export function createMcpServer(props: {
   client: AgentClient
   identity?: { agentId: string; ensName: string } | null
+  geo?: {
+    privateKey: `0x${string}`
+    spaceId: string
+    rpc?: string
+  } | null
 }) {
-  const { client, identity } = props
+  const { client, identity, geo } = props
 
   const identityLine = identity
     ? `You are agent ${identity.ensName} (ERC-8004 #${identity.agentId}, wallet: ${client.walletAddress})`
@@ -314,6 +322,99 @@ export function createMcpServer(props: {
         }
       }
     }
+  )
+
+  // --- Geo Knowledge Graph (GRC-20 / GeoBrowser) ---
+
+  server.tool(
+    "publish_to_geo",
+    "Publish a Ground Truth event to a GRC-20 Space on Geo testnet. Mirrors the verified event into the decentralized knowledge graph as a typed entity (POINT for location, DATETIME for timestamp, properties for category/severity/source). Requires GEO_PRIVATE_KEY and GEO_SPACE_ID env vars and a bootstrapped schema.",
+    {
+      eventId: z.string().describe("Ground Truth event ID (wev_...)"),
+    },
+    async ({ eventId }) => {
+      if (!geo) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: "Geo publishing not configured. Set GEO_PRIVATE_KEY and GEO_SPACE_ID env vars (run `npx groundtruth-mcp setup` to enable interactively).",
+          }],
+        }
+      }
+      if (!isGeoSchemaBootstrapped()) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: "Geo schema not bootstrapped — the property/type IDs in geo-constants.ts are still placeholders. The package owner needs to run `bun run scripts/bootstrap-geo.ts` first.",
+          }],
+        }
+      }
+      try {
+        const event = (await client.getEvent(eventId)) as GroundTruthEvent
+        const result = await publishEventToGeo({
+          event,
+          spaceId: geo.spaceId,
+          privateKey: geo.privateKey,
+          rpc: geo.rpc,
+        })
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              success: true,
+              eventId,
+              cid: result.cid,
+              txHash: result.txHash,
+              spaceId: result.spaceId,
+              network: result.network,
+              note: "Event published to Geo. View at https://testnet-api.geobrowser.io/graphql or via `query_geo_events`.",
+            }, null, 2),
+          }],
+        }
+      } catch (err: any) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Geo publish failed: ${err?.message ?? "unknown error"}`,
+          }],
+        }
+      }
+    },
+  )
+
+  server.tool(
+    "query_geo_events",
+    "Query Ground Truth events from the Geo knowledge graph (https://testnet-api.geobrowser.io/graphql). Returns events from ALL Spaces that publish to the canonical WorldEvent type — including events from other Ground Truth instances, not just yours. No payment required.",
+    {
+      limit: z.number().int().min(1).max(200).optional().describe("Max events to return (default 50)"),
+      offset: z.number().int().min(0).optional().describe("Pagination offset (default 0)"),
+    },
+    async ({ limit, offset }) => {
+      if (!isGeoSchemaBootstrapped()) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: "Geo schema not bootstrapped — the property/type IDs in geo-constants.ts are still placeholders. The package owner needs to run `bun run scripts/bootstrap-geo.ts` first.",
+          }],
+        }
+      }
+      try {
+        const events = await queryGeoEvents({ limit, offset })
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({ count: events.length, events }, null, 2),
+          }],
+        }
+      } catch (err: any) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Geo query failed: ${err?.message ?? "unknown error"}`,
+          }],
+        }
+      }
+    },
   )
 
   return server

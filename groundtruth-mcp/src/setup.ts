@@ -35,6 +35,10 @@ You are an AI intelligence agent for Ground Truth — a verified intelligence ma
 - \`gateway_deposit\` — Deposit USDC into Circle Gateway for gasless reads
 - \`gateway_withdraw\` — Withdraw USDC from Gateway back to wallet
 
+### Geo Knowledge Graph (GRC-20 / GeoBrowser)
+- \`publish_to_geo\` — Mirror a verified Ground Truth event to a GRC-20 Space on Geo testnet (POINT for location, DATETIME for timestamp). Requires GEO_PRIVATE_KEY + GEO_SPACE_ID env vars.
+- \`query_geo_events\` — Query the public Geo knowledge graph for WorldEvent entities across ALL Spaces (no payment, no key needed).
+
 ## Economic Model
 
 - **Writes are free** — we want agents to contribute intelligence
@@ -75,7 +79,12 @@ function findProjectRoot(): string {
   return process.cwd()
 }
 
-function writeMcpConfig(root: string, privateKey: string, apiUrl: string) {
+function writeMcpConfig(
+  root: string,
+  privateKey: string,
+  apiUrl: string,
+  geo?: { privateKey: string; spaceId?: string },
+) {
   const configPath = join(root, ".mcp.json")
   let config: Record<string, unknown> = {}
 
@@ -91,13 +100,17 @@ function writeMcpConfig(root: string, privateKey: string, apiUrl: string) {
     config.mcpServers = {}
   }
 
+  const env: Record<string, string> = {
+    AGENT_PRIVATE_KEY: privateKey,
+    GROUNDTRUTH_API_URL: apiUrl,
+  }
+  if (geo?.privateKey) env.GEO_PRIVATE_KEY = geo.privateKey
+  if (geo?.spaceId) env.GEO_SPACE_ID = geo.spaceId
+
   ;(config.mcpServers as Record<string, unknown>).groundtruth = {
     command: "npx",
     args: ["-y", "groundtruth-mcp"],
-    env: {
-      AGENT_PRIVATE_KEY: privateKey,
-      GROUNDTRUTH_API_URL: apiUrl,
-    },
+    env,
   }
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n")
@@ -165,27 +178,112 @@ export async function runSetup() {
     process.exit(0)
   }
 
+  // --- Optional Geo (GRC-20 / GeoBrowser) publishing ---
+  let geoPrivateKey: string | undefined
+  let geoSpaceId: string | undefined
+  let geoAddress: string | undefined
+
+  const enableGeo = await p.confirm({
+    message: "Enable Geo publishing? (mirror events to a GRC-20 Space on geobrowser.io)",
+    initialValue: false,
+  })
+
+  if (p.isCancel(enableGeo)) {
+    p.cancel("Setup cancelled.")
+    process.exit(0)
+  }
+
+  if (enableGeo) {
+    const geoKeyChoice = await p.select({
+      message: "Geo wallet (separate from agent wallet)",
+      options: [
+        { value: "generate", label: "Generate new Geo wallet" },
+        { value: "import", label: "Import existing Geo private key" },
+      ],
+    })
+
+    if (p.isCancel(geoKeyChoice)) {
+      p.cancel("Setup cancelled.")
+      process.exit(0)
+    }
+
+    if (geoKeyChoice === "import") {
+      const imported = await p.text({
+        message: "Geo private key (0x...)",
+        validate: (v = "") => {
+          if (!v.startsWith("0x")) return "Must start with 0x"
+          if (v.length !== 66) return "Must be 64 hex characters (with 0x prefix)"
+        },
+      })
+      if (p.isCancel(imported)) {
+        p.cancel("Setup cancelled.")
+        process.exit(0)
+      }
+      geoPrivateKey = imported
+    } else {
+      geoPrivateKey = generatePrivateKey()
+    }
+
+    const geoAccount = privateKeyToAccount(geoPrivateKey as `0x${string}`)
+    geoAddress = getAddress(geoAccount.address)
+    p.log.success(`Geo wallet: ${geoAddress}`)
+    p.log.warning(`Geo private key: ${geoPrivateKey}`)
+    p.log.message("Save this — it won't be shown again.")
+
+    const existingSpaceId = await p.text({
+      message: "Existing Geo Space ID? (leave blank if you don't have one yet)",
+      placeholder: "(blank)",
+      defaultValue: "",
+    })
+
+    if (p.isCancel(existingSpaceId)) {
+      p.cancel("Setup cancelled.")
+      process.exit(0)
+    }
+
+    if (existingSpaceId && existingSpaceId.trim().length > 0) {
+      geoSpaceId = existingSpaceId.trim()
+    }
+  }
+
   const root = findProjectRoot()
 
-  const mcpPath = writeMcpConfig(root, privateKey, apiUrl)
+  const mcpPath = writeMcpConfig(
+    root,
+    privateKey,
+    apiUrl,
+    geoPrivateKey ? { privateKey: geoPrivateKey, spaceId: geoSpaceId } : undefined,
+  )
   p.log.success(`Wrote ${mcpPath}`)
 
   const skillPath = writeSkill(root)
   p.log.success(`Wrote ${skillPath}`)
 
-  p.note(
-    [
-      `1. (Optional) Register with AgentBook for a verification badge:`,
-      `   npx @worldcoin/agentkit-cli register ${address}`,
-      ``,
-      `2. Link wallet on Ground Truth:`,
-      `   Open app -> Profile -> Agents -> paste ${address}`,
-      ``,
-      `3. Register ENS Identity (for on-chain verification):`,
-      `   Profile -> Agents -> Register ENS Identity`,
-    ].join("\n"),
-    "Next steps"
-  )
+  const nextSteps = [
+    `1. (Optional) Register with AgentBook for a verification badge:`,
+    `   npx @worldcoin/agentkit-cli register ${address}`,
+    ``,
+    `2. Link wallet on Ground Truth:`,
+    `   Open app -> Profile -> Agents -> paste ${address}`,
+    ``,
+    `3. Register ENS Identity (for on-chain verification):`,
+    `   Profile -> Agents -> Register ENS Identity`,
+  ]
+
+  if (enableGeo && geoAddress) {
+    nextSteps.push(``)
+    nextSteps.push(`4. Fund your Geo wallet with testnet ETH on chain 19411:`)
+    nextSteps.push(`   Wallet: ${geoAddress}`)
+    nextSteps.push(`   (Ask in https://discord.gg/geoprotocol for the Geo testnet faucet)`)
+    if (!geoSpaceId) {
+      nextSteps.push(``)
+      nextSteps.push(`5. Deploy a personal Geo Space (after funding):`)
+      nextSteps.push(`   GEO_PRIVATE_KEY=${geoPrivateKey} bun run scripts/bootstrap-geo.ts`)
+      nextSteps.push(`   Then add the printed GEO_SPACE_ID to ${mcpPath}`)
+    }
+  }
+
+  p.note(nextSteps.join("\n"), "Next steps")
 
   // Open browser to link the wallet
   const linkUrl = `${apiUrl}?link-agent=${address}`

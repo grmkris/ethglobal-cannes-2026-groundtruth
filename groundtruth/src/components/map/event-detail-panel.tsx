@@ -47,7 +47,7 @@ export function EventDetailPanel({
   onClose: () => void
   onShowOnMap: (coordinates: [number, number]) => void
 }) {
-  const { messages, send } = useChat(event.id)
+  const { messages, send } = useChat({ kind: "event", eventId: event.id })
   const { data: sessionData } = useSession()
   const isSignedIn = !!sessionData?.session
   const isWorldIdVerified = sessionData?.user?.worldIdVerified ?? false

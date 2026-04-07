@@ -9,13 +9,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { ChatInput } from "@/components/chat/chat-input"
 import { ChatMessageItem } from "@/components/chat/chat-message"
+import { CountryEventsHeader } from "./country-events-header"
 import { getCategoryConfig } from "@/lib/event-categories"
 import { agentExplorerUrl } from "@/lib/explorers"
 import { ConfidenceMeter } from "./confidence-meter"
 import { useSession } from "@/lib/auth-client"
 import type { EventCategory, SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
-import { useChat } from "@/hooks/use-chat"
+import { useChat, type ChatScope } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import {
   BadgeCheckIcon,
@@ -25,6 +26,7 @@ import {
   MessageCircleIcon,
   SearchIcon,
   WalletIcon,
+  XIcon,
 } from "lucide-react"
 import { useLayoutEffect, useRef } from "react"
 import { useAppKit } from "@reown/appkit/react"
@@ -156,6 +158,8 @@ export function MapSidebar({
   selectedEvent,
   activeTab,
   collapsed,
+  chatScope,
+  selectedCountryName,
   onToggleCategory,
   onToggleSeverity,
   onToggleVerified,
@@ -163,6 +167,7 @@ export function MapSidebar({
   onSearchChange,
   onClearFilters,
   onSelectEvent,
+  onClearCountry,
   onTabChange,
   onCollapsedChange,
   onFlyTo,
@@ -177,12 +182,15 @@ export function MapSidebar({
   selectedEvent: WorldEvent | null
   activeTab: SidebarTab
   collapsed: boolean
+  chatScope: ChatScope
+  selectedCountryName: string | null
   onToggleCategory: (category: EventCategory) => void
   onToggleSeverity: (severity: SeverityLevel) => void
   onToggleVerified: () => void
   onSearchChange: (query: string) => void
   onClearFilters: () => void
   onSelectEvent: (eventId: WorldEventId | null) => void
+  onClearCountry: () => void
   onTabChange: (tab: SidebarTab) => void
   onCollapsedChange: (collapsed: boolean) => void
   onFlyTo: (coordinates: [number, number]) => void
@@ -193,7 +201,7 @@ export function MapSidebar({
   const scrollRef = useRef<HTMLDivElement>(null)
   const { data: paymentStats } = usePaymentStats()
 
-  const { messages, send } = useChat(null, { enabled: activeTab === "chat" })
+  const { messages, send } = useChat(chatScope, { enabled: activeTab === "chat" })
   const messageList = messages.data ?? []
 
   // Legitimate effect — DOM sync (scroll to bottom on new messages)
@@ -384,17 +392,43 @@ export function MapSidebar({
           {activeTab === "chat" && (
             <>
               <div className="flex items-center gap-2 border-b px-3 py-1.5">
-                <span className="text-xs font-medium">Global Chat</span>
+                {chatScope.kind === "country" ? (
+                  <>
+                    <span className="text-xs font-medium">
+                      {selectedCountryName ?? chatScope.countryIso3}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="ml-auto size-5"
+                      aria-label="Clear country selection"
+                      onClick={onClearCountry}
+                    >
+                      <XIcon size={10} />
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-xs font-medium">Global Chat</span>
+                )}
               </div>
 
               <ScrollArea className="flex-1 overflow-hidden">
                 <div ref={scrollRef} className="flex flex-col">
+                  {chatScope.kind === "country" && (
+                    <CountryEventsHeader
+                      iso3={chatScope.countryIso3}
+                      countryName={selectedCountryName ?? chatScope.countryIso3}
+                      onSelectEvent={onSelectEvent}
+                    />
+                  )}
                   {messageList.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
                       <MessageCircleIcon size={20} className="text-muted-foreground/40" />
                       <p className="text-xs font-medium text-muted-foreground">No messages yet</p>
                       <p className="text-[11px] text-muted-foreground/60">
-                        Be the first to share intelligence
+                        {chatScope.kind === "country"
+                          ? `Be the first to discuss events in ${selectedCountryName ?? chatScope.countryIso3}`
+                          : "Be the first to share intelligence"}
                       </p>
                     </div>
                   ) : (

@@ -1,8 +1,11 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useQueryState, parseAsStringLiteral } from "nuqs"
-import { parseAsWorldEventId } from "@/lib/nuqs-parsers"
+import { parseAsCountryIso3, parseAsWorldEventId } from "@/lib/nuqs-parsers"
+import { countryNameFromIso3 } from "@/lib/geo/country-of"
+import { useCountryGeoJSON } from "@/hooks/use-country-geojson"
+import type { ChatScope } from "@/hooks/use-chat"
 import {
   Map,
   MapControlContainer,
@@ -58,6 +61,10 @@ export function WorldMap() {
 
   // URL-backed state (shareable)
   const [selectedEventId, setSelectedEventId] = useQueryState("event", parseAsWorldEventId)
+  const [selectedCountryIso3, setSelectedCountryIso3] = useQueryState(
+    "country",
+    parseAsCountryIso3
+  )
   const [sidebarTab, setSidebarTab] = useQueryState(
     "tab",
     parseAsStringLiteral(["events", "chat"] as const).withDefault("events")
@@ -88,6 +95,19 @@ export function WorldMap() {
   const selectedEvent = selectedEventId
     ? events.find((e) => e.id === selectedEventId) ?? null
     : null
+
+  // Country name lookup for sidebar header
+  const countryGeo = useCountryGeoJSON()
+  const selectedCountryName = useMemo(() => {
+    if (!selectedCountryIso3 || !countryGeo) return null
+    return countryNameFromIso3(selectedCountryIso3, countryGeo)
+  }, [selectedCountryIso3, countryGeo])
+
+  // Sidebar chat scope: country if selected, else global.
+  // (Event chat lives in EventDetailPanel — handled separately.)
+  const sidebarChatScope: ChatScope = selectedCountryIso3
+    ? { kind: "country", countryIso3: selectedCountryIso3 }
+    : { kind: "global" }
 
   function handleMapClick(lat: number, lng: number) {
     if (!reportMode) return
@@ -128,6 +148,19 @@ export function WorldMap() {
     },
     [setSidebarTab]
   )
+
+  const handleSelectCountry = useCallback(
+    (iso3: string) => {
+      setSelectedCountryIso3(iso3)
+      setSidebarTab("chat")
+      setSidebarCollapsed(false)
+    },
+    [setSelectedCountryIso3, setSidebarTab]
+  )
+
+  const handleClearCountry = useCallback(() => {
+    setSelectedCountryIso3(null)
+  }, [setSelectedCountryIso3])
 
   // Shift right-side controls when detail panel is open (sm:w-80 = 320px + gap)
   const rCtrl = selectedEvent ? "right-2 sm:right-[21.5rem]" : "right-2"
@@ -175,7 +208,12 @@ export function WorldMap() {
             attribution="Tiles &copy; Esri"
           />
           <NasaGibsTileLayer />
-          <CountryChoropleth events={filteredEvents} />
+          <CountryChoropleth
+            events={filteredEvents}
+            selectedCountryIso3={selectedCountryIso3}
+            reportMode={reportMode}
+            onSelectCountry={handleSelectCountry}
+          />
           <OverlayLayers />
           <EventMarkers
             eventsByCategory={eventsByCategory}
@@ -233,12 +271,15 @@ export function WorldMap() {
           selectedEvent={selectedEvent}
           activeTab={sidebarTab}
           collapsed={sidebarCollapsed}
+          chatScope={sidebarChatScope}
+          selectedCountryName={selectedCountryName}
           onToggleCategory={toggleCategory}
           onToggleSeverity={toggleSeverity}
           onToggleVerified={toggleVerified}
           onSearchChange={setSearchQuery}
           onClearFilters={clearFilters}
           onSelectEvent={handleSelectEvent}
+          onClearCountry={handleClearCountry}
           onTabChange={handleTabChange}
           onCollapsedChange={setSidebarCollapsed}
           onFlyTo={handleFlyTo}

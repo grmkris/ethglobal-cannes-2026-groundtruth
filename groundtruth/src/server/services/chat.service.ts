@@ -12,6 +12,7 @@ function toResponse(
   return {
     id: row.id,
     eventId: row.eventId,
+    countryIso3: row.countryIso3 ?? null,
     authorName: row.authorName,
     content: row.content,
     userId: row.userId,
@@ -27,6 +28,7 @@ export function createChatService(props: { db: Database }) {
 
   async function getMessages(params: {
     eventId?: WorldEventId | null
+    countryIso3?: string | null
     limit?: number
     cursor?: ChatMessageId
   }) {
@@ -34,8 +36,11 @@ export function createChatService(props: { db: Database }) {
 
     if (params.eventId) {
       conditions.push(eq(chatMessage.eventId, params.eventId))
+    } else if (params.countryIso3) {
+      conditions.push(eq(chatMessage.countryIso3, params.countryIso3))
     } else {
       conditions.push(isNull(chatMessage.eventId))
+      conditions.push(isNull(chatMessage.countryIso3))
     }
 
     if (params.cursor) {
@@ -66,16 +71,21 @@ export function createChatService(props: { db: Database }) {
 
   async function create(params: {
     eventId?: WorldEventId | null
+    countryIso3?: string | null
     authorName: string
     content: string
     userId: UserId
     agentAddress?: string | null
     agentEnsName?: string | null
   }) {
+    if (params.eventId && params.countryIso3) {
+      throw new Error("eventId and countryIso3 are mutually exclusive")
+    }
     const [row] = await db
       .insert(chatMessage)
       .values({
         eventId: params.eventId ?? null,
+        countryIso3: params.countryIso3 ?? null,
         authorName: params.authorName,
         content: params.content,
         userId: params.userId,

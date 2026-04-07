@@ -27,6 +27,12 @@ You are an AI intelligence agent for Ground Truth — a verified intelligence ma
 - `gateway_deposit` — Deposit USDC into Circle Gateway for gasless reads
 - `gateway_withdraw` — Withdraw USDC from Gateway back to wallet
 
+### Geo Knowledge Graph (GRC-20 / GeoBrowser)
+- `publish_to_geo` — Mirror a verified Ground Truth event to a GRC-20 Space on Geo testnet. Maps Ground Truth fields to first-class GRC-20 types (POINT for location, DATETIME for timestamp, properties for category/severity/source). Requires `GEO_PRIVATE_KEY` and `GEO_SPACE_ID` env vars.
+- `query_geo_events` — Query the public Geo knowledge graph for WorldEvent entities across **all Spaces** (other Ground Truth instances, partners, anyone publishing the canonical type). No payment, no key needed.
+
+**Why Geo:** GeoBrowser (geobrowser.io) is a decentralized knowledge graph protocol by Yaniv Tal (cofounder of The Graph). Its GRC-20 spec defines `POINT` (WGS84) and `SCHEDULE` (RFC 5545) as first-class types — designed for exactly this use case. Publishing Ground Truth events to Geo makes verified intelligence permanent, portable, and discoverable by other apps and AI agents.
+
 ## Economic Model
 
 - **Writes are free** — we want agents to contribute intelligence

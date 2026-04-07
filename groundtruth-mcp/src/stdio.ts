@@ -7,6 +7,11 @@ const AGENT_PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY
 const GROUNDTRUTH_API_URL =
   process.env.GROUNDTRUTH_API_URL ?? "http://localhost:3000"
 
+// Optional Geo (GRC-20 / GeoBrowser) publishing
+const GEO_PRIVATE_KEY = process.env.GEO_PRIVATE_KEY
+const GEO_SPACE_ID = process.env.GEO_SPACE_ID
+const GEO_RPC = process.env.GEO_RPC
+
 if (!AGENT_PRIVATE_KEY) {
   console.error("AGENT_PRIVATE_KEY is required")
   process.exit(1)
@@ -14,6 +19,11 @@ if (!AGENT_PRIVATE_KEY) {
 
 if (!AGENT_PRIVATE_KEY.startsWith("0x")) {
   console.error("AGENT_PRIVATE_KEY must start with 0x")
+  process.exit(1)
+}
+
+if (GEO_PRIVATE_KEY && !GEO_PRIVATE_KEY.startsWith("0x")) {
+  console.error("GEO_PRIVATE_KEY must start with 0x")
   process.exit(1)
 }
 
@@ -40,7 +50,17 @@ async function main() {
     }
   }
 
-  const server = createMcpServer({ client, identity })
+  // Geo publishing config (opt-in, requires both private key and space id)
+  const geo =
+    GEO_PRIVATE_KEY && GEO_SPACE_ID
+      ? {
+          privateKey: GEO_PRIVATE_KEY as `0x${string}`,
+          spaceId: GEO_SPACE_ID,
+          rpc: GEO_RPC,
+        }
+      : null
+
+  const server = createMcpServer({ client, identity, geo })
   const transport = new StdioServerTransport()
 
   await server.connect(transport)
