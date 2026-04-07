@@ -2,60 +2,10 @@ import { betterAuth } from "better-auth"
 import { siwe } from "better-auth/plugins"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { generateRandomString } from "better-auth/crypto"
-import { createPublicClient, http } from "viem"
 import { verifyMessage } from "viem/actions"
-import { mainnet, base, baseSepolia } from "viem/chains"
+import { mainnetClient } from "@/lib/chain-clients"
 import { DB_SCHEMA, type Database } from "./db/db"
 import { fetchReownIdentity } from "@/lib/reown-identity"
-import { env } from "@/env"
-
-// Reown's RPC is gas-tuned for the deployless ERC-6492 verification eth_call
-// used to verify embedded smart-wallet (Safe v1.4.1) signatures from social
-// login. Generic RPCs (Infura free, Cloudflare, etc.) cap eth_call gas too
-// low to simulate Safe deployment + isValidSignature in one call.
-// Reference: https://github.com/reown-com/appkit-web-examples/blob/main/nextjs/next-siwe-next-auth/app/api/auth/%5B...nextauth%5D/route.ts
-const reownRpc = (chainId: number) =>
-  http(
-    `https://rpc.walletconnect.org/v1/?chainId=eip155:${chainId}&projectId=${env.NEXT_PUBLIC_REOWN_PROJECT_ID}`,
-    { timeout: 30_000, retryCount: 2 }
-  )
-
-const mainnetClient = createPublicClient({
-  chain: mainnet,
-  transport: reownRpc(mainnet.id),
-})
-
-const baseClient = createPublicClient({
-  chain: base,
-  transport: reownRpc(base.id),
-})
-
-const baseSepoliaClient = createPublicClient({
-  chain: baseSepolia,
-  transport: reownRpc(baseSepolia.id),
-})
-
-// Dispatch the verifyMessage call per-chain. Returning a union of clients
-// from a helper would force viem's generic inference to widen to a single
-// chain type, which TypeScript rejects because the chain definitions differ
-// (block explorer URLs, OP-stack getBlock shape, etc).
-async function verifySignatureOnChain(args: {
-  chainId: number
-  address: `0x${string}`
-  message: string
-  signature: `0x${string}`
-}) {
-  const { chainId, ...rest } = args
-  switch (chainId) {
-    case base.id:
-      return verifyMessage(baseClient, rest)
-    case baseSepolia.id:
-      return verifyMessage(baseSepoliaClient, rest)
-    case mainnet.id:
-    default:
-      return verifyMessage(mainnetClient, rest)
-  }
-}
 
 function ensureHexString(value: string): `0x${string}` {
   if (!value.startsWith("0x")) throw new Error(`Invalid hex string: ${value}`)
@@ -103,13 +53,11 @@ export function createAuth(props: {
             })
             return false
           }
-          // Use viem's smart-wallet-aware verifyMessage action so that
-          // ERC-1271 / ERC-6492 signatures from embedded smart wallets
-          // (Reown social login) verify correctly. Falls back to mainnet
-          // if the chain isn't in our supported set.
+          // Smart-wallet-aware verification (ERC-1271 / ERC-6492) against
+          // mainnet via the shared Reown-RPC mainnet client. The only chain
+          // Ground Truth signs SIWE messages on is Ethereum mainnet.
           try {
-            const ok = await verifySignatureOnChain({
-              chainId,
+            const ok = await verifyMessage(mainnetClient, {
               address: ensureHexString(address),
               message,
               signature: ensureHexString(signature),

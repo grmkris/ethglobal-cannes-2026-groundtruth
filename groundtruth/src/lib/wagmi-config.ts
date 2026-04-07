@@ -1,11 +1,11 @@
 "use client"
 
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi"
-import { mainnet, base, baseSepolia } from "wagmi/chains"
+import { mainnet } from "wagmi/chains"
 import { env } from "@/env"
 
 export const projectId = env.NEXT_PUBLIC_REOWN_PROJECT_ID
-export const networks = [mainnet, base, baseSepolia] as const
+export const networks = [mainnet] as const
 export const chainIds = networks.map((n) => n.id)
 
 export const wagmiAdapter = new WagmiAdapter({
