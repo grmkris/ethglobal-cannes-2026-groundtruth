@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  varchar,
 } from "drizzle-orm/pg-core"
 import { type UserId, type WorldEventId, type EventDisputeId, typeIdGenerator } from "@/lib/typeid"
 import { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES } from "@/lib/event-constants"
@@ -87,6 +88,9 @@ export const eventDispute = pgTable(
     reason: text("reason").notNull().$type<DisputeReason>(),
     justification: text("justification"),
     txHash: text("tx_hash"),
+    // EAS offchain attestation UID signed by the disputer. Null for
+    // legacy disputes created before EAS integration.
+    attestationUid: varchar("attestation_uid", { length: 66 }),
     ...baseEntityFields,
   },
   (table) => [

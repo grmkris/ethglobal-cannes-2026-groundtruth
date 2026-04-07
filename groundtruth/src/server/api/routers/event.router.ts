@@ -53,6 +53,10 @@ export const eventRouter = {
         reason: z.enum(DISPUTE_REASONS),
         justification: z.string().max(500).optional(),
         txHash: z.string().optional(),
+        attestationUid: z
+          .string()
+          .regex(/^0x[0-9a-fA-F]{64}$/)
+          .optional(),
       })
     )
     .handler(async ({ input, context }) => {
@@ -89,6 +93,7 @@ export const eventRouter = {
         reason: input.reason,
         justification: input.justification,
         txHash: input.txHash,
+        attestationUid: input.attestationUid,
       })
     }),
 

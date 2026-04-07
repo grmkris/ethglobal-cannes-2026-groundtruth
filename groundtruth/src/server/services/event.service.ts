@@ -1,5 +1,5 @@
 import { and, desc, eq, getTableColumns, ilike, inArray, isNotNull, lt, or, sql, type SQL } from "drizzle-orm"
-import { getAddress } from "viem"
+import { getAddress, type Hex } from "viem"
 import type { UserId, WorldEventId } from "@/lib/typeid"
 import type { Database } from "../db/db"
 import type {
@@ -11,9 +11,13 @@ import { worldEvent, eventDispute, type DisputeReason } from "../db/schema/event
 import { chatMessage } from "../db/schema/chat/chat.db"
 import { user, paymentLedger } from "../db/schema/auth/auth.db"
 import { computeConfidence } from "@/lib/confidence"
+import type { AttestationService } from "./attestation.service"
+import type { EasAttestation } from "../db/schema/attestation/attestation.db"
+import { CORROBORATION_SCHEMA, DISPUTE_SCHEMA } from "@/lib/eas"
 
 function toWorldEvent(
-  row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean; creatorName: string }
+  row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean; creatorName: string },
+  attestations?: { corroborations: EasAttestation[]; disputes: EasAttestation[] }
 ): WorldEventResponse & { confidenceScore: number; confidenceLevel: string } {
   const confidence = computeConfidence({
     corroborationCount: row.corroborationCount,
@@ -21,6 +25,8 @@ function toWorldEvent(
     worldIdVerified: row.worldIdVerified,
     onChainVerified: row.onChainVerified,
     source: row.source,
+    corroborationAttestations: attestations?.corroborations,
+    disputeAttestations: attestations?.disputes,
   })
   return {
     id: row.id,
@@ -48,8 +54,40 @@ function toWorldEvent(
   }
 }
 
-export function createEventService(props: { db: Database }) {
-  const { db } = props
+export function createEventService(props: {
+  db: Database
+  attestationService: AttestationService
+}) {
+  const { db, attestationService } = props
+
+  /**
+   * Fetch the EAS corroboration + dispute attestations for an event.
+   * Returns empty arrays on failure — the caller falls back to
+   * counter-based confidence in that case.
+   */
+  async function fetchEventAttestations(eventId: WorldEventId): Promise<{
+    corroborations: EasAttestation[]
+    disputes: EasAttestation[]
+  }> {
+    try {
+      const [corroborations, disputes] = await Promise.all([
+        attestationService.listForRef({
+          refType: "event",
+          refId: eventId,
+          schemaUid: CORROBORATION_SCHEMA.uid as Hex,
+        }),
+        attestationService.listForRef({
+          refType: "event",
+          refId: eventId,
+          schemaUid: DISPUTE_SCHEMA.uid as Hex,
+        }),
+      ])
+      return { corroborations, disputes }
+    } catch (err) {
+      console.warn("[event] fetchEventAttestations failed", err)
+      return { corroborations: [], disputes: [] }
+    }
+  }
 
   async function getAll(params?: {
     category?: EventCategory | EventCategory[]
@@ -127,7 +165,10 @@ export function createEventService(props: { db: Database }) {
       .where(eq(worldEvent.id, params.id))
       .limit(1)
 
-    return rows[0] ? toWorldEvent(rows[0]) : null
+    if (!rows[0]) return null
+    // Detail view: hydrate confidence from attestations when available.
+    const attestations = await fetchEventAttestations(params.id)
+    return toWorldEvent(rows[0], attestations)
   }
 
   async function create(params: {
@@ -199,6 +240,7 @@ export function createEventService(props: { db: Database }) {
     reason: DisputeReason
     justification?: string
     txHash?: string
+    attestationUid?: string
   }) {
     const [dispute] = await db
       .insert(eventDispute)
@@ -208,6 +250,7 @@ export function createEventService(props: { db: Database }) {
         reason: params.reason,
         justification: params.justification ?? null,
         txHash: params.txHash ?? null,
+        attestationUid: params.attestationUid ?? null,
       })
       .returning()
 
