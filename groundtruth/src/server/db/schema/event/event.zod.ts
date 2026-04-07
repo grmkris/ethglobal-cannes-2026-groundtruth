@@ -12,6 +12,10 @@ export type { EventCategory, SeverityLevel } from "@/lib/event-constants"
 export const eventCategorySchema = z.enum(EVENT_CATEGORY_VALUES)
 export const severityLevelSchema = z.enum(SEVERITY_LEVEL_VALUES)
 
+// --- Confidence level enum (mirrors src/lib/confidence.ts ConfidenceLevel) ---
+export const confidenceLevelSchema = z.enum(["unverified", "low", "medium", "high", "verified"])
+export type ConfidenceLevel = z.infer<typeof confidenceLevelSchema>
+
 // --- API response schema (DB stores lat/lng separately, API returns coordinates tuple) ---
 export const worldEventResponseSchema = z.object({
   id: WorldEventId,
@@ -34,6 +38,10 @@ export const worldEventResponseSchema = z.object({
   canonicalEventId: WorldEventId.nullable(),
   corroborationCount: z.number(),
   disputeCount: z.number(),
+  // Confidence is computed on the server in event.service.ts:toWorldEvent
+  // and is always present on every event response.
+  confidenceScore: z.number(),
+  confidenceLevel: confidenceLevelSchema,
 })
 
 // --- Inferred types ---

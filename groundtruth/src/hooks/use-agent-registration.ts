@@ -209,11 +209,10 @@ export function useAgentRegistration() {
               abi: identityRegistryAbi,
               data: log.data,
               topics: log.topics,
+              eventName: "Registered",
             })
-            if (decoded.eventName === "Registered") {
-              erc8004AgentId = String((decoded.args as any).agentId)
-              break
-            }
+            erc8004AgentId = String(decoded.args.agentId)
+            break
           } catch {
             // not our event, skip
           }

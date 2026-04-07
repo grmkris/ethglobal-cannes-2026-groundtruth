@@ -144,12 +144,10 @@ export function EventDetailPanel({
               {event.title}
             </h3>
 
-            {"confidenceScore" in event && (
-              <ConfidenceMeter
-                score={(event as any).confidenceScore}
-                level={(event as any).confidenceLevel}
-              />
-            )}
+            <ConfidenceMeter
+              score={event.confidenceScore}
+              level={event.confidenceLevel}
+            />
 
             <p className="text-xs leading-relaxed text-muted-foreground">
               {event.description}

@@ -339,7 +339,9 @@ export function createAgentApp(props: {
         amountUsd: "0.005",
         network: ARC_TESTNET,
         category: Array.isArray(category) ? category[0] : category ?? null,
-      }).catch(() => {})
+      }).catch((err) => {
+        log?.error(err instanceof Error ? err : new Error(String(err)))
+      })
     }
 
     return c.json(result)
@@ -362,7 +364,9 @@ export function createAgentApp(props: {
         route: "GET /api/agent/events/:id",
         amountUsd: "0.005",
         network: ARC_TESTNET,
-      }).catch(() => {})
+      }).catch((err) => {
+        log?.error(err instanceof Error ? err : new Error(String(err)))
+      })
     }
 
     return c.json(event)

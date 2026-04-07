@@ -59,7 +59,7 @@ import { useAgentReputation } from "@/hooks/use-agent-reputation"
 import { useOnchainWallet } from "@/hooks/use-onchain-wallet"
 import { ERC8004_IDENTITY_REGISTRY, identityRegistryAbi } from "@/lib/contracts"
 import { etherscanUrl, worldscanUrl, ensAppUrl, agentExplorerUrl } from "@/lib/explorers"
-import type { AgentProfileId, AgentWalletId } from "@/lib/typeid";
+import { AgentWalletId, type AgentProfileId } from "@/lib/typeid"
 
 
 function truncateAddress(address: string) {
@@ -504,7 +504,7 @@ function RegisterAgentDialog({
   function handleRegister() {
     if (!canSubmit || !selectedWallet || !userEnsName) return
     registration.register({
-      agentWalletId: selectedWalletId as any,
+      agentWalletId: AgentWalletId.parse(selectedWalletId),
       agentWalletAddress: selectedWallet.address,
       label,
       parentEnsName: userEnsName,

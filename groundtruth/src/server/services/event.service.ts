@@ -18,7 +18,7 @@ import { CORROBORATION_SCHEMA, DISPUTE_SCHEMA } from "@/lib/eas"
 function toWorldEvent(
   row: typeof worldEvent.$inferSelect & { worldIdVerified: boolean; creatorName: string },
   attestations?: { corroborations: EasAttestation[]; disputes: EasAttestation[] }
-): WorldEventResponse & { confidenceScore: number; confidenceLevel: string } {
+): WorldEventResponse {
   const confidence = computeConfidence({
     corroborationCount: row.corroborationCount,
     disputeCount: row.disputeCount,

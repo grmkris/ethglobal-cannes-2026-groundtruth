@@ -94,9 +94,7 @@ function EventListItem({
     >
       <div className="mb-1 flex items-center gap-1.5">
         <span className={cn("size-1.5 rounded-full", SEVERITY_DOT[event.severity])} />
-        {"confidenceScore" in event && (
-          <ConfidenceMeter score={(event as any).confidenceScore} level={(event as any).confidenceLevel} compact />
-        )}
+        <ConfidenceMeter score={event.confidenceScore} level={event.confidenceLevel} compact />
         <span className="text-[11px] text-muted-foreground">
           {config.emoji} {config.label}
         </span>

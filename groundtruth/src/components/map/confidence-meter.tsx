@@ -19,10 +19,10 @@ export function ConfidenceMeter({
   compact,
 }: {
   score: number
-  level: string
+  level: ConfidenceLevel
   compact?: boolean
 }) {
-  const config = LEVEL_CONFIG[(level as ConfidenceLevel) ?? "unverified"]
+  const config = LEVEL_CONFIG[level]
 
   if (compact) {
     return (

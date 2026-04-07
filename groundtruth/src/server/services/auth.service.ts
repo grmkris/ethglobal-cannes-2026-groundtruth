@@ -16,17 +16,26 @@ export function createAuthService(props: { db: Database }) {
     log.info({ msg: "Storing World ID verification", userId, service: "auth" })
 
     await db.transaction(async (tx) => {
-      const existing = await tx.query.worldIdVerification.findFirst({
-        where: (v, { eq }) => eq(v.nullifierHash, nullifierHash),
-      })
-      if (existing && existing.userId !== userId) {
-        throw new Error("This World ID is already linked to another account")
+      // Race-free dedup: rely on the unique constraint on nullifierHash.
+      // Try the insert first; on conflict, check whether this is the same
+      // user re-verifying (idempotent — fall through) or a different user
+      // attempting to link an already-linked nullifier (error).
+      try {
+        await tx.insert(worldIdVerification).values({ nullifierHash, userId })
+      } catch {
+        const existing = await tx.query.worldIdVerification.findFirst({
+          where: (v, { eq }) => eq(v.nullifierHash, nullifierHash),
+        })
+        if (!existing) {
+          // The insert failed for a reason other than the unique constraint.
+          // Re-throw so the caller sees the original failure.
+          throw new Error("Failed to record World ID verification")
+        }
+        if (existing.userId !== userId) {
+          throw new Error("This World ID is already linked to another account")
+        }
+        // Same user re-verifying — idempotent, continue.
       }
-
-      await tx
-        .insert(worldIdVerification)
-        .values({ nullifierHash, userId })
-        .onConflictDoNothing()
 
       await tx
         .update(user)
