@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useQueryState, parseAsStringLiteral } from "nuqs"
 import { parseAsWorldEventId } from "@/lib/nuqs-parsers"
 import {
@@ -42,7 +42,9 @@ function MapFlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap()
   useEffect(() => {
     if (target) {
-      map.flyTo(target, Math.max(map.getZoom(), 14), { duration: 1 })
+      // Soft fly: only nudge to region level if currently zoomed further out;
+      // never zoom in past what the user already has. Keeps spatial context.
+      map.flyTo(target, Math.max(map.getZoom(), 6), { duration: 1.2 })
     }
   }, [target, map])
   return null
@@ -65,9 +67,6 @@ export function WorldMap() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null)
 
-  // One-time URL deep-link fly guard
-  const initialFlyDone = useRef(false)
-
   const {
     activeCategories,
     activeSeverities,
@@ -81,18 +80,6 @@ export function WorldMap() {
     setSearchQuery,
     clearFilters,
   } = useEventFilters(events)
-
-  // Legitimate effect: sync with external system on initial URL deep-link
-  // Only fires once when events first load and URL has a selected event
-  useEffect(() => {
-    if (!initialFlyDone.current && selectedEventId && events.length > 0) {
-      const event = events.find((e) => e.id === selectedEventId)
-      if (event) {
-        setFlyToTarget([...event.coordinates])
-        initialFlyDone.current = true
-      }
-    }
-  }, [selectedEventId, events])
 
   // Compute selectedEvent from full events array (not filtered)
   const selectedEvent = selectedEventId
