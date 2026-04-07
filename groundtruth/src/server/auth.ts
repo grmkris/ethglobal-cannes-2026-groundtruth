@@ -8,30 +8,30 @@ import { mainnet, base, baseSepolia } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
 import { env } from "@/env"
 
-const httpOptions = { timeout: 5_000, retryCount: 0 } as const
+// Reown's RPC is gas-tuned for the deployless ERC-6492 verification eth_call
+// used to verify embedded smart-wallet (Safe v1.4.1) signatures from social
+// login. Generic RPCs (Infura free, Cloudflare, etc.) cap eth_call gas too
+// low to simulate Safe deployment + isValidSignature in one call.
+// Reference: https://github.com/reown-com/appkit-web-examples/blob/main/nextjs/next-siwe-next-auth/app/api/auth/%5B...nextauth%5D/route.ts
+const reownRpc = (chainId: number) =>
+  http(
+    `https://rpc.walletconnect.org/v1/?chainId=eip155:${chainId}&projectId=${env.NEXT_PUBLIC_REOWN_PROJECT_ID}`,
+    { timeout: 30_000, retryCount: 2 }
+  )
 
 const mainnetClient = createPublicClient({
   chain: mainnet,
-  transport: http(
-    `https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
-    httpOptions
-  ),
+  transport: reownRpc(mainnet.id),
 })
 
 const baseClient = createPublicClient({
   chain: base,
-  transport: http(
-    `https://base-mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
-    httpOptions
-  ),
+  transport: reownRpc(base.id),
 })
 
 const baseSepoliaClient = createPublicClient({
   chain: baseSepolia,
-  transport: http(
-    `https://base-sepolia.infura.io/v3/${env.INFURA_PROJECT_ID}`,
-    httpOptions
-  ),
+  transport: reownRpc(baseSepolia.id),
 })
 
 const clientByChainId: Record<number, PublicClient> = {
@@ -40,7 +40,14 @@ const clientByChainId: Record<number, PublicClient> = {
   [baseSepolia.id]: baseSepoliaClient,
 }
 
-const ensClient = mainnetClient
+// ENS lookups need an Infura mainnet client (Reown RPC doesn't expose ENS).
+const ensClient = createPublicClient({
+  chain: mainnet,
+  transport: http(
+    `https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
+    { timeout: 5_000, retryCount: 0 }
+  ),
+})
 
 function ensureHexString(value: string): `0x${string}` {
   if (!value.startsWith("0x")) throw new Error(`Invalid hex string: ${value}`)
@@ -78,18 +85,36 @@ export function createAuth(props: {
           return generateRandomString(32, "a-z", "A-Z", "0-9")
         },
         verifyMessage: async ({ message, signature, address, chainId }) => {
+          // Sanity check: hex must be even-length. Catches transcription bugs.
+          if (
+            !signature.startsWith("0x") ||
+            (signature.length - 2) % 2 !== 0
+          ) {
+            console.error("[siwe] signature is not valid hex", {
+              length: signature.length,
+            })
+            return false
+          }
+          // Use viem's smart-wallet-aware verifyMessage action so that
+          // ERC-1271 / ERC-6492 signatures from embedded smart wallets
+          // (Reown social login) verify correctly. Falls back to mainnet
+          // if the chain isn't in our supported set.
+          const client = clientByChainId[chainId] ?? mainnetClient
           try {
-            // Use viem's smart-wallet-aware verifyMessage action so that
-            // ERC-1271 / ERC-6492 signatures from embedded smart wallets
-            // (Reown social login) verify correctly. Falls back to mainnet
-            // if the chain isn't in our supported set.
-            const client = clientByChainId[chainId] ?? mainnetClient
-            return await verifyMessage(client, {
+            const ok = await verifyMessage(client, {
               address: ensureHexString(address),
               message,
               signature: ensureHexString(signature),
             })
-          } catch {
+            if (!ok) {
+              console.warn("[siwe] verifyMessage returned false", {
+                address,
+                chainId,
+              })
+            }
+            return ok
+          } catch (err) {
+            console.error("[siwe] verifyMessage threw", err)
             return false
           }
         },

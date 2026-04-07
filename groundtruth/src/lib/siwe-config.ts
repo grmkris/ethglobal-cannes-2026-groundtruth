@@ -56,6 +56,28 @@ export const siweConfig = createSIWEConfig({
     if (!parsed) throw new Error("Invalid chain ID in SIWE message")
     const chainId = Number(parsed)
 
+    // Idempotency guard: AppKit's auto-reconnect calls verifyMessage on every
+    // page load when the embedded wallet still has a cached session. If
+    // better-auth already has a session for this address, skip the round-trip
+    // — otherwise we spam the backend on every reload and risk a transient
+    // verify failure auto-disconnecting the user. Better-auth creates emails
+    // as `${checksumAddress}@${domain}` (anonymous: true), so the email's
+    // local part identifies the wallet.
+    try {
+      const existing = await authClient.getSession()
+      const existingEmail = existing?.data?.user?.email
+      const existingAddress = existingEmail?.split("@")[0]
+      if (
+        existingAddress &&
+        existingAddress.toLowerCase() === address.toLowerCase()
+      ) {
+        sessionStorage.removeItem(EMBEDDED_FLOW_FLAG)
+        return true
+      }
+    } catch {
+      // Fall through to full verify on any session-check failure
+    }
+
     // Embedded wallet flow: no server-side nonce exists for the real address
     // (getNonce ran with a placeholder). Register one now so better-auth's
     // verify endpoint can find it. Our backend verifyMessage callback uses
