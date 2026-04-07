@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAppKit } from "@reown/appkit/react"
+import { useAccount } from "wagmi"
 import {
   Avatar,
   AvatarImage,
@@ -12,12 +13,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { ProfileSheet } from "@/components/profile-sheet"
 import { useSession } from "@/lib/auth-client"
+import { useReownIdentity } from "@/hooks/use-reown-identity"
+import { client } from "@/lib/orpc"
 import { WalletIcon } from "lucide-react"
 
 export function UserControls() {
   const { data: sessionData } = useSession()
   const isSignedIn = !!sessionData?.session
   const user = sessionData?.user
+  const { address } = useAccount()
+  const identity = useReownIdentity(address)
   const { open } = useAppKit()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -37,7 +42,22 @@ export function UserControls() {
     }
   }, [searchParams, isSignedIn, router])
 
-  const displayName = user?.name || "User"
+  // Once per session, refresh the persisted user.name + user.image from the
+  // Reown Identity API. The SIWE plugin only resolves ENS at signup, so this
+  // keeps server-rendered fields (chat author, event creator, agent gating) in
+  // sync if the user set their primary ENS after signup.
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    void client.auth.refreshIdentity().catch((err) => {
+      console.error("[user-controls] auth.refreshIdentity failed", err)
+    })
+  }, [userId])
+
+  const storedName =
+    user?.name && !/^0x[a-fA-F0-9]{40}$/.test(user.name) ? user.name : null
+  const displayName = identity.name ?? storedName ?? "User"
+  const avatarSrc = identity.avatar ?? user?.image ?? null
   const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
@@ -48,7 +68,7 @@ export function UserControls() {
           className="rounded-full ring-2 ring-background transition-opacity hover:opacity-80"
         >
           <Avatar size="default">
-            {user.image && <AvatarImage src={user.image} alt={displayName} />}
+            {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName} />}
             <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
             {user.worldIdVerified && (
               <AvatarBadge className="bg-emerald-500" />

@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server"
 import { publicProcedure } from "./api"
 import { agentRouter } from "./routers/agent.router"
+import { authRouter } from "./routers/auth.router"
 import { chatRouter } from "./routers/chat.router"
 import { eventRouter } from "./routers/event.router"
 import { paymentRouter } from "./routers/payment.router"
@@ -13,6 +14,7 @@ export const appRouter = {
   worldId: worldIdRouter,
   agent: agentRouter,
   payment: paymentRouter,
+  auth: authRouter,
 }
 
 export type AppRouter = typeof appRouter

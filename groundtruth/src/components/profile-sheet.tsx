@@ -52,6 +52,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
 import { useAgentWallets } from "@/hooks/use-agent-wallets"
 import { useAgentProfiles } from "@/hooks/use-agent-profiles"
+import { useReownIdentity } from "@/hooks/use-reown-identity"
 import { useAgentRegistration, type RegistrationStep } from "@/hooks/use-agent-registration"
 import { useAgentBookStatus } from "@/hooks/use-agentbook-status"
 import { useAgentReputation } from "@/hooks/use-agent-reputation"
@@ -92,11 +93,18 @@ export function ProfileSheet({
   const { disconnect } = useDisconnect()
   const { resolvedTheme, setTheme } = useTheme()
   const isMobile = useIsMobile()
+  const identity = useReownIdentity(address)
   const user = sessionData?.user
 
   if (!user) return null
 
-  const displayName = user.name || (address ? truncateAddress(address) : "User")
+  // Prefer the live Reown-resolved name over `user.name` (which is frozen at
+  // signup and can be stale). Treat a stored 0x… literal as no-name.
+  const storedName =
+    user.name && !/^0x[a-fA-F0-9]{40}$/.test(user.name) ? user.name : null
+  const displayName =
+    identity.name ?? storedName ?? (address ? truncateAddress(address) : "User")
+  const avatarSrc = identity.avatar ?? user.image ?? null
   const initials = displayName.slice(0, 2).toUpperCase()
 
   function handleCopyAddress() {
@@ -120,7 +128,7 @@ export function ProfileSheet({
             title="Open wallet details"
           >
             <Avatar size="lg">
-              {user.image && <AvatarImage src={user.image} alt={displayName} />}
+              {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName} />}
               <AvatarFallback>{initials}</AvatarFallback>
               {user.worldIdVerified && (
                 <AvatarBadge className="bg-emerald-500" />
@@ -465,6 +473,8 @@ function RegisterAgentDialog({
   preselectedWalletId?: string | null
 }) {
   const { data: sessionData } = useSession()
+  const { address } = useAccount()
+  const identity = useReownIdentity(address)
   const registration = useAgentRegistration()
 
   const [selectedWalletId, setSelectedWalletId] = useState(preselectedWalletId ?? "")
@@ -477,7 +487,10 @@ function RegisterAgentDialog({
   }, [preselectedWalletId])
 
   const user = sessionData?.user
-  const userEnsName = user?.name?.endsWith(".eth") ? user.name : null
+  // Live ENS first; fall back to the stored `user.name` for users whose
+  // session hasn't been refreshed yet.
+  const ensSource = identity.name ?? user?.name ?? null
+  const userEnsName = ensSource?.endsWith(".eth") ? ensSource : null
   const selectedWallet = agentWallets.find((w) => w.id === selectedWalletId)
   const previewName = label && userEnsName ? `${label}.${userEnsName}` : ""
 

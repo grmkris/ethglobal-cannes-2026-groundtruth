@@ -6,6 +6,7 @@ import { createPublicClient, http } from "viem"
 import { verifyMessage } from "viem/actions"
 import { mainnet, base, baseSepolia } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
+import { fetchReownIdentity } from "@/lib/reown-identity"
 import { env } from "@/env"
 
 // Reown's RPC is gas-tuned for the deployless ERC-6492 verification eth_call
@@ -55,15 +56,6 @@ async function verifySignatureOnChain(args: {
       return verifyMessage(mainnetClient, rest)
   }
 }
-
-// ENS lookups need an Infura mainnet client (Reown RPC doesn't expose ENS).
-const ensClient = createPublicClient({
-  chain: mainnet,
-  transport: http(
-    `https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
-    { timeout: 5_000, retryCount: 0 }
-  ),
-})
 
 function ensureHexString(value: string): `0x${string}` {
   if (!value.startsWith("0x")) throw new Error(`Invalid hex string: ${value}`)
@@ -135,19 +127,13 @@ export function createAuth(props: {
           }
         },
         ensLookup: async ({ walletAddress }) => {
-          try {
-            const ensName = await ensClient.getEnsName({
-              address: ensureHexString(walletAddress),
-            })
-            const ensAvatar = ensName
-              ? await ensClient.getEnsAvatar({ name: ensName })
-              : null
-            return {
-              name: ensName || walletAddress,
-              avatar: ensAvatar || "",
-            }
-          } catch {
-            return { name: walletAddress, avatar: "" }
+          // Reown's Identity API aggregates ENS, CCIP-read offchain names, and
+          // Reown profile names in one call. Reuses our existing project id —
+          // no Infura roundtrip, no extra RPC tuning.
+          const { name, avatar } = await fetchReownIdentity(walletAddress)
+          return {
+            name: name ?? walletAddress,
+            avatar: avatar ?? "",
           }
         },
       }),

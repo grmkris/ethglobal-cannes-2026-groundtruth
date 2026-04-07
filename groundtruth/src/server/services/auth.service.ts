@@ -238,6 +238,27 @@ export function createAuthService(props: { db: Database }) {
     })
   }
 
+  async function getPrimaryWalletAddress(params: {
+    userId: UserId
+  }): Promise<string | null> {
+    const wa = await db.query.walletAddress.findFirst({
+      where: (w, { eq }) => eq(w.userId, params.userId),
+      columns: { address: true },
+    })
+    return wa?.address ?? null
+  }
+
+  async function updateUserProfile(params: {
+    userId: UserId
+    name: string
+    image: string | null
+  }) {
+    await db
+      .update(user)
+      .set({ name: params.name, image: params.image })
+      .where(eq(user.id, params.userId))
+  }
+
   return {
     verifyWorldId,
     isWorldIdVerified,
@@ -256,6 +277,8 @@ export function createAuthService(props: { db: Database }) {
     storeWalletLinkSignature,
     getWalletLinkSignature,
     listAllCompletedAgents,
+    getPrimaryWalletAddress,
+    updateUserProfile,
   }
 }
 
