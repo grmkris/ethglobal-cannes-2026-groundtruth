@@ -34,18 +34,25 @@ const baseSepoliaClient = createPublicClient({
   transport: reownRpc(baseSepolia.id),
 })
 
-// Use a switch to dispatch — a Record<number, PublicClient> can't unify
-// Ethereum mainnet with OP-stack chains (Base) because OP-stack getBlock
-// returns deposit transactions the base PublicClient type doesn't include.
-function getClientForChain(chainId: number) {
+// Dispatch the verifyMessage call per-chain. Returning a union of clients
+// from a helper would force viem's generic inference to widen to a single
+// chain type, which TypeScript rejects because the chain definitions differ
+// (block explorer URLs, OP-stack getBlock shape, etc).
+async function verifySignatureOnChain(args: {
+  chainId: number
+  address: `0x${string}`
+  message: string
+  signature: `0x${string}`
+}) {
+  const { chainId, ...rest } = args
   switch (chainId) {
     case base.id:
-      return baseClient
+      return verifyMessage(baseClient, rest)
     case baseSepolia.id:
-      return baseSepoliaClient
+      return verifyMessage(baseSepoliaClient, rest)
     case mainnet.id:
     default:
-      return mainnetClient
+      return verifyMessage(mainnetClient, rest)
   }
 }
 
@@ -108,9 +115,9 @@ export function createAuth(props: {
           // ERC-1271 / ERC-6492 signatures from embedded smart wallets
           // (Reown social login) verify correctly. Falls back to mainnet
           // if the chain isn't in our supported set.
-          const client = getClientForChain(chainId)
           try {
-            const ok = await verifyMessage(client, {
+            const ok = await verifySignatureOnChain({
+              chainId,
               address: ensureHexString(address),
               message,
               signature: ensureHexString(signature),
