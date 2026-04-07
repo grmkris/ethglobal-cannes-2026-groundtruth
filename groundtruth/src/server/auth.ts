@@ -2,18 +2,45 @@ import { betterAuth } from "better-auth"
 import { siwe } from "better-auth/plugins"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { generateRandomString } from "better-auth/crypto"
-import { verifyMessage, createPublicClient, http } from "viem"
-import { mainnet } from "viem/chains"
+import { createPublicClient, http, type PublicClient } from "viem"
+import { verifyMessage } from "viem/actions"
+import { mainnet, base, baseSepolia } from "viem/chains"
 import { DB_SCHEMA, type Database } from "./db/db"
 import { env } from "@/env"
 
-const ensClient = createPublicClient({
+const httpOptions = { timeout: 5_000, retryCount: 0 } as const
+
+const mainnetClient = createPublicClient({
   chain: mainnet,
-  transport: http(`https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`, {
-    timeout: 5_000,
-    retryCount: 0,
-  }),
+  transport: http(
+    `https://mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
+    httpOptions
+  ),
 })
+
+const baseClient = createPublicClient({
+  chain: base,
+  transport: http(
+    `https://base-mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
+    httpOptions
+  ),
+})
+
+const baseSepoliaClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(
+    `https://base-sepolia.infura.io/v3/${env.INFURA_PROJECT_ID}`,
+    httpOptions
+  ),
+})
+
+const clientByChainId: Record<number, PublicClient> = {
+  [mainnet.id]: mainnetClient,
+  [base.id]: baseClient,
+  [baseSepolia.id]: baseSepoliaClient,
+}
+
+const ensClient = mainnetClient
 
 function ensureHexString(value: string): `0x${string}` {
   if (!value.startsWith("0x")) throw new Error(`Invalid hex string: ${value}`)
@@ -50,9 +77,14 @@ export function createAuth(props: {
         getNonce: async () => {
           return generateRandomString(32, "a-z", "A-Z", "0-9")
         },
-        verifyMessage: async ({ message, signature, address }) => {
+        verifyMessage: async ({ message, signature, address, chainId }) => {
           try {
-            return await verifyMessage({
+            // Use viem's smart-wallet-aware verifyMessage action so that
+            // ERC-1271 / ERC-6492 signatures from embedded smart wallets
+            // (Reown social login) verify correctly. Falls back to mainnet
+            // if the chain isn't in our supported set.
+            const client = clientByChainId[chainId] ?? mainnetClient
+            return await verifyMessage(client, {
               address: ensureHexString(address),
               message,
               signature: ensureHexString(signature),
