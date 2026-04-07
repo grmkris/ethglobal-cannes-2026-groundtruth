@@ -4,4 +4,5 @@ export * from "./event/event.db"
 export * from "./event/event.relations"
 export * from "./chat/chat.db"
 export * from "./chat/chat.relations"
+export * from "./attestation/attestation.db"
 // paymentLedger is exported from auth.db (alongside agentkitUsage/agentkitNonce)

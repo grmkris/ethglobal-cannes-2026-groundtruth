@@ -9,6 +9,7 @@ import { UPLOAD_MAX_SIZE_BYTES, UPLOAD_ALLOWED_TYPES } from "@/lib/upload-config
 import { createContext } from "./api/context"
 import { appRouter } from "./api/router"
 import { createAuth } from "./auth"
+import { createAttestationService } from "./services/attestation.service"
 import { createAuthService } from "./services/auth.service"
 import { createEventService } from "./services/event.service"
 import { createChatService } from "./services/chat.service"
@@ -24,7 +25,8 @@ export function createApi(props: { db: Database }) {
 
   // --- Services ---
   const authService = createAuthService({ db })
-  const eventService = createEventService({ db })
+  const attestationService = createAttestationService({ db })
+  const eventService = createEventService({ db, attestationService })
   const chatService = createChatService({ db })
   const paymentService = createPaymentService({ db })
 
@@ -118,6 +120,7 @@ export function createApi(props: { db: Database }) {
       eventService,
       chatService,
       paymentService,
+      attestationService,
       session,
     })
 

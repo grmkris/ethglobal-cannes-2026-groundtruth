@@ -1,5 +1,6 @@
 import type { RequestLogger } from "evlog"
 import type { Auth } from "../auth"
+import type { AttestationService } from "../services/attestation.service"
 import type { AuthService } from "../services/auth.service"
 import type { ChatService } from "../services/chat.service"
 import type { EventService } from "../services/event.service"
@@ -14,6 +15,7 @@ export function createContext(props: {
   eventService: EventService
   chatService: ChatService
   paymentService: PaymentService
+  attestationService: AttestationService
   session: Session
 }) {
   return {
@@ -23,6 +25,7 @@ export function createContext(props: {
     eventService: props.eventService,
     chatService: props.chatService,
     paymentService: props.paymentService,
+    attestationService: props.attestationService,
     session: props.session,
   }
 }
