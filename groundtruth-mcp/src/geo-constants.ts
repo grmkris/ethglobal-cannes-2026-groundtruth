@@ -38,6 +38,11 @@ export const CATEGORY_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
 export const SEVERITY_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
 export const LOCATION_NAME_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
 
+// --- Trust-stack bridge properties (filled in by bootstrap script) ---
+export const AGENT_ID_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
+export const ATTESTATION_UID_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
+export const WORLD_ID_VERIFIED_PROPERTY_ID: string = "TODO_RUN_BOOTSTRAP"
+
 // --- Type IDs (filled in by bootstrap script) ---
 export const WORLD_EVENT_TYPE_ID: string = "TODO_RUN_BOOTSTRAP"
 

@@ -30,8 +30,15 @@ export const attestationRouter = {
    * Create an offchain EAS attestation from a signed EIP-712 payload.
    * The server re-builds the attestation from the inputs, verifies the
    * signature via smart-wallet-aware verifyTypedData, and stores the row.
+   *
+   * Intentionally `publicProcedure`: the signature is the source of truth
+   * for "who signed this attestation". Cross-checking against a session
+   * wallet would add no security (an attacker with a valid signature
+   * already has the private key), and SIWE sessions may not have a
+   * convenient wallet field populated. TODO: add per-IP rate limiting
+   * before this is production-hot — see cleanup plan for follow-up.
    */
-  create: authedProcedure
+  create: publicProcedure
     .input(
       z.object({
         schemaUid: uidSchema,
@@ -59,11 +66,6 @@ export const attestationRouter = {
         })
       }
 
-      // The signature must verify against the attester address via
-      // verifyTypedData (smart-wallet-aware). That is the source of
-      // truth for "who signed this attestation" — we don't need to
-      // cross-check against the session wallet, which may not even be
-      // populated for SIWE users in a convenient way.
       try {
         return await context.attestationService.createOffchainAttestation({
           schema,
