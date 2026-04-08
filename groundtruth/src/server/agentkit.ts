@@ -400,9 +400,21 @@ export function createAgentApp(props: {
     const eventId = query.eventId
       ? WorldEventId.parse(query.eventId)
       : undefined
+    const countryIso3Raw = query.countryIso3
+    const countryIso3 =
+      countryIso3Raw && /^[A-Z]{3}$/.test(countryIso3Raw)
+        ? countryIso3Raw
+        : null
+    if (eventId && countryIso3) {
+      return c.json(
+        { error: "eventId and countryIso3 are mutually exclusive" },
+        400
+      )
+    }
     const limit = query.limit ? Number(query.limit) : undefined
     const messages = await chatService.getMessages({
       eventId: eventId ?? null,
+      countryIso3,
       limit,
     })
     return c.json(messages)
@@ -421,6 +433,7 @@ export function createAgentApp(props: {
     const body = createChatMessageInputSchema.parse(await c.req.json())
     const message = await chatService.create({
       eventId: body.eventId ?? null,
+      countryIso3: body.countryIso3 ?? null,
       content: body.content,
       authorName: userName,
       userId,

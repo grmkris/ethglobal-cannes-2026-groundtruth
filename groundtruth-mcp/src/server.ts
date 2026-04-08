@@ -102,12 +102,17 @@ export function createMcpServer(props: {
 
   server.tool(
     "get_event_chat",
-    "Get chat messages. Provide eventId for per-event chat, or omit for global chat.",
+    "Get chat messages. Provide eventId for per-event chat, countryIso3 (ISO-A3) for per-country chat, or omit both for global chat. eventId and countryIso3 are mutually exclusive.",
     {
       eventId: z
         .string()
         .optional()
-        .describe("Event ID to get chat for (omit for global chat)"),
+        .describe("Event ID (wev_...) to get chat for"),
+      countryIso3: z
+        .string()
+        .regex(/^[A-Z]{3}$/)
+        .optional()
+        .describe("ISO-A3 country code (e.g. USA, FRA) for per-country chat"),
       limit: z
         .number()
         .int()
@@ -116,8 +121,8 @@ export function createMcpServer(props: {
         .optional()
         .describe("Max messages to return (default 50)"),
     },
-    async ({ eventId, limit }) => {
-      const messages = await client.getChat({ eventId, limit })
+    async ({ eventId, countryIso3, limit }) => {
+      const messages = await client.getChat({ eventId, countryIso3, limit })
       return {
         content: [
           { type: "text" as const, text: JSON.stringify(messages, null, 2) },
@@ -171,16 +176,21 @@ export function createMcpServer(props: {
 
   server.tool(
     "post_message",
-    "Post a chat message. Provide eventId for per-event chat, or omit for global chat. Requires a linked agent wallet.",
+    "Post a chat message. Provide eventId for per-event chat, countryIso3 (ISO-A3) for per-country chat, or omit both for global chat. eventId and countryIso3 are mutually exclusive. Requires a linked agent wallet.",
     {
       eventId: z
         .string()
         .optional()
-        .describe("Event ID to post to (omit for global chat)"),
+        .describe("Event ID (wev_...) to post to"),
+      countryIso3: z
+        .string()
+        .regex(/^[A-Z]{3}$/)
+        .optional()
+        .describe("ISO-A3 country code (e.g. USA, FRA) for per-country chat"),
       content: z.string().describe("Message content"),
     },
-    async ({ eventId, content }) => {
-      const message = await client.sendChat({ eventId, content })
+    async ({ eventId, countryIso3, content }) => {
+      const message = await client.sendChat({ eventId, countryIso3, content })
       return {
         content: [
           { type: "text" as const, text: JSON.stringify(message, null, 2) },
@@ -325,97 +335,88 @@ export function createMcpServer(props: {
   )
 
   // --- Geo Knowledge Graph (GRC-20 / GeoBrowser) ---
+  //
+  // These tools are only registered when the canonical schema has been
+  // bootstrapped (property/type IDs populated in geo-constants.ts via
+  // `bun run scripts/bootstrap-geo.ts`). If the schema isn't bootstrapped,
+  // the tools don't show up in `tools/list` at all — agents never see dead
+  // tools that would always return errors.
+  if (isGeoSchemaBootstrapped()) {
+    server.tool(
+      "publish_to_geo",
+      "Publish a Ground Truth event to a GRC-20 Space on Geo testnet. Mirrors the verified event into the decentralized knowledge graph as a typed entity (POINT for location, DATETIME for timestamp, properties for category/severity/source). Requires GEO_PRIVATE_KEY and GEO_SPACE_ID env vars.",
+      {
+        eventId: z.string().describe("Ground Truth event ID (wev_...)"),
+      },
+      async ({ eventId }) => {
+        if (!geo) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: "Geo publishing not configured. Set GEO_PRIVATE_KEY and GEO_SPACE_ID env vars (run `npx groundtruth-mcp setup` to enable interactively).",
+            }],
+          }
+        }
+        try {
+          const event = (await client.getEvent(eventId)) as GroundTruthEvent
+          const result = await publishEventToGeo({
+            event,
+            spaceId: geo.spaceId,
+            privateKey: geo.privateKey,
+            rpc: geo.rpc,
+          })
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                success: true,
+                eventId,
+                cid: result.cid,
+                txHash: result.txHash,
+                spaceId: result.spaceId,
+                network: result.network,
+                note: "Event published to Geo. View at https://testnet-api.geobrowser.io/graphql or via `query_geo_events`.",
+              }, null, 2),
+            }],
+          }
+        } catch (err: any) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `Geo publish failed: ${err?.message ?? "unknown error"}`,
+            }],
+          }
+        }
+      },
+    )
 
-  server.tool(
-    "publish_to_geo",
-    "Publish a Ground Truth event to a GRC-20 Space on Geo testnet. Mirrors the verified event into the decentralized knowledge graph as a typed entity (POINT for location, DATETIME for timestamp, properties for category/severity/source). Requires GEO_PRIVATE_KEY and GEO_SPACE_ID env vars and a bootstrapped schema.",
-    {
-      eventId: z.string().describe("Ground Truth event ID (wev_...)"),
-    },
-    async ({ eventId }) => {
-      if (!geo) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: "Geo publishing not configured. Set GEO_PRIVATE_KEY and GEO_SPACE_ID env vars (run `npx groundtruth-mcp setup` to enable interactively).",
-          }],
+    server.tool(
+      "query_geo_events",
+      "Query Ground Truth events from the Geo knowledge graph (https://testnet-api.geobrowser.io/graphql). Returns events from ALL Spaces that publish to the canonical WorldEvent type — including events from other Ground Truth instances, not just yours. No payment required.",
+      {
+        limit: z.number().int().min(1).max(200).optional().describe("Max events to return (default 50)"),
+        offset: z.number().int().min(0).optional().describe("Pagination offset (default 0)"),
+      },
+      async ({ limit, offset }) => {
+        try {
+          const events = await queryGeoEvents({ limit, offset })
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({ count: events.length, events }, null, 2),
+            }],
+          }
+        } catch (err: any) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `Geo query failed: ${err?.message ?? "unknown error"}`,
+            }],
+          }
         }
-      }
-      if (!isGeoSchemaBootstrapped()) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: "Geo schema not bootstrapped — the property/type IDs in geo-constants.ts are still placeholders. The package owner needs to run `bun run scripts/bootstrap-geo.ts` first.",
-          }],
-        }
-      }
-      try {
-        const event = (await client.getEvent(eventId)) as GroundTruthEvent
-        const result = await publishEventToGeo({
-          event,
-          spaceId: geo.spaceId,
-          privateKey: geo.privateKey,
-          rpc: geo.rpc,
-        })
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              success: true,
-              eventId,
-              cid: result.cid,
-              txHash: result.txHash,
-              spaceId: result.spaceId,
-              network: result.network,
-              note: "Event published to Geo. View at https://testnet-api.geobrowser.io/graphql or via `query_geo_events`.",
-            }, null, 2),
-          }],
-        }
-      } catch (err: any) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: `Geo publish failed: ${err?.message ?? "unknown error"}`,
-          }],
-        }
-      }
-    },
-  )
-
-  server.tool(
-    "query_geo_events",
-    "Query Ground Truth events from the Geo knowledge graph (https://testnet-api.geobrowser.io/graphql). Returns events from ALL Spaces that publish to the canonical WorldEvent type — including events from other Ground Truth instances, not just yours. No payment required.",
-    {
-      limit: z.number().int().min(1).max(200).optional().describe("Max events to return (default 50)"),
-      offset: z.number().int().min(0).optional().describe("Pagination offset (default 0)"),
-    },
-    async ({ limit, offset }) => {
-      if (!isGeoSchemaBootstrapped()) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: "Geo schema not bootstrapped — the property/type IDs in geo-constants.ts are still placeholders. The package owner needs to run `bun run scripts/bootstrap-geo.ts` first.",
-          }],
-        }
-      }
-      try {
-        const events = await queryGeoEvents({ limit, offset })
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({ count: events.length, events }, null, 2),
-          }],
-        }
-      } catch (err: any) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: `Geo query failed: ${err?.message ?? "unknown error"}`,
-          }],
-        }
-      }
-    },
-  )
+      },
+    )
+  }
 
   return server
 }

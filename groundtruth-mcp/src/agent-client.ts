@@ -221,15 +221,16 @@ export function createAgentClient(props: {
       return request<unknown>("POST", "/events", input)
     },
 
-    getChat(params?: { eventId?: string; limit?: number }) {
+    getChat(params?: { eventId?: string; countryIso3?: string; limit?: number }) {
       const qs = new URLSearchParams()
       if (params?.eventId) qs.set("eventId", params.eventId)
+      if (params?.countryIso3) qs.set("countryIso3", params.countryIso3)
       if (params?.limit) qs.set("limit", String(params.limit))
       const query = qs.toString()
       return request<unknown[]>("GET", `/chat${query ? `?${query}` : ""}`)
     },
 
-    sendChat(input: { eventId?: string; content: string }) {
+    sendChat(input: { eventId?: string; countryIso3?: string; content: string }) {
       return request<unknown>("POST", "/chat", input)
     },
 
