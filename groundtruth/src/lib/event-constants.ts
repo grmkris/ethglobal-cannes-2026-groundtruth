@@ -21,3 +21,12 @@ export const SEVERITY_LEVEL_VALUES = [
 
 export type EventCategory = (typeof EVENT_CATEGORY_VALUES)[number]
 export type SeverityLevel = (typeof SEVERITY_LEVEL_VALUES)[number]
+
+export const DISPUTE_REASONS = ["inaccurate", "misleading", "fabricated"] as const
+export type DisputeReason = (typeof DISPUTE_REASONS)[number]
+
+export const DISPUTE_VALUES: Record<DisputeReason, number> = {
+  inaccurate: -1,
+  misleading: -2,
+  fabricated: -3,
+} as const

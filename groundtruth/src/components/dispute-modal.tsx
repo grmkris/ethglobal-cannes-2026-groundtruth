@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useDisputeEvent } from "@/hooks/use-dispute-event"
-import { DISPUTE_REASONS, type DisputeReason } from "@/server/db/schema/event/event.db"
+import { DISPUTE_REASONS, type DisputeReason } from "@/lib/event-constants"
 import type { WorldEventId } from "@/lib/typeid"
 import { AlertTriangleIcon } from "lucide-react"
 

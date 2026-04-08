@@ -6,7 +6,7 @@ import {
   eventCategorySchema,
   severityLevelSchema,
 } from "@/server/db/schema/event/event.zod"
-import { DISPUTE_REASONS } from "@/server/db/schema/event/event.db"
+import { DISPUTE_REASONS } from "@/lib/event-constants"
 import { authedProcedure, publicProcedure } from "../api"
 
 export const eventRouter = {

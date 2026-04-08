@@ -7,7 +7,8 @@ import type {
   SeverityLevel,
   WorldEventResponse,
 } from "@/server/db/schema/event/event.zod"
-import { worldEvent, eventDispute, type DisputeReason } from "../db/schema/event/event.db"
+import { worldEvent, eventDispute } from "../db/schema/event/event.db"
+import type { DisputeReason } from "@/lib/event-constants"
 import { chatMessage } from "../db/schema/chat/chat.db"
 import { user, paymentLedger } from "../db/schema/auth/auth.db"
 import { computeConfidence } from "@/lib/confidence"

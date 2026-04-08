@@ -8,7 +8,7 @@ import {
   ERC8004_REPUTATION_REGISTRY,
   reputationRegistryAbi,
 } from "@/lib/contracts"
-import { DISPUTE_VALUES, type DisputeReason } from "@/server/db/schema/event/event.db"
+import { DISPUTE_VALUES, type DisputeReason } from "@/lib/event-constants"
 import {
   buildOffchainAttestation,
   DISPUTE_SCHEMA,
