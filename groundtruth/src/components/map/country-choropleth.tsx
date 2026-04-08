@@ -97,16 +97,14 @@ export function CountryChoropleth({
       const name = (feature.properties?.NAME as string) ?? "Unknown"
       const count = countryCounts.get(iso) ?? 0
       const isSelected = iso === selectedCountryIso3
-      const isClickable = count > 0 && iso !== "-99"
+      const isClickable = iso !== "-99"
 
-      if (count > 0) {
-        layer.bindTooltip(
-          `<strong>${name}</strong><br/>${count} event${count !== 1 ? "s" : ""}${
-            isClickable ? "<br/><span style=\"opacity:0.7\">click to open chat</span>" : ""
-          }`,
-          { sticky: true },
-        )
-      }
+      layer.bindTooltip(
+        `<strong>${name}</strong>${
+          count > 0 ? `<br/>${count} event${count !== 1 ? "s" : ""}` : ""
+        }${isClickable ? "<br/><span style=\"opacity:0.7\">click to open</span>" : ""}`,
+        { sticky: true },
+      )
 
       const pathLayer = layer as Layer & {
         setStyle: (s: PathOptions) => void

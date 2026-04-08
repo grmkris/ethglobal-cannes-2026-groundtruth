@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
-import { useQueryState, parseAsStringLiteral } from "nuqs"
+import { useQueryState } from "nuqs"
 import { parseAsCountryIso3, parseAsWorldEventId } from "@/lib/nuqs-parsers"
-import { countryNameFromIso3 } from "@/lib/geo/country-of"
+import { countryNameFromIso3, countryPropertiesFromIso3 } from "@/lib/geo/country-of"
 import { useCountryGeoJSON } from "@/hooks/use-country-geojson"
-import type { ChatScope } from "@/hooks/use-chat"
 import {
   Map,
   MapControlContainer,
@@ -18,7 +17,6 @@ import {
 } from "@/components/ui/map"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { EVENT_CATEGORIES } from "@/lib/event-categories"
@@ -34,7 +32,8 @@ import { CreateEventModal } from "./create-event-modal"
 import { EventDetailPanel } from "./event-detail-panel"
 import { EventMarkers } from "./event-markers"
 import { MapClickHandler } from "./map-click-handler"
-import { MapSidebar, type SidebarTab } from "./map-sidebar"
+import { MapSidebar } from "./map-sidebar"
+import { CountryDetailPanel } from "./country-detail-panel"
 import { CountryChoropleth } from "./country-choropleth"
 import { OverlayLayers } from "./overlays/overlay-layers"
 import { NasaGibsTileLayer } from "./overlays/nasa-gibs-tile-layer"
@@ -65,10 +64,6 @@ export function WorldMap() {
     "country",
     parseAsCountryIso3
   )
-  const [sidebarTab, setSidebarTab] = useQueryState(
-    "tab",
-    parseAsStringLiteral(["events", "chat"] as const).withDefault("events")
-  )
 
   // Local UI state (ephemeral)
   const [reportMode, setReportMode] = useState(false)
@@ -96,18 +91,16 @@ export function WorldMap() {
     ? events.find((e) => e.id === selectedEventId) ?? null
     : null
 
-  // Country name lookup for sidebar header
+  // Country lookups for right-side panel
   const countryGeo = useCountryGeoJSON()
   const selectedCountryName = useMemo(() => {
     if (!selectedCountryIso3 || !countryGeo) return null
     return countryNameFromIso3(selectedCountryIso3, countryGeo)
   }, [selectedCountryIso3, countryGeo])
-
-  // Sidebar chat scope: country if selected, else global.
-  // (Event chat lives in EventDetailPanel — handled separately.)
-  const sidebarChatScope: ChatScope = selectedCountryIso3
-    ? { kind: "country", countryIso3: selectedCountryIso3 }
-    : { kind: "global" }
+  const selectedCountryProperties = useMemo(() => {
+    if (!selectedCountryIso3 || !countryGeo) return null
+    return countryPropertiesFromIso3(selectedCountryIso3, countryGeo)
+  }, [selectedCountryIso3, countryGeo])
 
   function handleMapClick(lat: number, lng: number) {
     if (!reportMode) return
@@ -133,37 +126,30 @@ export function WorldMap() {
   const handleSelectEvent = useCallback(
     (eventId: WorldEventId | null) => {
       setSelectedEventId(eventId)
+      if (eventId) setSelectedCountryIso3(null)
     },
-    [setSelectedEventId]
+    [setSelectedEventId, setSelectedCountryIso3]
   )
 
   const handleCloseDetail = useCallback(() => {
     setSelectedEventId(null)
   }, [setSelectedEventId])
 
-  const handleTabChange = useCallback(
-    (tab: SidebarTab) => {
-      setSidebarTab(tab)
-      if (tab === "chat") setSidebarCollapsed(false)
-    },
-    [setSidebarTab]
-  )
-
   const handleSelectCountry = useCallback(
     (iso3: string) => {
       setSelectedCountryIso3(iso3)
-      setSidebarTab("chat")
-      setSidebarCollapsed(false)
+      setSelectedEventId(null)
     },
-    [setSelectedCountryIso3, setSidebarTab]
+    [setSelectedCountryIso3, setSelectedEventId]
   )
 
   const handleClearCountry = useCallback(() => {
     setSelectedCountryIso3(null)
   }, [setSelectedCountryIso3])
 
-  // Shift right-side controls when detail panel is open (sm:w-80 = 320px + gap)
-  const rCtrl = selectedEvent ? "right-2 sm:right-[21.5rem]" : "right-2"
+  // Shift right-side controls when any right panel is open (sm:w-80 = 320px + gap)
+  const rightPanelOpen = !!(selectedEvent || selectedCountryIso3)
+  const rCtrl = rightPanelOpen ? "right-2 sm:right-[21.5rem]" : "right-2"
 
   if (isLoading) {
     return (
@@ -223,14 +209,26 @@ export function WorldMap() {
           <MapLayersControl position={`bottom-2 ${rCtrl}`} />
         </MapLayers>
 
-        {selectedEvent && (
+        {selectedEvent ? (
           <EventDetailPanel
             key={selectedEvent.id}
             event={selectedEvent}
             onClose={handleCloseDetail}
             onShowOnMap={handleFlyTo}
           />
-        )}
+        ) : selectedCountryIso3 ? (
+          <CountryDetailPanel
+            key={selectedCountryIso3}
+            countryIso3={selectedCountryIso3}
+            countryName={selectedCountryName ?? selectedCountryIso3}
+            countryProperties={selectedCountryProperties}
+            onClose={handleClearCountry}
+            onSelectEvent={(id) => {
+              setSelectedEventId(id)
+              setSelectedCountryIso3(null)
+            }}
+          />
+        ) : null}
 
         <LayersPopover className={`top-2 ${rCtrl}`} />
 
@@ -268,19 +266,13 @@ export function WorldMap() {
           verifiedOnly={verifiedOnly}
           searchQuery={searchQuery}
           selectedEventId={selectedEventId}
-          selectedEvent={selectedEvent}
-          activeTab={sidebarTab}
           collapsed={sidebarCollapsed}
-          chatScope={sidebarChatScope}
-          selectedCountryName={selectedCountryName}
           onToggleCategory={toggleCategory}
           onToggleSeverity={toggleSeverity}
           onToggleVerified={toggleVerified}
           onSearchChange={setSearchQuery}
           onClearFilters={clearFilters}
           onSelectEvent={handleSelectEvent}
-          onClearCountry={handleClearCountry}
-          onTabChange={handleTabChange}
           onCollapsedChange={setSidebarCollapsed}
           onFlyTo={handleFlyTo}
         />

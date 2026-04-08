@@ -5,18 +5,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { ChatInput } from "@/components/chat/chat-input"
-import { ChatMessageItem } from "@/components/chat/chat-message"
-import { CountryEventsHeader } from "./country-events-header"
 import { getCategoryConfig } from "@/lib/event-categories"
 import { agentExplorerUrl } from "@/lib/explorers"
 import { ConfidenceMeter } from "./confidence-meter"
-import { useSession } from "@/lib/auth-client"
 import type { EventCategory, SeverityLevel, WorldEvent } from "@/lib/orpc-types"
 import type { WorldEventId } from "@/lib/typeid"
-import { useChat, type ChatScope } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import {
   BadgeCheckIcon,
@@ -25,11 +19,7 @@ import {
   ChevronRightIcon,
   MessageCircleIcon,
   SearchIcon,
-  WalletIcon,
-  XIcon,
 } from "lucide-react"
-import { useLayoutEffect, useRef } from "react"
-import { useAppKit } from "@reown/appkit/react"
 import { CategoryFilter } from "./category-filter"
 import { RevenueDashboard } from "./revenue-dashboard"
 import { usePaymentStats } from "@/hooks/use-payment-stats"
@@ -144,8 +134,6 @@ function EventListItem({
   )
 }
 
-export type SidebarTab = "events" | "chat"
-
 export function MapSidebar({
   filteredEvents,
   eventCount,
@@ -153,20 +141,14 @@ export function MapSidebar({
   activeSeverities,
   searchQuery,
   selectedEventId,
-  selectedEvent,
-  activeTab,
+  verifiedOnly,
   collapsed,
-  chatScope,
-  selectedCountryName,
   onToggleCategory,
   onToggleSeverity,
   onToggleVerified,
-  verifiedOnly,
   onSearchChange,
   onClearFilters,
   onSelectEvent,
-  onClearCountry,
-  onTabChange,
   onCollapsedChange,
   onFlyTo,
 }: {
@@ -177,47 +159,21 @@ export function MapSidebar({
   verifiedOnly: boolean
   searchQuery: string
   selectedEventId: WorldEventId | null
-  selectedEvent: WorldEvent | null
-  activeTab: SidebarTab
   collapsed: boolean
-  chatScope: ChatScope
-  selectedCountryName: string | null
   onToggleCategory: (category: EventCategory) => void
   onToggleSeverity: (severity: SeverityLevel) => void
   onToggleVerified: () => void
   onSearchChange: (query: string) => void
   onClearFilters: () => void
   onSelectEvent: (eventId: WorldEventId | null) => void
-  onClearCountry: () => void
-  onTabChange: (tab: SidebarTab) => void
   onCollapsedChange: (collapsed: boolean) => void
   onFlyTo: (coordinates: [number, number]) => void
 }) {
-  const { data: sessionData } = useSession()
-  const isSignedIn = !!sessionData?.session
-  const { open: openAppKit } = useAppKit()
-  const scrollRef = useRef<HTMLDivElement>(null)
   const { data: paymentStats } = usePaymentStats()
-
-  const { messages, send } = useChat(chatScope, { enabled: activeTab === "chat" })
-  const messageList = messages.data ?? []
-
-  // Legitimate effect — DOM sync (scroll to bottom on new messages)
-  useLayoutEffect(() => {
-    if (scrollRef.current && activeTab === "chat") {
-      const viewport = scrollRef.current.closest("[data-slot='scroll-area-viewport']")
-        ?? scrollRef.current
-      viewport.scrollTop = viewport.scrollHeight
-    }
-  }, [messageList.length, activeTab])
 
   function handleOpenChat(eventId: WorldEventId) {
     onSelectEvent(eventId)
     onCollapsedChange(false)
-  }
-
-  function handleSend(content: string) {
-    send.mutate({ content })
   }
 
   return (
@@ -281,27 +237,8 @@ export function MapSidebar({
           {/* Revenue mini-dashboard */}
           <RevenueDashboard stats={paymentStats} />
 
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => {
-              if (v === "events" || v === "chat") onTabChange(v)
-            }}
-          >
-            <TabsList variant="line" className="w-full border-b px-0">
-              <TabsTrigger value="events" className="flex-1 text-xs">
-                Events
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="flex-1 text-xs">
-                Chat
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Events Tab */}
-          {activeTab === "events" && (
-            <>
-              <div className="space-y-2 border-b px-3 py-2">
+          {/* Events */}
+          <div className="space-y-2 border-b px-3 py-2">
                 <div className="relative">
                   <SearchIcon size={12} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -383,74 +320,6 @@ export function MapSidebar({
                   )}
                 </div>
               </ScrollArea>
-            </>
-          )}
-
-          {/* Chat Tab */}
-          {activeTab === "chat" && (
-            <>
-              <div className="flex items-center gap-2 border-b px-3 py-1.5">
-                {chatScope.kind === "country" ? (
-                  <>
-                    <span className="text-xs font-medium">
-                      {selectedCountryName ?? chatScope.countryIso3}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="ml-auto size-5"
-                      aria-label="Clear country selection"
-                      onClick={onClearCountry}
-                    >
-                      <XIcon size={10} />
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-xs font-medium">Global Chat</span>
-                )}
-              </div>
-
-              <ScrollArea className="flex-1 overflow-hidden">
-                <div ref={scrollRef} className="flex flex-col">
-                  {chatScope.kind === "country" && (
-                    <CountryEventsHeader
-                      iso3={chatScope.countryIso3}
-                      countryName={selectedCountryName ?? chatScope.countryIso3}
-                      onSelectEvent={onSelectEvent}
-                    />
-                  )}
-                  {messageList.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-                      <MessageCircleIcon size={20} className="text-muted-foreground/40" />
-                      <p className="text-xs font-medium text-muted-foreground">No messages yet</p>
-                      <p className="text-[11px] text-muted-foreground/60">
-                        {chatScope.kind === "country"
-                          ? `Be the first to discuss events in ${selectedCountryName ?? chatScope.countryIso3}`
-                          : "Be the first to share intelligence"}
-                      </p>
-                    </div>
-                  ) : (
-                    messageList.map((msg) => (
-                      <ChatMessageItem key={msg.id} message={msg} />
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-              {isSignedIn ? (
-                <ChatInput onSend={handleSend} disabled={send.isPending} />
-              ) : (
-                <button
-                  onClick={() => openAppKit()}
-                  className="flex w-full items-center gap-2 border-t px-3 py-3 text-left transition-colors hover:bg-muted/50"
-                >
-                  <WalletIcon size={14} className="text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
-                    Connect wallet to chat
-                  </p>
-                </button>
-              )}
-            </>
-          )}
         </div>
       )}
     </MapControlContainer>

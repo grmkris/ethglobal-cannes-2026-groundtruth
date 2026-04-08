@@ -38,6 +38,18 @@ export function countryNameFromIso3(
   return null
 }
 
+export function countryPropertiesFromIso3(
+  iso3: string,
+  geo: FeatureCollection
+): Record<string, unknown> | null {
+  for (const feature of geo.features) {
+    if ((feature.properties?.ISO_A3 as string | undefined) === iso3) {
+      return (feature.properties as Record<string, unknown>) ?? null
+    }
+  }
+  return null
+}
+
 let cachedGeo: FeatureCollection | null = null
 let inflight: Promise<FeatureCollection> | null = null
 

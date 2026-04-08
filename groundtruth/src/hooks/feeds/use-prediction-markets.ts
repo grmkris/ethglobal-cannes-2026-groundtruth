@@ -73,7 +73,8 @@ function normalize(events: GammaEvent[] | undefined): PredictionMarket[] {
     const outcomes = parseJsonArray(market?.outcomes)
     const prices = parseJsonArray(market?.outcomePrices).map(Number)
     const probability = prices[0] ?? 0.5
-    const volume = event.volumeNum ?? (Number(event.volume) || 0)
+    const rawVolume = Number(event.volume) || 0
+    const volume = event.volumeNum ?? rawVolume
 
     out.push({
       id: `poly-${event.id ?? event.slug ?? event.title}`,
