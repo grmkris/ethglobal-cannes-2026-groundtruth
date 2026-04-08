@@ -26,6 +26,8 @@ if (projectId) {
     },
     features: {
       analytics: false,
+      socials: ["google", "github", "apple", "discord", "x"],
+      email: true,
     },
     siweConfig,
   })
