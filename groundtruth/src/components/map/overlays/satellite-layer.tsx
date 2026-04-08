@@ -29,7 +29,7 @@ const SAT_ICON = L.divIcon({
 function propagate(satrec: satellite.SatRec, when: Date): Pos | null {
   try {
     const eci = satellite.propagate(satrec, when)
-    if (!eci.position || typeof eci.position === "boolean") return null
+    if (!eci || !eci.position || typeof eci.position === "boolean") return null
     const gmst = satellite.gstime(when)
     const geodetic = satellite.eciToGeodetic(eci.position, gmst)
     return {
