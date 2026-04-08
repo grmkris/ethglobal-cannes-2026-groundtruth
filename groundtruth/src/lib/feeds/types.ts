@@ -10,6 +10,7 @@ export const LAYER_IDS = [
   "gvp",
   "rainviewer",
   "satellites",
+  "predictions",
 ] as const
 
 export type LayerId = (typeof LAYER_IDS)[number]

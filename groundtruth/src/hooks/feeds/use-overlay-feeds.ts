@@ -19,6 +19,10 @@ import { useEonet, type EonetEvent } from "./use-eonet"
 import { useGvp, type GvpVolcano } from "./use-gvp"
 import { useRainViewer, type RainViewerResult } from "./use-rainviewer"
 import { useSatellites, type SatelliteRecord } from "./use-satellites"
+import {
+  usePredictionMarkets,
+  type PredictionMarket,
+} from "./use-prediction-markets"
 
 export type OverlayFeeds = {
   usgs: LayerHookResult<UsgsEarthquake>
@@ -28,6 +32,7 @@ export type OverlayFeeds = {
   gvp: LayerHookResult<GvpVolcano>
   rainviewer: RainViewerResult
   satellites: LayerHookResult<SatelliteRecord>
+  predictions: LayerHookResult<PredictionMarket>
 }
 
 /** Resolve a feed result by LayerId — used by the popover to render rows generically. */
@@ -50,6 +55,8 @@ export function getFeedById(
       return feeds.rainviewer as LayerHookResult<unknown>
     case "satellites":
       return feeds.satellites as LayerHookResult<unknown>
+    case "predictions":
+      return feeds.predictions as LayerHookResult<unknown>
     default:
       return null
   }
@@ -65,5 +72,6 @@ export function useOverlayFeeds(): OverlayFeeds {
     gvp: useGvp({ enabled: isActive("gvp") }),
     rainviewer: useRainViewer({ enabled: isActive("rainviewer") }),
     satellites: useSatellites({ enabled: isActive("satellites") }),
+    predictions: usePredictionMarkets({ enabled: isActive("predictions") }),
   }
 }

@@ -4,7 +4,7 @@
 
 import { LAYER_IDS, type LayerId } from "./types"
 
-export type LayerGroup = "disaster" | "weather" | "mobility"
+export type LayerGroup = "disaster" | "weather" | "mobility" | "signals"
 
 export type LayerMeta = {
   id: LayerId
@@ -81,17 +81,27 @@ export const LAYER_META: Record<LayerId, LayerMeta> = {
     group: "mobility",
     accent: "text-violet-500",
   },
+  predictions: {
+    id: "predictions",
+    label: "Prediction Markets",
+    shortLabel: "Markets",
+    description: "Geopolitical prediction markets from Polymarket",
+    attribution: "Polymarket",
+    group: "signals",
+    accent: "text-emerald-500",
+  },
 }
 
 export const LAYER_GROUP_LABELS: Record<LayerGroup, string> = {
   disaster: "Disasters",
   weather: "Weather",
   mobility: "Mobility",
+  signals: "Signals",
 }
 
 /** Layer groups in display order. Filters out empty groups. */
 export const LAYER_GROUPS: { id: LayerGroup; label: string; layers: LayerId[] }[] = (
-  ["disaster", "weather", "mobility"] as const
+  ["disaster", "weather", "mobility", "signals"] as const
 )
   .map((g) => ({
     id: g,

@@ -41,14 +41,14 @@ export function useFindRelated(
 
     const [lat, lng] = event.coordinates
 
-    const POINT_SOURCES: LayerId[] = ["usgs", "gdacs", "nhc", "eonet", "gvp"]
+    const POINT_SOURCES: LayerId[] = ["usgs", "gdacs", "nhc", "eonet", "gvp", "predictions"]
 
     const groups: RelatedGroup[] = []
     let totalCount = 0
 
     for (const id of POINT_SOURCES) {
       if (!isActive(id)) continue
-      const feed = feeds[id as "usgs" | "gdacs" | "nhc" | "eonet" | "gvp"]
+      const feed = feeds[id as "usgs" | "gdacs" | "nhc" | "eonet" | "gvp" | "predictions"]
       const items = feed.queryNearby(lat, lng, radiusKm, hoursBack)
       if (items.length > 0) {
         groups.push({ id, label: LAYER_META[id].label, items })

@@ -9,6 +9,7 @@ import { EonetLayer } from "./eonet-layer"
 import { GvpLayer } from "./gvp-layer"
 import { RainViewerLayer } from "./rainviewer-layer"
 import { SatelliteLayer } from "./satellite-layer"
+import { PredictionLayer } from "./prediction-layer"
 
 /**
  * Renders all enabled overlay layers. Each layer component declares its own
@@ -33,6 +34,7 @@ export function OverlayLayers() {
         <RainViewerLayer urlTemplate={feeds.rainviewer.urlTemplate} />
       )}
       {isActive("satellites") && <SatelliteLayer data={feeds.satellites.data} />}
+      {isActive("predictions") && <PredictionLayer data={feeds.predictions.data} />}
     </>
   )
 }
