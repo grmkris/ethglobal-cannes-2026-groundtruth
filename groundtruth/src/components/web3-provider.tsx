@@ -21,7 +21,7 @@ if (projectId) {
     metadata: {
       name: "Ground Truth",
       description: "Verified intelligence map",
-      url: "https://groundtruth.grm.wtf",
+      url: typeof window !== "undefined" ? window.location.origin : "https://groundtruth.grm.wtf",
       icons: [],
     },
     features: {

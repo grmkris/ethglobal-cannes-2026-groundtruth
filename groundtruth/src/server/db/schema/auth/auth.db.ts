@@ -123,7 +123,7 @@ export const walletAddress = pgTable(
   },
   (table) => [
     index("walletAddress_userId_idx").on(table.userId),
-    index("walletAddress_address_idx").on(table.address),
+    uniqueIndex("walletAddress_address_idx").on(table.address),
   ]
 )
 

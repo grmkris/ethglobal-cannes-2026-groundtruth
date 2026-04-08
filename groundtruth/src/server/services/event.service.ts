@@ -50,6 +50,7 @@ function toWorldEvent(
     canonicalEventId: row.canonicalEventId ?? null,
     corroborationCount: row.corroborationCount,
     disputeCount: row.disputeCount,
+    sourceClaimUid: row.sourceClaimUid ?? null,
     confidenceScore: confidence.score,
     confidenceLevel: confidence.level,
   }
@@ -364,7 +365,17 @@ export function createEventService(props: {
     return activities
   }
 
-  return { getAll, getById, create, createDispute, getDisputes, hasUserDisputed, getAgentActivity }
+  async function setSourceClaimUid(params: {
+    eventId: WorldEventId
+    uid: string
+  }) {
+    await db
+      .update(worldEvent)
+      .set({ sourceClaimUid: params.uid })
+      .where(eq(worldEvent.id, params.eventId))
+  }
+
+  return { getAll, getById, create, createDispute, getDisputes, hasUserDisputed, getAgentActivity, setSourceClaimUid }
 }
 
 export type EventService = ReturnType<typeof createEventService>

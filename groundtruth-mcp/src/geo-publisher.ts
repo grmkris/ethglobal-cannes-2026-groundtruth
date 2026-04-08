@@ -165,7 +165,7 @@ export async function publishEventToGeo(opts: {
   if (typeof event.worldIdVerified === "boolean") {
     values.push({
       property: PROPERTY_IDS.worldIdVerified,
-      type: "checkbox",
+      type: "bool",
       value: event.worldIdVerified,
     })
   }

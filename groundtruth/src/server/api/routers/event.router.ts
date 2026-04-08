@@ -103,6 +103,20 @@ export const eventRouter = {
       return context.eventService.getDisputes({ eventId: input.eventId })
     }),
 
+  setSourceClaim: authedProcedure
+    .input(
+      z.object({
+        eventId: WorldEventId,
+        uid: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const userId = UserId.parse(context.session.user.id)
+      context.log.set({ procedure: "event.setSourceClaim", eventId: input.eventId, userId })
+      await context.eventService.setSourceClaimUid({ eventId: input.eventId, uid: input.uid })
+      return { ok: true }
+    }),
+
   getAgentActivity: publicProcedure
     .handler(async ({ context }) => {
       context.log.set({ procedure: "event.getAgentActivity" })

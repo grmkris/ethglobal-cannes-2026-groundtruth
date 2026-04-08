@@ -16,7 +16,8 @@ import {
 } from "@/lib/eas"
 import type { WorldEventId } from "@/lib/typeid"
 
-const ENDPOINT = "https://groundtruth.grm.wtf"
+const ENDPOINT =
+  typeof window !== "undefined" ? window.location.origin : ""
 
 /**
  * Dispute flow (Phase 5 of EAS integration):

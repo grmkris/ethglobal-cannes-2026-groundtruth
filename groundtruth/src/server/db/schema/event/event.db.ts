@@ -19,6 +19,7 @@ import {
 } from "@/lib/event-constants"
 import { baseEntityFields, typeId } from "../../utils"
 import { user } from "../auth/auth.db"
+import { easAttestation } from "../attestation/attestation.db"
 
 export const eventCategoryEnum = pgEnum("event_category", [...EVENT_CATEGORY_VALUES])
 
@@ -56,6 +57,10 @@ export const worldEvent = pgTable(
     corroborationCount: integer("corroboration_count").default(0).notNull(),
     // Disputes
     disputeCount: integer("dispute_count").default(0).notNull(),
+    // EAS GroundTruthSourceClaim attestation UID signed by the event creator.
+    // Populated client-side after event creation when a source URL is provided.
+    sourceClaimUid: varchar("source_claim_uid", { length: 66 })
+      .references(() => easAttestation.uid),
     ...baseEntityFields,
   },
   (table) => [

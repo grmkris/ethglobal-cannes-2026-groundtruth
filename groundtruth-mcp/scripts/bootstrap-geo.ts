@@ -120,7 +120,7 @@ async function main() {
   ops.push(...attestationUidOps)
 
   const { id: worldIdVerifiedId, ops: worldIdVerifiedOps } = Graph.createProperty({
-    dataType: "CHECKBOX",
+    dataType: "BOOLEAN",
     name: "World ID Verified",
     description: "True if the reporter completed World ID 4.0 proof of personhood",
   })

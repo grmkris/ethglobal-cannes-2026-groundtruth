@@ -38,6 +38,7 @@ export const worldEventResponseSchema = z.object({
   canonicalEventId: WorldEventId.nullable(),
   corroborationCount: z.number(),
   disputeCount: z.number(),
+  sourceClaimUid: z.string().nullable(),
   // Confidence is computed on the server in event.service.ts:toWorldEvent
   // and is always present on every event response.
   confidenceScore: z.number(),

@@ -24,7 +24,7 @@ export function createAuth(props: {
     database: drizzleAdapter(db, { provider: "pg", schema: DB_SCHEMA }),
     secret,
     baseURL,
-    trustedOrigins: ["https://groundtruth.grm.wtf"],
+    trustedOrigins: [baseURL],
     user: {
       additionalFields: {
         worldIdVerified: {
@@ -37,7 +37,7 @@ export function createAuth(props: {
     plugins: [
       siwe({
         domain,
-        emailDomainName: "wallet.groundtruth.grm.wtf",
+        emailDomainName: `wallet.${new URL(baseURL).hostname}`,
         anonymous: true,
         getNonce: async () => {
           return generateRandomString(32, "a-z", "A-Z", "0-9")
