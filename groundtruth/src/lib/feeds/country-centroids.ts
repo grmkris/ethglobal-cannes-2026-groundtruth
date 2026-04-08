@@ -4,7 +4,7 @@
 
 const CENTROIDS: Record<string, [number, number]> = {
   // North America
-  usa: [39.8, -98.6], "united-states": [39.8, -98.6], "us-elections": [39.8, -98.6], "us-politics": [39.8, -98.6], us: [39.8, -98.6],
+  usa: [39.8, -98.6], "united-states": [39.8, -98.6], "us-elections": [39.8, -98.6], "us-politics": [39.8, -98.6], us: [39.8, -98.6], "us-presidential-election": [39.8, -98.6], "us-election": [39.8, -98.6],
   can: [56.1, -106.3], canada: [56.1, -106.3],
   mex: [23.6, -102.5], mexico: [23.6, -102.5],
 
@@ -16,6 +16,7 @@ const CENTROIDS: Record<string, [number, number]> = {
   esp: [40.5, -3.7], spain: [40.5, -3.7],
   pol: [51.9, 19.1], poland: [51.9, 19.1],
   rou: [45.9, 25.0], romania: [45.9, 25.0],
+  hun: [47.2, 19.5], hungary: [47.2, 19.5],
   nld: [52.1, 5.3], netherlands: [52.1, 5.3],
   bel: [50.8, 4.5], belgium: [50.8, 4.5],
   grc: [39.1, 21.8], greece: [39.1, 21.8],
@@ -33,9 +34,9 @@ const CENTROIDS: Record<string, [number, number]> = {
   geo: [42.3, 43.4], georgia: [42.3, 43.4],
 
   // Middle East
-  irn: [32.4, 53.7], iran: [32.4, 53.7],
+  irn: [32.4, 53.7], iran: [32.4, 53.7], "iranian-regime": [32.4, 53.7],
   irq: [33.2, 43.7], iraq: [33.2, 43.7],
-  isr: [31.0, 34.9], israel: [31.0, 34.9],
+  isr: [31.0, 34.9], israel: [31.0, 34.9], "israel-hamas": [31.5, 34.5],
   pse: [31.9, 35.2], palestine: [31.9, 35.2], gaza: [31.5, 34.5],
   sau: [23.9, 45.1], "saudi-arabia": [23.9, 45.1],
   tur: [38.9, 35.2], turkey: [38.9, 35.2], turkiye: [38.9, 35.2],
@@ -47,7 +48,7 @@ const CENTROIDS: Record<string, [number, number]> = {
   chn: [35.9, 104.2], china: [35.9, 104.2],
   ind: [20.6, 79.0], india: [20.6, 79.0],
   jpn: [36.2, 138.3], japan: [36.2, 138.3],
-  kor: [35.9, 127.8], "south-korea": [35.9, 127.8],
+  kor: [35.9, 127.8], "south-korea": [35.9, 127.8], seoul: [37.6, 127.0],
   prk: [40.3, 127.5], "north-korea": [40.3, 127.5],
   twn: [23.7, 121.0], taiwan: [23.7, 121.0],
   pak: [30.4, 69.3], pakistan: [30.4, 69.3],
@@ -76,12 +77,8 @@ const CENTROIDS: Record<string, [number, number]> = {
   aus: [-25.3, 133.8], australia: [-25.3, 133.8],
   nzl: [-40.9, 174.9], "new-zealand": [-40.9, 174.9],
 
-  // Geopolitical tags (not countries)
+  // Geopolitical orgs (pinned to HQ / capital)
   nato: [50.8, 4.4], eu: [50.1, 14.4], "european-union": [50.1, 14.4],
-  "global-elections": [20.0, 0.0],
-  "nuclear-weapons": [46.0, 2.0],
-  geopolitics: [20.0, 0.0],
-  world: [20.0, 0.0],
 }
 
 /**
@@ -92,9 +89,18 @@ export function geocodeTag(tag: string): [number, number] | null {
   return CENTROIDS[tag.toLowerCase().trim()] ?? null
 }
 
+// Generic tags that match the lookup but provide no useful location.
+// Skip these so we don't cluster everything at [20, 0].
+const GENERIC_SLUGS = new Set([
+  "politics", "elections", "sports", "crypto", "world",
+  "geopolitics", "global-elections", "world-elections",
+  "primaries", "earn-4", "hide-from-new",
+])
+
 /**
- * Try each tag in order, returning the first match.
- * Tags like "Ukraine" or "us-elections" resolve to country centroids.
+ * Try each tag, skipping generic topic slugs. Polymarket puts generic tags
+ * first (e.g. "Global Elections") and country tags later ("United States"),
+ * so skipping generics lets the country-specific tag win.
  */
 export function geocodeTags(
   tags: Array<{ slug?: string; label?: string }>
@@ -102,7 +108,9 @@ export function geocodeTags(
   for (const tag of tags) {
     const slug = tag.slug ?? tag.label
     if (!slug) continue
-    const result = geocodeTag(slug)
+    const key = slug.toLowerCase().trim()
+    if (GENERIC_SLUGS.has(key)) continue
+    const result = geocodeTag(key)
     if (result) return result
   }
   return null
