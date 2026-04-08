@@ -59,6 +59,22 @@ export function createApi(props: { db: Database }) {
 
   app.get("/health", (c) => c.json({ status: "ok" }))
 
+  // Polymarket proxy — their API lacks CORS headers so browsers can't fetch
+  // directly. Cache for 5 min (matches the client-side refetch interval).
+  app.get("/feeds/polymarket", async (c) => {
+    const url = new URL("https://gamma-api.polymarket.com/events")
+    url.searchParams.set("active", "true")
+    url.searchParams.set("closed", "false")
+    url.searchParams.set("order", "volume")
+    url.searchParams.set("ascending", "false")
+    url.searchParams.set("limit", "50")
+    const res = await fetch(url.toString())
+    if (!res.ok) return c.json({ error: "upstream error" }, 502)
+    const data = await res.json()
+    c.header("Cache-Control", "public, max-age=300")
+    return c.json(data)
+  })
+
   // On-chain identity verification
   const identityVerification = createIdentityVerificationService({
     infuraProjectId: env.INFURA_PROJECT_ID,

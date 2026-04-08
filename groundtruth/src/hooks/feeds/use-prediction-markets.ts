@@ -7,11 +7,10 @@ import { deriveLayerStatus, filterNearby } from "@/lib/feeds/geo"
 import { geocodeTags } from "@/lib/feeds/country-centroids"
 import type { LayerHookResult, OverlayItem } from "@/lib/feeds/types"
 
-// Polymarket Gamma API — fully public, no auth, open CORS.
-// Fetch active geopolitical events ordered by volume.
-const GAMMA_URL =
-  "https://gamma-api.polymarket.com/events" +
-  "?active=true&closed=false&order=volume&ascending=false&limit=50"
+// Polymarket events proxied through our API (their Gamma API lacks CORS
+// headers, so browsers can't fetch directly). The server-side proxy at
+// /api/feeds/polymarket caches for 5 min.
+const PROXY_URL = "/api/feeds/polymarket"
 const REFETCH_MS = 5 * 60_000 // 5 min
 
 export type PredictionMarket = OverlayItem & {
@@ -107,7 +106,7 @@ export function usePredictionMarkets(
   const query = useQuery({
     queryKey: ["feeds", "predictions", "polymarket"],
     queryFn: async () => {
-      const res = await fetch(GAMMA_URL)
+      const res = await fetch(PROXY_URL)
       if (!res.ok) throw new Error(`Polymarket API returned ${res.status}`)
       const json = (await res.json()) as GammaEvent[]
       return normalize(json)
