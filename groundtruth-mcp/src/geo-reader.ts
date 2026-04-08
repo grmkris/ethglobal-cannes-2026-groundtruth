@@ -25,6 +25,10 @@ export type GeoEvent = {
   source: string | null
   category: string | null
   severity: string | null
+  // Trust-stack bridge fields
+  agentId: string | null
+  attestationUid: string | null
+  worldIdVerified: boolean | null
   createdAt: string
   updatedAt: string
 }
@@ -117,6 +121,9 @@ function decodeEntity(entity: GqlEntity): GeoEvent {
     source: get("source")?.text ?? null,
     category: get("category")?.text ?? null,
     severity: get("severity")?.text ?? null,
+    agentId: get("agentId")?.text ?? null,
+    attestationUid: get("attestationUid")?.text ?? null,
+    worldIdVerified: get("worldIdVerified")?.boolean ?? null,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   }

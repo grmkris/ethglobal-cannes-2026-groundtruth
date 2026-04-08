@@ -104,6 +104,28 @@ async function main() {
   })
   ops.push(...locationNameOps)
 
+  // Trust-stack bridge properties
+  const { id: agentIdId, ops: agentIdOps } = Graph.createProperty({
+    dataType: "TEXT",
+    name: "Agent ID",
+    description: "ERC-8004 NFT token id of the publishing agent on Ethereum mainnet (empty if human-reported)",
+  })
+  ops.push(...agentIdOps)
+
+  const { id: attestationUidId, ops: attestationUidOps } = Graph.createProperty({
+    dataType: "TEXT",
+    name: "Attestation UID",
+    description: "EAS GroundTruthSourceClaim attestation UID (mainnet) — empty if not yet attested",
+  })
+  ops.push(...attestationUidOps)
+
+  const { id: worldIdVerifiedId, ops: worldIdVerifiedOps } = Graph.createProperty({
+    dataType: "CHECKBOX",
+    name: "World ID Verified",
+    description: "True if the reporter completed World ID 4.0 proof of personhood",
+  })
+  ops.push(...worldIdVerifiedOps)
+
   console.log(`✓ ${ops.length} property ops generated`)
   console.log("")
 
@@ -119,6 +141,9 @@ async function main() {
       categoryId,
       severityId,
       locationNameId,
+      agentIdId,
+      attestationUidId,
+      worldIdVerifiedId,
     ],
   })
   ops.push(...typeOps)
@@ -151,6 +176,9 @@ async function main() {
   console.log(`CATEGORY_PROPERTY_ID:        ${categoryId}`)
   console.log(`SEVERITY_PROPERTY_ID:        ${severityId}`)
   console.log(`LOCATION_NAME_PROPERTY_ID:   ${locationNameId}`)
+  console.log(`AGENT_ID_PROPERTY_ID:        ${agentIdId}`)
+  console.log(`ATTESTATION_UID_PROPERTY_ID: ${attestationUidId}`)
+  console.log(`WORLD_ID_VERIFIED_PROPERTY_ID: ${worldIdVerifiedId}`)
   console.log(`WORLD_EVENT_TYPE_ID:         ${worldEventTypeId}`)
   console.log("")
 
@@ -167,6 +195,9 @@ async function main() {
     ["CATEGORY_PROPERTY_ID", categoryId],
     ["SEVERITY_PROPERTY_ID", severityId],
     ["LOCATION_NAME_PROPERTY_ID", locationNameId],
+    ["AGENT_ID_PROPERTY_ID", agentIdId],
+    ["ATTESTATION_UID_PROPERTY_ID", attestationUidId],
+    ["WORLD_ID_VERIFIED_PROPERTY_ID", worldIdVerifiedId],
     ["WORLD_EVENT_TYPE_ID", worldEventTypeId],
   ]
 

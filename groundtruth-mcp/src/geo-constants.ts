@@ -67,6 +67,9 @@ export const PROPERTY_IDS = {
   category: CATEGORY_PROPERTY_ID,
   severity: SEVERITY_PROPERTY_ID,
   locationName: LOCATION_NAME_PROPERTY_ID,
+  agentId: AGENT_ID_PROPERTY_ID,
+  attestationUid: ATTESTATION_UID_PROPERTY_ID,
+  worldIdVerified: WORLD_ID_VERIFIED_PROPERTY_ID,
 } as const
 
 export type PropertyKey = keyof typeof PROPERTY_IDS

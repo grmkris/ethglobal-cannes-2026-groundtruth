@@ -41,6 +41,10 @@ export type GroundTruthEvent = {
   source?: string | null
   occurredAt?: string | null
   imageUrls?: string[] | null
+  // Trust-stack bridge fields (optional — populated when the event has them)
+  erc8004AgentId?: string | null
+  attestationUid?: string | null
+  worldIdVerified?: boolean | null
 }
 
 export type PublishResult = {
@@ -138,6 +142,31 @@ export async function publishEventToGeo(opts: {
       property: PROPERTY_IDS.locationName,
       type: "text",
       value: event.location,
+    })
+  }
+
+  // Trust-stack bridge values
+  if (event.erc8004AgentId) {
+    values.push({
+      property: PROPERTY_IDS.agentId,
+      type: "text",
+      value: event.erc8004AgentId,
+    })
+  }
+
+  if (event.attestationUid) {
+    values.push({
+      property: PROPERTY_IDS.attestationUid,
+      type: "text",
+      value: event.attestationUid,
+    })
+  }
+
+  if (typeof event.worldIdVerified === "boolean") {
+    values.push({
+      property: PROPERTY_IDS.worldIdVerified,
+      type: "checkbox",
+      value: event.worldIdVerified,
     })
   }
 
