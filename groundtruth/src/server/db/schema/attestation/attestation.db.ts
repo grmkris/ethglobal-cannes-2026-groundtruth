@@ -9,6 +9,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import { baseEntityFields } from "../../utils"
 
 /**
@@ -66,7 +67,7 @@ export const easAttestation = pgTable(
     attestationTime: bigint("attestation_time", { mode: "bigint" }).notNull(),
     expirationTime: bigint("expiration_time", { mode: "bigint" })
       .notNull()
-      .default(0n),
+      .default(sql`0`),
     revocable: boolean("revocable").notNull(),
     // Parent attestation UID (if this attestation references another).
     refUid: varchar("ref_uid", { length: 66 }).notNull(),

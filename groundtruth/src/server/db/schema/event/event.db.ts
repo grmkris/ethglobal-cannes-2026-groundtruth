@@ -9,9 +9,14 @@ import {
   text,
   timestamp,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 import { type UserId, type WorldEventId, type EventDisputeId, typeIdGenerator } from "@/lib/typeid"
-import { EVENT_CATEGORY_VALUES, SEVERITY_LEVEL_VALUES } from "@/lib/event-constants"
+import {
+  EVENT_CATEGORY_VALUES,
+  SEVERITY_LEVEL_VALUES,
+  type DisputeReason,
+} from "@/lib/event-constants"
 import { baseEntityFields, typeId } from "../../utils"
 import { user } from "../auth/auth.db"
 
@@ -46,6 +51,7 @@ export const worldEvent = pgTable(
     onChainVerified: boolean("on_chain_verified").default(false).notNull(),
     // Corroboration
     canonicalEventId: typeId("worldEvent", "canonical_event_id")
+      .references((): AnyPgColumn => worldEvent.id)
       .$type<WorldEventId>(),
     corroborationCount: integer("corroboration_count").default(0).notNull(),
     // Disputes
@@ -58,16 +64,6 @@ export const worldEvent = pgTable(
     index("worldEvent_timestamp_idx").on(table.timestamp),
   ]
 )
-
-// --- Dispute reasons ---
-export const DISPUTE_REASONS = ["inaccurate", "misleading", "fabricated"] as const
-export type DisputeReason = (typeof DISPUTE_REASONS)[number]
-
-export const DISPUTE_VALUES: Record<DisputeReason, number> = {
-  inaccurate: -1,
-  misleading: -2,
-  fabricated: -3,
-} as const
 
 // --- Event disputes ---
 export const eventDispute = pgTable(

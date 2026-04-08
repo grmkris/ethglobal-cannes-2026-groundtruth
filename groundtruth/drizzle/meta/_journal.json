@@ -15,6 +15,13 @@
       "when": 1775362480169,
       "tag": "0001_spotty_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775576796320,
+      "tag": "0002_clear_aqueduct",
+      "breakpoints": true
     }
   ]
 }

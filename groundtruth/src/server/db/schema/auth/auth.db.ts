@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  primaryKey,
   uniqueIndex,
   pgTable,
   text,
@@ -133,6 +134,8 @@ export const agentkitNonce = pgTable("agentkit_nonce", {
 })
 
 // --- Ground Truth: AgentKit usage tracking (free-trial mode, time-windowed) ---
+// Composite PK on (humanId, endpoint, windowStart) so concurrent upserts for
+// the same time window collapse to a single row instead of racing.
 export const agentkitUsage = pgTable(
   "agentkit_usage",
   {
@@ -142,7 +145,7 @@ export const agentkitUsage = pgTable(
     windowStart: createTimestampField("window_start").defaultNow().notNull(),
   },
   (table) => [
-    index("agentkitUsage_lookup_idx").on(table.humanId, table.endpoint),
+    primaryKey({ columns: [table.humanId, table.endpoint, table.windowStart] }),
   ]
 )
 
